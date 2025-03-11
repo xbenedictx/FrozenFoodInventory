@@ -1,0 +1,178 @@
+{
+    "inventory": {
+      "item1": {
+        "name": "Adobo (Chicken)",
+        "description": "Chicken braised in soy sauce, vinegar, and garlic",
+        "stock": 40,
+        "minStock": 20,
+        "supplier": "Supplier A",
+        "expiration": "10-31-25"
+      },
+      "item2": {
+        "name": "Bagnet (Ilocano)",
+        "description": "Crispy pork belly, Ilocano style",
+        "stock": 20,
+        "minStock": 10,
+        "supplier": "Supplier B",
+        "expiration": "11-04-24"
+      },
+      "item3": {
+        "name": "Banana Cue",
+        "description": "Deep-fried bananas with caramelized sugar",
+        "stock": 50,
+        "minStock": 20,
+        "supplier": "Supplier C",
+        "expiration": "11-04-24"
+      },
+      "item4": {
+        "name": "Bangus (Boneless)",
+        "description": "Deboned milkfish, ready to cook",
+        "stock": 30,
+        "minStock": 15,
+        "supplier": "Supplier A",
+        "expiration": "10-31-24"
+      },
+      "item5": {
+        "name": "Caldereta (Ready-to-Cook)",
+        "description": "Pre-prepared beef caldereta mix",
+        "stock": 15,
+        "minStock": 5,
+        "supplier": "Supplier B",
+        "expiration": "10-22-24"
+      },
+      "item6": {
+        "name": "Dinengdeng (Ilocano)",
+        "description": "Ilocano vegetable stew mix",
+        "stock": 20,
+        "minStock": 10,
+        "supplier": "Supplier C",
+        "expiration": "11-04-24"
+      },
+      "item7": {
+        "name": "Empanada (Meat)",
+        "description": "Savory pastries filled with ground meat",
+        "stock": 40,
+        "minStock": 15,
+        "supplier": "Supplier A",
+        "expiration": "10-31-24"
+      },
+      "item8": {
+        "name": "Kare-kare (Oxtail)",
+        "description": "Peanut sauce stew with oxtail and vegetables",
+        "stock": 20,
+        "minStock": 10,
+        "supplier": "Supplier B",
+        "expiration": "10-22-24"
+      },
+      "item9": {
+        "name": "Longganisa (Ilocano)",
+        "description": "Ilocano sausage with garlic flavor",
+        "stock": 30,
+        "minStock": 15,
+        "supplier": "Supplier C",
+        "expiration": "11-04-24"
+      },
+      "item10": {
+        "name": "Lumpia (Pork)",
+        "description": "Fried spring rolls filled with pork and vegetables",
+        "stock": 50,
+        "minStock": 20,
+        "supplier": "Supplier A",
+        "expiration": "10-31-24"
+      },
+      "item11": {
+        "name": "Menudo (Ready-to-Cook)",
+        "description": "Pre-prepared menudo mix with pork and vegetables",
+        "stock": 15,
+        "minStock": 5,
+        "supplier": "Supplier B",
+        "expiration": "10-22-24"
+      },
+      "item12": {
+        "name": "Shrimp (Suahe)",
+        "description": "Large prawns, cleaned and frozen",
+        "stock": 25,
+        "minStock": 10,
+        "supplier": "Supplier C",
+        "expiration": "11-04-24"
+      },
+      "item13": {
+        "name": "Sinigang (Pork)",
+        "description": "Sour soup with pork and tamarind base",
+        "stock": 25,
+        "minStock": 10,
+        "supplier": "Supplier A",
+        "expiration": "10-31-24"
+      },
+      "item14": {
+        "name": "Siomai (Shrimp)",
+        "description": "Steamed dumplings filled with shrimp",
+        "stock": 30,
+        "minStock": 15,
+        "supplier": "Supplier B",
+        "expiration": "10-22-24"
+      },
+      "item15": {
+        "name": "Siopao (Asado)",
+        "description": "Steamed buns filled with pork asado",
+        "stock": 45,
+        "minStock": 20,
+        "supplier": "Supplier C",
+        "expiration": "11-04-24"
+      },
+      "item16": {
+        "name": "Squid (Rings)",
+        "description": "Pre-cut squid rings, ready to cook",
+        "stock": 20,
+        "minStock": 10,
+        "supplier": "Supplier A",
+        "expiration": "10-31-24"
+      },
+      "item17": {
+        "name": "Turon",
+        "description": "Fried banana rolls coated in caramelized sugar",
+        "stock": 15,
+        "minStock": 5,
+        "supplier": "Supplier B",
+        "expiration": "10-22-24"
+      }
+    },
+    "suppliers": {
+      "supplier1": {
+        "name": "Supplier A",
+        "contact": "0917-123-4567",
+        "gcash": "0917-123-4567",
+        "products": "Adobo (Chicken), Bangus (Boneless), Empanada (Meat), Longganisa (Ilocano), Lumpia (Pork), Sinigang (Pork), Squid (Rings)"
+      },
+      "supplier2": {
+        "name": "Supplier B",
+        "contact": "0917-234-5678",
+        "gcash": "0917-234-5678",
+        "products": "Bagnet (Ilocano), Caldereta (Ready-to-Cook), Kare-kare (Oxtail), Menudo (Ready-to-Cook), Siomai (Shrimp), Turon"
+      },
+      "supplier3": {
+        "name": "Supplier C",
+        "contact": "0917-345-6789",
+        "gcash": "0917-345-6789",
+        "products": "Banana Cue, Dinengdeng (Ilocano), Shrimp (Suahe), Siopao (Asado)"
+      }
+    },
+    "orders": {
+      "order1": {
+        "supplierId": "supplier1",
+        "product": "Adobo (Chicken)",
+        "quantity": 10,
+        "status": "Pending",
+        "paymentStatus": "Pending",
+        "timestamp": "2025-03-10T10:00:00Z"
+      },
+      "order2": {
+        "supplierId": "supplier2",
+        "product": "Bagnet (Ilocano)",
+        "quantity": 5,
+        "status": "Processing",
+        "paymentStatus": "Pending",
+        "timestamp": "2025-03-09T14:30:00Z"
+      }
+    }
+  }

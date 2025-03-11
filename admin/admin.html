@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Frozen Filipino Food Inventory - Admin Dashboard</title>
+  <link rel="stylesheet" href="../admin/admin.css">
+</head>
+<body>
+  <div id="admin-dashboard">
+    <div class="dashboard-header">
+      <h1>Welcome, Admin</h1>
+      <button onclick="signOut()">Sign Out</button>
+    </div>
+    <div class="nav">
+      <button id="nav-users" onclick="showAdminPage('users')">Users</button>
+      <button id="nav-suppliers" onclick="showAdminPage('suppliers')">Suppliers</button>
+      <button id="nav-branches" onclick="showAdminPage('branches')">Branches</button>
+    </div>
+    <div id="pages">
+      <!-- Users Page -->
+      <div id="page-users" class="page">
+        <h2>User Management</h2>
+        <div id="users-content">
+          <h3>Add New Manager</h3>
+          <input type="email" id="newUserEmail" placeholder="Email">
+          <input type="password" id="newUserPassword" placeholder="Password">
+          <select id="newUserBranch">
+            <option value="" disabled selected>Select Branch</option>
+          </select>
+          <button onclick="addUser()">Add User</button>
+          <h3>Manager List</h3>
+          <ul id="userList"></ul>
+        </div>
+      </div>
+
+      <!-- Suppliers Page -->
+      <div id="page-suppliers" class="page" style="display: none;">
+        <h2>Supplier Management</h2>
+        <div id="suppliers-content">
+          <h3>Add New Supplier</h3>
+          <input type="text" id="newSupplierName" placeholder="Supplier Name">
+          <input type="text" id="newSupplierContact" placeholder="Contact Number">
+          <input type="text" id="newSupplierGCash" placeholder="GCash Number">
+          <input type="text" id="newSupplierProduct" placeholder="Product Catalog (e.g., Item1, Item2)">
+          <button onclick="addSupplier()">Add Supplier</button>
+          <h3>Supplier List</h3>
+          <ul id="supplierList"></ul>
+        </div>
+      </div>
+
+      <!-- Branches Page -->
+      <div id="page-branches" class="page" style="display: none;">
+        <h2>Branch Management</h2>
+        <div id="branches-content">
+          <h3>Add New Branch</h3>
+          <input type="text" id="newBranchName" placeholder="Branch Name">
+          <button onclick="addBranch()">Add Branch</button>
+          <h3>Branch List</h3>
+          <ul id="branchList"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="../js/admin.js"></script>
+</body>
+</html>

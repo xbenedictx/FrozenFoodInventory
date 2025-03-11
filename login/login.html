@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Frozen Filipino Food Inventory - Login</title>
+  <link rel="stylesheet" href="../login/login.css">
+</head>
+<body>
+  <div class="container">
+    <div class="left">
+      <img src="../assets/logo.png" alt="Illustration" class="illustration">
+    </div>
+    <div class="right">
+      <div class="logo">
+        <img src="../assets/icon1.jpg" alt="Frozen Food Inventory Logo">
+        <h1>Frozen Food Inventory</h1>
+      </div>
+      <h2>Log in to your account.</h2>
+      <form id="loginForm">
+        <select id="role" name="role" required>
+          <option value="" disabled selected>Select your role</option>
+          <option value="user">User (Manager)</option>
+          <option value="admin">Admin (Branch Owner)</option>
+        </select>
+        <input type="email" id="email" placeholder="Enter your email" required>
+        <div class="password-container">
+          <input type="password" id="password" placeholder="Enter your password" required>
+          <span class="toggle-password">
+            <img src="../assets/reveal-pass.jpg" id="toggleIcon" alt="Toggle Password">
+          </span>
+        </div>
+        <button type="button" onclick="signIn()">Login</button>
+      </form>
+      <a href="#" class="forgot-password">Forgot Password?</a>
+      <p class="terms">
+        Help & Documentation <br>
+        By continuing, you must agree to our <a href="#">Terms</a>, <a href="#">Privacy Policy</a>, and <a href="#">Cookie Use</a>.
+      </p>
+      <!-- Inline script for toggle -->
+      <script>
+        const toggleIcon = document.getElementById("toggleIcon");
+        if (toggleIcon) {
+          toggleIcon.addEventListener("click", () => {
+            const passwordInput = document.getElementById("password");
+            const toggleContainer = toggleIcon.parentElement;
+            if (passwordInput) {
+              if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                toggleContainer.classList.add("revealed");
+              } else {
+                passwordInput.type = "password";
+                toggleContainer.classList.remove("revealed");
+              }
+            }
+          });
+        }
+      </script>
+    </div>
+  </div>
+
+  <!-- Firebase SDK Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <!-- Login-specific script -->
+  <script src="../js/login.js"></script>
+</body>
+</html>
