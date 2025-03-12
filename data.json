@@ -14,7 +14,7 @@
         "stock": 20,
         "minStock": 10,
         "supplier": "Supplier B",
-        "expiration": "11-04-24"
+        "expiration": "11-04-25"
       },
       "item3": {
         "name": "Banana Cue",
@@ -22,7 +22,7 @@
         "stock": 50,
         "minStock": 20,
         "supplier": "Supplier C",
-        "expiration": "11-04-24"
+        "expiration": "11-04-25"
       },
       "item4": {
         "name": "Bangus (Boneless)",
@@ -30,7 +30,7 @@
         "stock": 30,
         "minStock": 15,
         "supplier": "Supplier A",
-        "expiration": "10-31-24"
+        "expiration": "10-31-25"
       },
       "item5": {
         "name": "Caldereta (Ready-to-Cook)",
@@ -38,103 +38,87 @@
         "stock": 15,
         "minStock": 5,
         "supplier": "Supplier B",
-        "expiration": "10-22-24"
+        "expiration": "10-22-25"
       },
       "item6": {
-        "name": "Dinengdeng (Ilocano)",
-        "description": "Ilocano vegetable stew mix",
-        "stock": 20,
-        "minStock": 10,
-        "supplier": "Supplier C",
-        "expiration": "11-04-24"
-      },
-      "item7": {
         "name": "Empanada (Meat)",
         "description": "Savory pastries filled with ground meat",
         "stock": 40,
         "minStock": 15,
         "supplier": "Supplier A",
-        "expiration": "10-31-24"
+        "expiration": "10-31-25"
       },
-      "item8": {
+      "item7": {
         "name": "Kare-kare (Oxtail)",
         "description": "Peanut sauce stew with oxtail and vegetables",
         "stock": 20,
         "minStock": 10,
         "supplier": "Supplier B",
-        "expiration": "10-22-24"
+        "expiration": "10-22-25"
       },
-      "item9": {
+      "item8": {
         "name": "Longganisa (Ilocano)",
         "description": "Ilocano sausage with garlic flavor",
         "stock": 30,
         "minStock": 15,
         "supplier": "Supplier C",
-        "expiration": "11-04-24"
+        "expiration": "11-04-25"
       },
-      "item10": {
+      "item9": {
         "name": "Lumpia (Pork)",
         "description": "Fried spring rolls filled with pork and vegetables",
         "stock": 50,
         "minStock": 20,
         "supplier": "Supplier A",
-        "expiration": "10-31-24"
+        "expiration": "10-31-25"
       },
-      "item11": {
+      "item10": {
         "name": "Menudo (Ready-to-Cook)",
         "description": "Pre-prepared menudo mix with pork and vegetables",
         "stock": 15,
         "minStock": 5,
         "supplier": "Supplier B",
-        "expiration": "10-22-24"
+        "expiration": "10-22-25"
       },
-      "item12": {
+      "item11": {
         "name": "Shrimp (Suahe)",
         "description": "Large prawns, cleaned and frozen",
         "stock": 25,
         "minStock": 10,
         "supplier": "Supplier C",
-        "expiration": "11-04-24"
+        "expiration": "11-04-25"
       },
-      "item13": {
-        "name": "Sinigang (Pork)",
-        "description": "Sour soup with pork and tamarind base",
-        "stock": 25,
-        "minStock": 10,
-        "supplier": "Supplier A",
-        "expiration": "10-31-24"
-      },
-      "item14": {
+      "item12": {
         "name": "Siomai (Shrimp)",
         "description": "Steamed dumplings filled with shrimp",
         "stock": 30,
         "minStock": 15,
         "supplier": "Supplier B",
-        "expiration": "10-22-24"
+        "expiration": "10-22-25"
       },
-      "item15": {
+      "item13": {
         "name": "Siopao (Asado)",
         "description": "Steamed buns filled with pork asado",
         "stock": 45,
         "minStock": 20,
         "supplier": "Supplier C",
-        "expiration": "11-04-24"
+        "expiration": "11-04-25"
       },
-      "item16": {
+      "item14": {
         "name": "Squid (Rings)",
         "description": "Pre-cut squid rings, ready to cook",
         "stock": 20,
         "minStock": 10,
         "supplier": "Supplier A",
-        "expiration": "10-31-24"
+        "expiration": "10-31-25"
       },
-      "item17": {
+      "item15": {
         "name": "Turon",
         "description": "Fried banana rolls coated in caramelized sugar",
         "stock": 15,
         "minStock": 5,
         "supplier": "Supplier B",
-        "expiration": "10-22-24"
+        "expiration": "10-22-25"
       }
     },
     "suppliers": {

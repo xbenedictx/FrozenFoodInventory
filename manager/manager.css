@@ -1,537 +1,442 @@
-body {
+/* General Reset */
+* {
   margin: 0;
   padding: 0;
-  font-family: Arial, sans-serif;
-  background-color: #f5f7fa;
-  transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 
-/* Main Dashboard Container */
+body {
+  font-family: 'Roboto', sans-serif; /* Changed to Roboto */
+  background-color: #fff; /* White background */
+  color: #000; /* Black text */
+  line-height: 1.5;
+}
+
+/* Manager Dashboard Container */
 #manager-dashboard {
   display: flex;
   min-height: 100vh;
-  transition: all 0.3s ease;
 }
 
 /* Sidebar */
 .sidebar {
-  width: 70px;
-  background-color: #fff;
-  color: #333;
+  width: 250px; /* Increased width to 250px */
+  background-color: #fff; /* White sidebar background */
+  border-right: 2px solid #000; /* Black border on the right */
   position: fixed;
   height: 100%;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 15px;
-  box-sizing: border-box;
-  border-right: 2px solid #ff4d4f;
-  transition: width 0.3s ease;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-}
-
-.sidebar:hover {
-  width: 200px;
-  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s;
+  z-index: 1000; /* Ensure sidebar stays above other elements */
 }
 
 .sidebar-header {
-  width: 100%;
-  padding: 10px 0;
-  background-color: #ff4d4f;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-bottom: 2px solid #e63946;
-  position: absolute;
-  top: 0;
-  left: 0;
-  transition: all 0.3s ease;
+  padding: 15px;
+  text-align: center;
+  background-color: #dc3545; /* Red header */
+  color: #fff; /* White text */
 }
 
 .sidebar-header h2 {
+  font-size: 1.2em;
   margin: 0;
-  font-size: 20px;
-  color: white;
-  font-weight: bold;
   text-transform: uppercase;
-  white-space: nowrap;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.sidebar:hover .sidebar-header h2 {
-  opacity: 1;
+  font-weight: 600; /* Slightly bolder for header */
 }
 
 .nav-list {
-  list-style-type: none;
+  list-style: none;
   padding: 0;
-  margin: 0;
-  width: 100%;
-  transition: all 0.3s ease;
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  padding-top: 30px;
 }
 
 .nav-list li {
-  border-bottom: 1px solid #ddd;
-  transition: all 0.3s ease;
-  margin: 5px 0;
-  background-color: transparent;
+  border-bottom: 1px solid #eee; /* Light gray border */
 }
 
-.nav-list a {
+.nav-list li a {
   display: flex;
-  justify-content: center;
-  padding: 15px 0;
-  color: #333;
+  align-items: center;
+  padding: 12px 15px;
+  color: #000; /* Black text */
   text-decoration: none;
-  transition: all 0.3s ease;
-  opacity: 0.7;
-  border-radius: 5px;
+  transition: background 0.2s;
+  font-weight: 500; /* Slightly bolder font for sidebar */
 }
 
-.sidebar:hover .nav-list a {
-  justify-content: flex-start;
-  padding: 15px 20px;
-  opacity: 1;
-  background-color: #f9f9f9;
+.nav-list li a i {
+  margin-right: 8px;
+  color: #dc3545; /* Red icons */
 }
 
-.nav-list a:hover,
-.nav-list a.active {
-  color: #ff4d4f;
-  background-color: #fff5f5;
-}
-
-.nav-list a i {
-  font-size: 18px;
-  margin-right: 10px;
-  transition: margin 0.3s ease, color 0.3s ease;
-}
-
-.sidebar:hover .nav-list a i {
-  margin-right: 10px;
-}
-
-.nav-list a span {
-  display: none;
-  transition: display 0.3s ease, opacity 0.3s ease;
-  font-weight: 500;
-}
-
-.sidebar:hover .nav-list a span {
-  display: inline;
-  white-space: nowrap;
+.nav-list li a:hover,
+.nav-list li a.active {
+  background-color: #f8f9fa; /* Light gray highlight */
 }
 
 /* Main Content */
 .main-content {
-  margin-left: 70px;
-  padding: 20px;
-  width: calc(100% - 70px);
-  background-color: #fff;
-  transition: margin-left 0.3s ease;
+  margin-left: 250px; /* Adjusted to match new sidebar width */
+  flex: 1;
+  padding: 15px;
+  position: relative; /* Ensure main content can scroll */
 }
 
-/* Dashboard Header */
 .dashboard-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-between; /* Space between "Stocks" and user-info */
   align-items: center;
-  margin-bottom: 20px;
-  border-bottom: 2px solid #ff4d4f;
-  position: relative;
-  transition: all 0.3s ease;
+  height: 60px; /* Fixed height to match screenshot */
+  margin-bottom: 15px;
+  border-bottom: 2px solid #dc3545; /* Red underline */
+  padding: 0 15px; /* Add padding for content */
+  position: fixed; /* Fix the header to the top */
+  top: 0;
+  right: 0;
+  left: 250px; /* Align with sidebar */
+  background-color: #fff; /* White background to avoid transparency */
+  z-index: 900; /* Below sidebar but above content */
 }
 
 .dashboard-header h1 {
-  color: #ff4d4f;
-  font-size: 24px;
-  margin: 0;
-  font-weight: 600;
+  font-size: 1.5em; /* Make "Stocks" readable */
+  color: #000; /* Black text */
+  display: block; /* Show the "Stocks" title */
 }
 
-.dashboard-header .user-info {
+.user-info {
   display: flex;
   align-items: center;
+  gap: 10px;
+}
+
+/* Move dropdown to upper right corner */
+.profile {
   position: relative;
-  transition: all 0.3s ease;
-}
-
-.dashboard-header .user-info .support {
-  margin-right: 15px;
-  color: #333;
   cursor: pointer;
-  transition: color 0.3s ease;
 }
 
-.dashboard-header .user-info .support i {
-  font-size: 18px;
+.profile span {
+  font-size: 1em;
+  color: #000; /* Black text */
+  margin-right: 5px;
 }
 
-.dashboard-header .user-info .notifications {
-  margin-right: 15px;
-  color: #333;
-  cursor: pointer;
-  position: relative;
-  transition: color 0.3s ease;
-}
-
-.dashboard-header .user-info .notifications i {
-  font-size: 18px;
-}
-
-.dashboard-header .user-info .notifications .badge {
-  position: absolute;
-  top: -5px;
-  right: -10px;
-  background-color: #ff4d4f;
-  color: white;
-  border-radius: 50%;
-  padding: 2px 6px;
-  font-size: 12px;
-  min-width: 18px;
-  text-align: center;
-}
-
-.dashboard-header .user-info .profile {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.dashboard-header .user-info .profile span {
-  margin-right: 10px;
-  color: #333;
-  transition: color 0.3s ease;
-}
-
-.dashboard-header .user-info .profile i {
-  font-size: 14px;
-  transition: transform 0.3s ease;
-}
-
-.dashboard-header .dropdown {
+.dropdown {
   display: none;
-  position: absolute;
-  top: 100%;
-  right: 0;
+  position: fixed;
+  top: 65px;
+  right: 15px;
   background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  padding: 10px;
+  border: 1px solid #dc3545;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   z-index: 1000;
-  transition: opacity 0.3s ease;
-  opacity: 0;
+  width: 160px;
+  font-size: 0.9em;
+  padding: 5px 0;
 }
 
-.dashboard-header .user-info .profile:hover .dropdown {
-  display: block;
-  opacity: 1;
-}
-
-.dropdown .profile-menu {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
-  transition: all 0.3s ease;
-}
-
-.dropdown .profile-menu img {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  margin-right: 10px;
-  transition: all 0.3s ease;
-}
-
-.dropdown .profile-menu span {
-  font-size: 14px;
-  color: #333;
-  transition: color 0.3s ease;
-}
-
-.dropdown ul {
+.dropdown-menu {
   list-style: none;
   padding: 0;
   margin: 0;
-  transition: all 0.3s ease;
 }
 
-.dropdown ul li {
-  padding: 5px 0;
-  font-size: 14px;
-  color: #666;
-  border-radius: 3px;
-  transition: all 0.3s ease;
+.dropdown-menu li {
+  border-bottom: 1px solid #eee;
 }
 
-.dropdown ul li i {
-  margin-right: 10px;
-  transition: color 0.3s ease;
+.dropdown-menu li:last-child {
+  border-bottom: none;
 }
 
-.dropdown ul li:hover {
-  color: #ff4d4f;
-  background-color: #f9f9f9;
-}
-
-.dropdown .language-branches {
-  display: flex;
-  justify-content: space-between;
-  transition: all 0.3s ease;
-}
-
-.dropdown .language-branches div {
-  width: 45%;
-}
-
-.dropdown .language-branches h4 {
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 5px;
-  transition: color 0.3s ease;
-}
-
-.dropdown .language-branches ul li {
+.dropdown-menu li a,
+.dropdown-menu li button {
+  display: block;
+  padding: 10px 15px;
+  color: #000;
+  text-decoration: none;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
   cursor: pointer;
-  transition: color 0.3s ease;
+  transition: background 0.2s;
 }
 
-/* Page Sections */
+.dropdown-menu li a:hover {
+  background-color: #f8f9fa;
+}
+
+.signout-btn {
+  color: #dc3545;
+}
+
+.signout-btn:hover {
+  background-color: #fff5f5;
+}
+
+/* Pages */
 .page {
   display: none;
-  transition: opacity 0.3s ease;
 }
 
 .page.active {
   display: block;
-  opacity: 1;
 }
 
-/* Inventory Container */
-.inventory-container {
+/* Inventory Page */
+.filter-sort {
   display: flex;
-  flex-wrap: wrap;
-  gap: 30px;
-  margin-top: 15px;
-  transition: all 0.3s ease;
-}
-
-/* Food Item Container */
-.food-item {
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 15px;
-  width: 250px;
-  height: 300px;
-  display: flex;
-  flex-direction: column;
+  justify-content: flex-end; /* Align to the right as per screenshot */
+  align-items: center;
+  margin-bottom: 15px;
   gap: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  margin-top: 75px; /* Add margin to account for fixed header (60px + padding) */
+}
+
+.filter-sort select,
+.filter-sort input {
+  padding: 6px;
+  border: 1px solid #dc3545; /* Red border */
+  border-radius: 3px;
+  background-color: #fff; /* White background */
+  color: #000; /* Black text */
+  font-size: 0.9em;
+}
+
+.filter-sort select {
+  display: none; /* Hide the sort dropdown as per screenshot */
+}
+
+.filter-sort input {
+  width: 180px;
+}
+
+.filter-sort button {
+  padding: 6px 10px;
+  background-color: #dc3545; /* Red button */
+  color: #fff; /* White text */
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background 0.2s;
+}
+
+.filter-sort button:hover {
+  background-color: #c82333; /* Darker red on hover */
+}
+
+.inventory-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* Four columns per row */
+  gap: 15px;
+  margin-bottom: 150px; /* Add space for the fixed alerts container */
+}
+
+.food-item {
+  background-color: #fff; /* White background */
+  border: 1px solid #ddd; /* Light gray border */
+  border-radius: 5px;
+  padding: 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
 }
 
 .food-item:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
 }
 
 .food-item img {
   width: 100%;
-  height: 150px;
+  height: 120px;
   object-fit: cover;
   border-radius: 5px;
-  background-color: #f0f0f0;
-  transition: all 0.3s ease;
+  margin-bottom: 8px;
 }
 
-.food-item .item-details {
-  display: flex;
-  flex-direction: column;
-  padding: 5px 0;
-  flex-grow: 1;
-  transition: all 0.3s ease;
+.item-details {
+  margin-bottom: 8px;
 }
 
-.food-item .item-name {
-  font-size: 18px;
+.item-name {
+  font-size: 1em;
   font-weight: bold;
-  color: #333;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: color 0.3s ease;
+  color: #000; /* Black text */
 }
 
-.food-item .item-description {
-  font-size: 14px;
-  color: #666;
-  margin-top: 5px;
-  transition: color 0.3s ease;
+.item-description {
+  font-size: 0.85em;
+  color: #666; /* Dark gray text */
 }
 
-.food-item .stock-info {
+.stock-info span {
+  display: block;
+  font-size: 0.85em;
+  color: #333; /* Dark gray text */
+  margin: 2px 0;
+}
+
+.actions {
   display: flex;
-  flex-direction: column;
-  font-size: 14px;
-  color: #333;
-  margin-top: auto;
-  transition: all 0.3s ease;
+  gap: 8px;
 }
 
-.food-item .stock-bar {
-  display: none;
-}
-
-.food-item .stock-text {
-  font-size: 14px;
-  color: #333;
-  transition: color 0.3s ease;
-}
-
-.food-item .actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-  transition: all 0.3s ease;
-}
-
-.food-item button {
-  padding: 8px;
-  background-color: #ff4d4f;
-  color: white;
+.actions button {
+  flex: 1;
+  padding: 6px;
   border: none;
-  border-radius: 5px;
+  border-radius: 3px;
   cursor: pointer;
-  font-size: 14px;
-  transition: all 0.3s ease;
+  font-size: 0.85em;
+  transition: background 0.2s;
 }
 
-.food-item button:hover {
-  background-color: #e63946;
-  transform: translateY(-2px);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+.actions button:first-child {
+  background-color: #dc3545; /* Red button for Edit */
+  color: #fff; /* White text */
 }
 
-/* Filters and Actions */
-.filter-sort {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-  transition: all 0.3s ease;
+.actions button:first-child:hover {
+  background-color: #c82333; /* Darker red on hover */
 }
 
-.filter-sort input[type="text"] {
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  width: 250px;
-  font-size: 14px;
-  transition: all 0.3s ease;
+.actions button:last-child {
+  background-color: #dc3545; /* Red button for Delete */
+  color: #fff; /* White text */
 }
 
-.filter-sort select {
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  background-color: #fff;
-  font-size: 14px;
-  transition: all 0.3s ease;
+.actions button:last-child:hover {
+  background-color: #c82333; /* Darker red on hover */
 }
 
-.filter-sort button {
-  padding: 10px 20px;
-  background-color: #ff4d4f;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.3s ease;
+.food-item.low {
+  border-left: 4px solid #dc3545; /* Red for low stock */
 }
 
-.filter-sort button:hover {
-  background-color: #e63946;
-  transform: translateY(-2px);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+.food-item.expired {
+  border-left: 4px solid #dc3545; /* Red for expired */
 }
 
-/* Alerts and Other Lists */
-#alerts li,
-#orderList li,
-#supplierList li,
-#inventory-report li,
-#order-report li {
-  margin: 5px 0;
-  padding: 10px;
-  background-color: white;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+/* Low Stock Alerts Container with Fixed Positioning */
+.alerts-container {
+  position: fixed;
+  bottom: 0;
+  left: 250px; /* Align with sidebar */
+  right: 0;
+  background-color: #fff5f5; /* Light red background */
+  border-top: 1px solid #dc3545; /* Red border on top */
+  padding: 15px;
+  z-index: 800; /* Below header but above inventory */
+  box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+}
+
+.alerts-container h3 {
+  font-size: 1.1em;
+  color: #dc3545; /* Red text */
+  margin-bottom: 10px;
+}
+
+#alerts {
+  list-style: none;
+  padding: 0;
 }
 
 #alerts li {
-  color: #ff4d4f;
-}
-
-#alerts li button,
-#orderList li button,
-#supplierList li button {
-  padding: 5px 10px;
-  background-color: #ff4d4f;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-#alerts li button:hover,
-#orderList li button:hover,
-#supplierList li button:hover {
-  background-color: #e63946;
-  transform: translateY(-2px);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  background-color: #fff5f5; /* Light red background */
+  color: #dc3545; /* Red text */
+  padding: 8px;
+  border-radius: 3px;
+  margin-bottom: 5px;
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .sidebar {
-    width: 70px;
-  }
-
-  .sidebar:hover {
-    width: 70px;
+    width: 200px;
   }
 
   .main-content {
-    margin-left: 70px;
-    width: calc(100% - 70px);
+    margin-left: 200px;
   }
 
-  .food-item {
-    width: 100%;
-    height: auto;
+  .dashboard-header {
+    left: 200px; /* Adjust for sidebar width */
+  }
+
+  .alerts-container {
+    left: 200px; /* Adjust for sidebar width */
+  }
+
+  .inventory-container {
+    grid-template-columns: repeat(3, 1fr); /* Three columns on medium screens */
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 180px;
+  }
+
+  .main-content {
+    margin-left: 180px;
+  }
+
+  .dashboard-header {
+    left: 180px; /* Adjust for sidebar width */
+  }
+
+  .alerts-container {
+    left: 180px; /* Adjust for sidebar width */
   }
 
   .filter-sort {
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
+  }
+
+  .filter-sort input {
+    width: 100%;
+  }
+
+  .inventory-container {
+    grid-template-columns: repeat(2, 1fr); /* Two columns on smaller screens */
+  }
+}
+
+@media (max-width: 576px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+    border-right: none;
+    border-bottom: 2px solid #000; /* Black border at bottom for mobile */
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  .dashboard-header {
+    left: 0; /* Full width on mobile */
+    position: relative; /* Remove fixed positioning on mobile */
+    height: auto; /* Reset height on mobile */
+    padding: 10px;
+  }
+
+  .filter-sort {
+    margin-top: 15px; /* Reset margin on mobile */
+  }
+
+  .alerts-container {
+    position: relative; /* Remove fixed positioning on mobile */
+    left: 0;
+    margin-top: 20px;
+  }
+
+  .inventory-container {
+    grid-template-columns: 1fr; /* Single column on mobile */
+    margin-bottom: 20px; /* Adjust for non-fixed alerts */
   }
 }
