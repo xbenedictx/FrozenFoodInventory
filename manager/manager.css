@@ -20,7 +20,7 @@ body {
 
 .sidebar-header {
   padding: 15px;
-  background-color: #28a745;
+  background-color: #dc3545;
   color: white;
   text-align: center;
 }
@@ -40,7 +40,7 @@ body {
 
 .nav-list li a i {
   margin-right: 10px;
-  color: #28a745;
+  color: #dc3545;
 }
 
 .nav-list li a:hover, .nav-list li a.active {
@@ -63,7 +63,6 @@ body {
 .user-info {
   display: flex;
   align-items: center;
-  gap: 15px;
 }
 
 .profile {
@@ -89,13 +88,11 @@ body {
 }
 
 .dropdown-menu li button {
-  display: block;
   padding: 10px;
-  color: #28a745;
-  background: none;
-  border: none;
   width: 100%;
-  text-align: left;
+  border: none;
+  background: none;
+  color: #dc3545;
   cursor: pointer;
 }
 
@@ -109,115 +106,4 @@ body {
 
 .page.active {
   display: block;
-}
-
-/* Inventory Styling */
-.filter-sort {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-
-.filter-sort input {
-  padding: 6px;
-  border: 1px solid #28a745;
-  border-radius: 3px;
-  width: 200px;
-}
-
-.inventory-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 15px;
-  min-height: 200px;
-  visibility: visible;
-}
-
-.food-item {
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  padding: 10px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  visibility: visible;
-}
-
-.food-item.low, .food-item.expired {
-  border-left: 4px solid #28a745;
-}
-
-.food-item img {
-  width: 100%;
-  height: 150px;
-  border-radius: 5px;
-  margin-bottom: 10px;
-  object-fit: cover;
-  display: block;
-}
-
-.food-item .item-details {
-  margin-bottom: 10px;
-}
-
-.food-item .item-name {
-  font-weight: bold;
-  font-size: 16px;
-}
-
-.food-item .item-description {
-  font-size: 14px;
-  color: #666;
-}
-
-.food-item .stock-info {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  font-size: 14px;
-}
-
-.food-item .actions {
-  display: flex;
-  gap: 5px;
-}
-
-.food-item .actions button {
-  flex: 1;
-  padding: 5px;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-}
-
-.food-item .actions button:hover {
-  background-color: #218838;
-}
-
-/* General List Styling */
-.list-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 15px;
-  margin-top: 15px;
-}
-
-.supplier-item, .order-item {
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  padding: 10px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-/* Dashboard Metrics */
-.metric-card {
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  padding: 15px;
-  margin-bottom: 15px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }

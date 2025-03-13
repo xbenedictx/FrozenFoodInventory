@@ -75,16 +75,29 @@ function loadDashboardPage() {
     const lowStock = inventoryData.filter(item => item.stock <= (item.minStock || 0)).length;
 
     const recentOrders = [];
+    const ordersBySupplier = {};
     if (ordersSnap.val()) {
       ordersSnap.forEach(child => {
         const order = child.val();
         order.id = child.key;
         recentOrders.push(order);
+        const supplierId = order.supplierID;
+        ordersBySupplier[supplierId] = (ordersBySupplier[supplierId] || 0) + 1;
       });
     }
-    const recentOrdersList = recentOrders.slice(-3); // Get the last 3 orders
+    const recentOrdersList = recentOrders.slice(-3);
 
-    const supplierPerformance = suppliersSnap.val() ? Object.values(suppliersSnap.val()).map(s => ({ name: s.name, orders: 0 })) : [];
+    const suppliers = suppliersSnap.val() ? Object.entries(suppliersSnap.val()).reduce((acc, [id, supplier]) => {
+      acc[id] = supplier;
+      return acc;
+    }, {}) : {};
+
+    const supplierPerformance = suppliersSnap.val()
+      ? Object.entries(suppliersSnap.val()).map(([id, s]) => ({
+          name: s.name,
+          orders: ordersBySupplier[id] || 0
+        }))
+      : [];
 
     metrics.innerHTML = `
       <div class="metric-card">
@@ -97,7 +110,7 @@ function loadDashboardPage() {
           ${recentOrdersList.map(o => `
             <li>
               <strong>Order #${o.id}</strong><br>
-              Supplier: ${o.supplierID}<br>
+              Supplier: ${suppliers[o.supplierID]?.name || 'Unknown'}<br>
               Product: ${o.product}<br>
               Quantity: ${o.quantity}<br>
               Status: ${o.status}<br>
@@ -301,7 +314,12 @@ function loadSupplierPage() {
         const div = document.createElement("div");
         div.className = "supplier-item";
         div.innerHTML = `
-          <div>${supplier.name} - ${supplier.contact}</div>
+          <div>
+            <strong>${supplier.name}</strong><br>
+            Contact: ${supplier.contact}<br>
+            GCash: ${supplier.gcash}<br>
+            Products: ${supplier.products}
+          </div>
           <div class="actions">
             <button onclick="editSupplier('${supplier.id}')">Edit</button>
             <button onclick="db.ref('suppliers/${supplier.id}').remove()">Delete</button>
@@ -321,14 +339,18 @@ function loadSupplierPage() {
 function addSupplier() {
   const name = prompt("Enter supplier name:");
   const contact = prompt("Enter contact info:");
-  if (name && contact) {
-    db.ref("suppliers").push({ name, contact }).then(() => {
+  const gcash = prompt("Enter GCash number:");
+  const products = prompt("Enter products (comma-separated):");
+  if (name && contact && gcash && products) {
+    db.ref("suppliers").push({ name, contact, gcash, products }).then(() => {
       console.log("Supplier added successfully!");
       alert("Supplier added successfully!");
     }).catch((error) => {
       console.error("Error adding supplier:", error.message);
       alert("Error adding supplier: " + error.message);
     });
+  } else {
+    alert("Please fill in all required fields.");
   }
 }
 
@@ -338,8 +360,10 @@ function editSupplier(supplierId) {
     const supplier = snapshot.val();
     const newName = prompt("Enter new supplier name:", supplier.name);
     const newContact = prompt("Enter new contact info:", supplier.contact);
-    if (newName && newContact) {
-      supplierRef.update({ name: newName, contact: newContact }).then(() => {
+    const newGcash = prompt("Enter new GCash number:", supplier.gcash);
+    const newProducts = prompt("Enter new products (comma-separated):", supplier.products);
+    if (newName && newContact && newGcash && newProducts) {
+      supplierRef.update({ name: newName, contact: newContact, gcash: newGcash, products: newProducts }).then(() => {
         console.log("Supplier updated successfully!");
       }).catch((error) => {
         console.error("Error updating supplier:", error.message);
@@ -352,37 +376,44 @@ function loadOrderPage() {
   const orderList = document.getElementById("orderList");
   orderList.innerHTML = "<p>Loading orders...</p>";
 
-  db.ref("orders").on("value", (snapshot) => {
-    orderList.innerHTML = "";
-    if (snapshot.exists()) {
-      snapshot.forEach((child) => {
-        const order = child.val();
-        order.id = child.key;
-        const div = document.createElement("div");
-        div.className = "order-item";
-        div.innerHTML = `
-          <div>
-            <strong>Order #${order.id}</strong><br>
-            Supplier: ${order.supplierID}<br>
-            Product: ${order.product}<br>
-            Quantity: ${order.quantity}<br>
-            Status: ${order.status}<br>
-            Payment Status: ${order.paymentStatus}<br>
-            Timestamp: ${new Date(order.timestamp).toLocaleString()}
-          </div>
-          <div class="actions">
-            <button onclick="editOrder('${order.id}')">Edit</button>
-            <button onclick="db.ref('orders/${order.id}').remove()">Delete</button>
-          </div>
-        `;
-        orderList.appendChild(div);
-      });
-    } else {
-      orderList.innerHTML = "<p>No orders found. Create an order to start.</p>";
-    }
-  }, (error) => {
-    console.error("Error loading orders:", error.message);
-    orderList.innerHTML = `<p>Error loading orders: ${error.message}</p>`;
+  db.ref("suppliers").once("value").then((suppliersSnap) => {
+    const suppliers = suppliersSnap.val() ? Object.entries(suppliersSnap.val()).reduce((acc, [id, supplier]) => {
+      acc[id] = supplier;
+      return acc;
+    }, {}) : {};
+
+    db.ref("orders").on("value", (snapshot) => {
+      orderList.innerHTML = "";
+      if (snapshot.exists()) {
+        snapshot.forEach((child) => {
+          const order = child.val();
+          order.id = child.key;
+          const div = document.createElement("div");
+          div.className = "order-item";
+          div.innerHTML = `
+            <div>
+              <strong>Order #${order.id}</strong><br>
+              Supplier: ${suppliers[order.supplierID]?.name || 'Unknown'}<br>
+              Product: ${order.product}<br>
+              Quantity: ${order.quantity}<br>
+              Status: ${order.status}<br>
+              Payment Status: ${order.paymentStatus}<br>
+              Timestamp: ${new Date(order.timestamp).toLocaleString()}
+            </div>
+            <div class="actions">
+              <button onclick="editOrder('${order.id}')">Edit</button>
+              <button onclick="db.ref('orders/${order.id}').remove()">Delete</button>
+            </div>
+          `;
+          orderList.appendChild(div);
+        });
+      } else {
+        orderList.innerHTML = "<p>No orders found. Create an order to start.</p>";
+      }
+    }, (error) => {
+      console.error("Error loading orders:", error.message);
+      orderList.innerHTML = `<p>Error loading orders: ${error.message}</p>`;
+    });
   });
 }
 

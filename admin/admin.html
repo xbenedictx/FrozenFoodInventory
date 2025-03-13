@@ -44,7 +44,8 @@
             <!-- Metrics will be populated by JavaScript -->
           </div>
         </div>
-        <div id="page-inventory" class="page">
+        <!-- Sidebar- Inventory-->
+        <div id="page-inventory" class="page"> /
           <h2>Inventory Management</h2>
           <div class="filter-sort">
             <input type="text" id="inventorySearch" placeholder="Search stock item...">
@@ -54,16 +55,19 @@
           <h3>Low Stock Alerts</h3>
           <ul id="alerts"></ul>
         </div>
+        <!-- Sidebar- Suppliers-->
         <div id="page-suppliers" class="page">
           <h2>Supplier Management</h2>
           <button onclick="addSupplier()">+ Add Supplier</button>
           <div id="supplierList" class="list-container"></div>
         </div>
+        <!-- Sidebar- Orders-->
         <div id="page-orders" class="page">
           <h2>Order Management</h2>
           <button onclick="addOrder()">+ Create Order</button>
           <div id="orderList" class="list-container"></div>
         </div>
+        <!-- Sidebar- Reports-->
         <div id="page-reports" class="page">
           <h2>Reports</h2>
           <select id="reportType">
@@ -74,11 +78,13 @@
           <button onclick="generateReport()">Generate Report</button>
           <div id="reportOutput"></div>
         </div>
+        <!-- Sidebar- Users-->
         <div id="page-users" class="page">
           <h2>User Management</h2>
           <button onclick="addUser()">+ Add User</button>
           <div id="userList" class="list-container"></div>
         </div>
+        <!-- Sidebar- Settings-->
         <div id="page-settings" class="page">
           <h2>System Settings</h2>
           <button onclick="backupData()">Backup Data</button>
