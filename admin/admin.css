@@ -208,3 +208,48 @@ body {
 .food-item .actions button:hover {
   background-color: #e63946;
 }
+
+/* General List Styling */
+.list-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.supplier-item, .order-item, .user-item {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.supplier-item .actions, .order-item .actions, .user-item .actions {
+  display: flex;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.supplier-item .actions button, .order-item .actions button, .user-item .actions button {
+  padding: 5px;
+  background-color: #ff4d4f;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.supplier-item .actions button:hover, .order-item .actions button:hover, .user-item .actions button:hover {
+  background-color: #e63946;
+}
+
+/* Dashboard Metrics */
+.metric-card {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
