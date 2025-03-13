@@ -3,39 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Frozen Filipino Food Inventory - Manager Dashboard</title>
-  <link rel="stylesheet" href="manager.css">
+  <title>Frozen Filipino Food - Manager</title>
+  <link rel="stylesheet" href="../manager/manager.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
   <div id="manager-dashboard">
-    <!-- Sidebar -->
-    <div class="sidebar" id="sidebar">
+    <div class="sidebar">
       <div class="sidebar-header">
         <h2>Manager</h2>
       </div>
       <ul class="nav-list">
-        <li><a href="manager.html" id="nav-home" onclick="showManagerPage('home')"><i class="fas fa-home"></i><span>Home</span></a></li>
-        <li><a href="inventory.html" id="nav-inventory" onclick="showManagerPage('inventory')"><i class="fas fa-box"></i><span>Inventory</span></a></li>
-        <li><a href="orders.html" id="nav-orders" onclick="showManagerPage('orders')"><i class="fas fa-shopping-cart"></i><span>Orders</span></a></li>
-        <li><a href="suppliers.html" id="nav-suppliers" onclick="showManagerPage('suppliers')"><i class="fas fa-truck"></i><span>Suppliers</span></a></li>
-        <li><a href="reports.html" id="nav-reports" onclick="showManagerPage('reports')"><i class="fas fa-chart-bar"></i><span>Reports</span></a></li>
+        <li><a href="#" id="nav-dashboard" onclick="showPage('dashboard')" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
+        <li><a href="#" id="nav-inventory" onclick="showPage('inventory')"><i class="fas fa-box"></i> Inventory Management</a></li>
+        <li><a href="#" id="nav-suppliers" onclick="showPage('suppliers')"><i class="fas fa-truck"></i> Supplier Management</a></li>
+        <li><a href="#" id="nav-orders" onclick="showPage('orders')"><i class="fas fa-shopping-cart"></i> Order Management</a></li>
+        <li><a href="#" id="nav-reports" onclick="showPage('reports')"><i class="fas fa-chart-bar"></i> Reports</a></li>
       </ul>
     </div>
-
-    <!-- Main Content -->
-    <div class="main-content" id="main-content">
+    <div class="main-content">
       <div class="dashboard-header">
-        <h1>Welcome, Manager</h1>
+        <h1 id="page-title">Dashboard</h1>
         <div class="user-info">
-          <div class="support"><i class="fas fa-phone"></i></div>
-          <div class="notifications"><i class="fas fa-bell"></i></div>
           <div class="profile" onclick="toggleDropdown()">
-            <span>Manager X</span> <i class="fas fa-caret-down"></i>
+            <span>Manager</span> <i class="fas fa-caret-down"></i>
             <div class="dropdown">
               <ul class="dropdown-menu">
-                <li><a href="settings.html">Settings</a></li>
-                <li><a href="help.html">Help</a></li>
                 <li><button onclick="signOut()" class="signout-btn">Sign Out</button></li>
               </ul>
             </div>
@@ -43,10 +36,11 @@
         </div>
       </div>
       <div id="pages">
-        <div id="page-home" class="page active">
-          <h2>Manager Dashboard</h2>
-          <p>Welcome to your dashboard! Use the sidebar to navigate to Inventory, Orders, Suppliers, and Reports.</p>
-        </div>
+        <div id="page-dashboard" class="page active">Dashboard content goes here</div>
+        <div id="page-inventory" class="page">Inventory Management content goes here</div>
+        <div id="page-suppliers" class="page">Supplier Management content goes here</div>
+        <div id="page-orders" class="page">Order Management content goes here</div>
+        <div id="page-reports" class="page">Reports content goes here</div>
       </div>
     </div>
   </div>
@@ -60,13 +54,10 @@
       const dropdown = document.querySelector('.dropdown');
       dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
     }
-
-    document.addEventListener('click', function(event) {
+    document.addEventListener('click', (e) => {
       const dropdown = document.querySelector('.dropdown');
       const profile = document.querySelector('.profile');
-      if (!profile.contains(event.target)) {
-        dropdown.style.display = 'none';
-      }
+      if (!profile.contains(e.target)) dropdown.style.display = 'none';
     });
   </script>
 </body>

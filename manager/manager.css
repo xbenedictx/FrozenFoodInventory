@@ -1,47 +1,28 @@
-/* General Reset */
-* {
+body {
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+  background-color: #f5f7fa;
 }
 
-body {
-  font-family: 'Roboto', sans-serif; /* Changed to Roboto */
-  background-color: #fff; /* White background */
-  color: #000; /* Black text */
-  line-height: 1.5;
-}
-
-/* Manager Dashboard Container */
 #manager-dashboard {
   display: flex;
   min-height: 100vh;
 }
 
-/* Sidebar */
 .sidebar {
-  width: 250px; /* Increased width to 250px */
-  background-color: #fff; /* White sidebar background */
-  border-right: 2px solid #000; /* Black border on the right */
+  width: 250px;
+  background-color: #fff;
+  border-right: 2px solid #ddd;
   position: fixed;
   height: 100%;
-  overflow-y: auto;
-  transition: all 0.3s;
-  z-index: 1000; /* Ensure sidebar stays above other elements */
 }
 
 .sidebar-header {
   padding: 15px;
+  background-color: #dc3545;
+  color: white;
   text-align: center;
-  background-color: #dc3545; /* Red header */
-  color: #fff; /* White text */
-}
-
-.sidebar-header h2 {
-  font-size: 1.2em;
-  margin: 0;
-  text-transform: uppercase;
-  font-weight: 600; /* Slightly bolder for header */
 }
 
 .nav-list {
@@ -49,91 +30,55 @@ body {
   padding: 0;
 }
 
-.nav-list li {
-  border-bottom: 1px solid #eee; /* Light gray border */
-}
-
 .nav-list li a {
   display: flex;
   align-items: center;
   padding: 12px 15px;
-  color: #000; /* Black text */
+  color: #333;
   text-decoration: none;
-  transition: background 0.2s;
-  font-weight: 500; /* Slightly bolder font for sidebar */
 }
 
 .nav-list li a i {
-  margin-right: 8px;
-  color: #dc3545; /* Red icons */
+  margin-right: 10px;
+  color: #dc3545;
 }
 
-.nav-list li a:hover,
-.nav-list li a.active {
-  background-color: #f8f9fa; /* Light gray highlight */
+.nav-list li a:hover, .nav-list li a.active {
+  background-color: #f0f0f0;
 }
 
-/* Main Content */
 .main-content {
-  margin-left: 250px; /* Adjusted to match new sidebar width */
+  margin-left: 250px;
   flex: 1;
-  padding: 15px;
-  position: relative; /* Ensure main content can scroll */
+  padding: 20px;
 }
 
 .dashboard-header {
   display: flex;
-  justify-content: space-between; /* Space between "Stocks" and user-info */
+  justify-content: space-between;
   align-items: center;
-  height: 60px; /* Fixed height to match screenshot */
-  margin-bottom: 15px;
-  border-bottom: 2px solid #dc3545; /* Red underline */
-  padding: 0 15px; /* Add padding for content */
-  position: fixed; /* Fix the header to the top */
-  top: 0;
-  right: 0;
-  left: 250px; /* Align with sidebar */
-  background-color: #fff; /* White background to avoid transparency */
-  z-index: 900; /* Below sidebar but above content */
-}
-
-.dashboard-header h1 {
-  font-size: 1.5em; /* Make "Stocks" readable */
-  color: #000; /* Black text */
-  display: block; /* Show the "Stocks" title */
+  margin-bottom: 20px;
 }
 
 .user-info {
   display: flex;
   align-items: center;
-  gap: 10px;
 }
 
-/* Move dropdown to upper right corner */
 .profile {
-  position: relative;
   cursor: pointer;
-}
-
-.profile span {
-  font-size: 1em;
-  color: #000; /* Black text */
-  margin-right: 5px;
+  position: relative;
 }
 
 .dropdown {
   display: none;
-  position: fixed;
-  top: 65px;
-  right: 15px;
+  position: absolute;
+  top: 30px;
+  right: 0;
   background-color: #fff;
-  border: 1px solid #dc3545;
-  border-radius: 4px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  z-index: 1000;
-  width: 160px;
-  font-size: 0.9em;
-  padding: 5px 0;
 }
 
 .dropdown-menu {
@@ -142,41 +87,19 @@ body {
   margin: 0;
 }
 
-.dropdown-menu li {
-  border-bottom: 1px solid #eee;
-}
-
-.dropdown-menu li:last-child {
-  border-bottom: none;
-}
-
-.dropdown-menu li a,
 .dropdown-menu li button {
-  display: block;
-  padding: 10px 15px;
-  color: #000;
-  text-decoration: none;
-  background: none;
-  border: none;
+  padding: 10px;
   width: 100%;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.dropdown-menu li a:hover {
-  background-color: #f8f9fa;
-}
-
-.signout-btn {
+  border: none;
+  background: none;
   color: #dc3545;
+  cursor: pointer;
 }
 
-.signout-btn:hover {
-  background-color: #fff5f5;
+.dropdown-menu li button:hover {
+  background-color: #f0f0f0;
 }
 
-/* Pages */
 .page {
   display: none;
 }
@@ -185,258 +108,49 @@ body {
   display: block;
 }
 
-/* Inventory Page */
-.filter-sort {
-  display: flex;
-  justify-content: flex-end; /* Align to the right as per screenshot */
-  align-items: center;
-  margin-bottom: 15px;
-  gap: 10px;
-  margin-top: 75px; /* Add margin to account for fixed header (60px + padding) */
-}
-
-.filter-sort select,
-.filter-sort input {
-  padding: 6px;
-  border: 1px solid #dc3545; /* Red border */
-  border-radius: 3px;
-  background-color: #fff; /* White background */
-  color: #000; /* Black text */
-  font-size: 0.9em;
-}
-
-.filter-sort select {
-  display: none; /* Hide the sort dropdown as per screenshot */
-}
-
-.filter-sort input {
-  width: 180px;
-}
-
-.filter-sort button {
-  padding: 6px 10px;
-  background-color: #dc3545; /* Red button */
-  color: #fff; /* White text */
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 0.9em;
-  transition: background 0.2s;
-}
-
-.filter-sort button:hover {
-  background-color: #c82333; /* Darker red on hover */
-}
-
+/* Inventory Styling */
 .inventory-container {
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* Four columns per row */
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 15px;
-  margin-bottom: 150px; /* Add space for the fixed alerts container */
 }
 
 .food-item {
-  background-color: #fff; /* White background */
-  border: 1px solid #ddd; /* Light gray border */
+  background-color: #fff;
+  border: 1px solid #ddd;
   border-radius: 5px;
   padding: 10px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  transition: transform 0.2s;
 }
 
-.food-item:hover {
-  transform: translateY(-3px);
+.food-item.low {
+  border-left: 4px solid #dc3545;
 }
 
 .food-item img {
   width: 100%;
-  height: 120px;
-  object-fit: cover;
+  height: 150px;
   border-radius: 5px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  object-fit: cover;
 }
 
-.item-details {
-  margin-bottom: 8px;
+.food-item div {
+  margin-bottom: 5px;
+  font-size: 14px;
 }
 
-.item-name {
-  font-size: 1em;
-  font-weight: bold;
-  color: #000; /* Black text */
-}
-
-.item-description {
-  font-size: 0.85em;
-  color: #666; /* Dark gray text */
-}
-
-.stock-info span {
-  display: block;
-  font-size: 0.85em;
-  color: #333; /* Dark gray text */
-  margin: 2px 0;
-}
-
-.actions {
-  display: flex;
-  gap: 8px;
-}
-
-.actions button {
-  flex: 1;
-  padding: 6px;
+.food-item button {
+  padding: 5px;
+  background-color: #dc3545;
+  color: white;
   border: none;
   border-radius: 3px;
   cursor: pointer;
-  font-size: 0.85em;
-  transition: background 0.2s;
+  margin-top: 5px;
+  width: 100%;
 }
 
-.actions button:first-child {
-  background-color: #dc3545; /* Red button for Edit */
-  color: #fff; /* White text */
-}
-
-.actions button:first-child:hover {
-  background-color: #c82333; /* Darker red on hover */
-}
-
-.actions button:last-child {
-  background-color: #dc3545; /* Red button for Delete */
-  color: #fff; /* White text */
-}
-
-.actions button:last-child:hover {
-  background-color: #c82333; /* Darker red on hover */
-}
-
-.food-item.low {
-  border-left: 4px solid #dc3545; /* Red for low stock */
-}
-
-.food-item.expired {
-  border-left: 4px solid #dc3545; /* Red for expired */
-}
-
-/* Low Stock Alerts Container with Fixed Positioning */
-.alerts-container {
-  position: fixed;
-  bottom: 0;
-  left: 250px; /* Align with sidebar */
-  right: 0;
-  background-color: #fff5f5; /* Light red background */
-  border-top: 1px solid #dc3545; /* Red border on top */
-  padding: 15px;
-  z-index: 800; /* Below header but above inventory */
-  box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
-}
-
-.alerts-container h3 {
-  font-size: 1.1em;
-  color: #dc3545; /* Red text */
-  margin-bottom: 10px;
-}
-
-#alerts {
-  list-style: none;
-  padding: 0;
-}
-
-#alerts li {
-  background-color: #fff5f5; /* Light red background */
-  color: #dc3545; /* Red text */
-  padding: 8px;
-  border-radius: 3px;
-  margin-bottom: 5px;
-}
-
-/* Responsive Design */
-@media (max-width: 1024px) {
-  .sidebar {
-    width: 200px;
-  }
-
-  .main-content {
-    margin-left: 200px;
-  }
-
-  .dashboard-header {
-    left: 200px; /* Adjust for sidebar width */
-  }
-
-  .alerts-container {
-    left: 200px; /* Adjust for sidebar width */
-  }
-
-  .inventory-container {
-    grid-template-columns: repeat(3, 1fr); /* Three columns on medium screens */
-  }
-}
-
-@media (max-width: 768px) {
-  .sidebar {
-    width: 180px;
-  }
-
-  .main-content {
-    margin-left: 180px;
-  }
-
-  .dashboard-header {
-    left: 180px; /* Adjust for sidebar width */
-  }
-
-  .alerts-container {
-    left: 180px; /* Adjust for sidebar width */
-  }
-
-  .filter-sort {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .filter-sort input {
-    width: 100%;
-  }
-
-  .inventory-container {
-    grid-template-columns: repeat(2, 1fr); /* Two columns on smaller screens */
-  }
-}
-
-@media (max-width: 576px) {
-  .sidebar {
-    width: 100%;
-    height: auto;
-    position: relative;
-    border-right: none;
-    border-bottom: 2px solid #000; /* Black border at bottom for mobile */
-  }
-
-  .main-content {
-    margin-left: 0;
-  }
-
-  .dashboard-header {
-    left: 0; /* Full width on mobile */
-    position: relative; /* Remove fixed positioning on mobile */
-    height: auto; /* Reset height on mobile */
-    padding: 10px;
-  }
-
-  .filter-sort {
-    margin-top: 15px; /* Reset margin on mobile */
-  }
-
-  .alerts-container {
-    position: relative; /* Remove fixed positioning on mobile */
-    left: 0;
-    margin-top: 20px;
-  }
-
-  .inventory-container {
-    grid-template-columns: 1fr; /* Single column on mobile */
-    margin-bottom: 20px; /* Adjust for non-fixed alerts */
-  }
+.food-item button:hover {
+  background-color: #c82333;
 }

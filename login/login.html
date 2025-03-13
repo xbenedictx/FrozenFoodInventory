@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Frozen Filipino Food Inventory - Login</title>
+  <title>Frozen Filipino Food - Login</title>
   <link rel="stylesheet" href="../login/login.css">
 </head>
 <body>
@@ -13,58 +13,41 @@
     </div>
     <div class="right">
       <div class="logo">
-        <img src="../assets/icon1.jpg" alt="Frozen Food Inventory Logo">
+        <img src="../assets/icon1.jpg" alt="Logo">
         <h1>Frozen Food Inventory</h1>
       </div>
-      <h2>Log in to your account.</h2>
+      <h2>Log In</h2>
       <form id="loginForm">
         <select id="role" name="role" required>
-          <option value="" disabled selected>Select your role</option>
-          <option value="user">User (Manager)</option>
-          <option value="admin">Admin (Branch Owner)</option>
+          <option value="" disabled selected>Select Role</option>
+          <option value="user">Manager</option>
+          <option value="admin">Admin</option>
         </select>
-        <input type="email" id="email" placeholder="Enter your email" required>
+        <input type="email" id="email" placeholder="Email" required>
         <div class="password-container">
-          <input type="password" id="password" placeholder="Enter your password" required>
+          <input type="password" id="password" placeholder="Password" required>
           <span class="toggle-password">
-            <img src="../assets/reveal-pass.jpg" id="toggleIcon" alt="Toggle Password">
+            <img src="../assets/reveal-pass.jpg" id="toggleIcon" alt="Toggle">
           </span>
         </div>
         <button type="button" onclick="signIn()">Login</button>
+        <a href="#" class="forgot-password">Forgot Password?</a>
       </form>
-      <a href="#" class="forgot-password">Forgot Password?</a>
-      <p class="terms">
-        Help & Documentation <br>
-        By continuing, you must agree to our <a href="#">Terms</a>, <a href="#">Privacy Policy</a>, and <a href="#">Cookie Use</a>.
-      </p>
-      <!-- Inline script for toggle -->
-      <script>
-        const toggleIcon = document.getElementById("toggleIcon");
-        if (toggleIcon) {
-          toggleIcon.addEventListener("click", () => {
-            const passwordInput = document.getElementById("password");
-            const toggleContainer = toggleIcon.parentElement;
-            if (passwordInput) {
-              if (passwordInput.type === "password") {
-                passwordInput.type = "text";
-                toggleContainer.classList.add("revealed");
-              } else {
-                passwordInput.type = "password";
-                toggleContainer.classList.remove("revealed");
-              }
-            }
-          });
-        }
-      </script>
+      <p class="terms">By continuing, you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.</p>
     </div>
   </div>
 
-  <!-- Firebase SDK Scripts -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
-  <!-- Login-specific script -->
   <script src="../js/login.js"></script>
+  <script>
+    const toggleIcon = document.getElementById("toggleIcon");
+    toggleIcon?.addEventListener("click", () => {
+      const password = document.getElementById("password");
+      const container = toggleIcon.parentElement;
+      password.type = password.type === "password" ? "text" : "password";
+      container.classList.toggle("revealed");
+    });
+  </script>
 </body>
 </html>

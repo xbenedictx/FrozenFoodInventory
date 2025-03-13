@@ -3,62 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Frozen Filipino Food Inventory - Admin Dashboard</title>
+  <title>Frozen Filipino Food - Admin</title>
   <link rel="stylesheet" href="../admin/admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
   <div id="admin-dashboard">
-    <div class="dashboard-header">
-      <h1>Welcome, Admin</h1>
-      <button onclick="signOut()">Sign Out</button>
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>Admin</h2>
+      </div>
+      <ul class="nav-list">
+        <li><a href="#" id="nav-dashboard" onclick="showPage('dashboard')" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
+        <li><a href="#" id="nav-inventory" onclick="showPage('inventory')"><i class="fas fa-box"></i> Inventory Management</a></li>
+        <li><a href="#" id="nav-suppliers" onclick="showPage('suppliers')"><i class="fas fa-truck"></i> Supplier Management</a></li>
+        <li><a href="#" id="nav-orders" onclick="showPage('orders')"><i class="fas fa-shopping-cart"></i> Order Management</a></li>
+        <li><a href="#" id="nav-reports" onclick="showPage('reports')"><i class="fas fa-chart-bar"></i> Reports</a></li>
+        <li><a href="#" id="nav-users" onclick="showPage('users')"><i class="fas fa-users"></i> User Management</a></li>
+        <li><a href="#" id="nav-settings" onclick="showPage('settings')"><i class="fas fa-cog"></i> System Settings</a></li>
+      </ul>
     </div>
-    <div class="nav">
-      <button id="nav-users" onclick="showAdminPage('users')">Users</button>
-      <button id="nav-suppliers" onclick="showAdminPage('suppliers')">Suppliers</button>
-      <button id="nav-branches" onclick="showAdminPage('branches')">Branches</button>
-    </div>
-    <div id="pages">
-      <!-- Users Page -->
-      <div id="page-users" class="page">
-        <h2>User Management</h2>
-        <div id="users-content">
-          <h3>Add New Manager</h3>
-          <input type="email" id="newUserEmail" placeholder="Email">
-          <input type="password" id="newUserPassword" placeholder="Password">
-          <select id="newUserBranch">
-            <option value="" disabled selected>Select Branch</option>
-          </select>
-          <button onclick="addUser()">Add User</button>
-          <h3>Manager List</h3>
-          <ul id="userList"></ul>
+    <div class="main-content">
+      <div class="dashboard-header">
+        <h1 id="page-title">Dashboard</h1>
+        <div class="user-info">
+          <div class="profile" onclick="toggleDropdown()">
+            <span>Admin</span> <i class="fas fa-caret-down"></i>
+            <div class="dropdown">
+              <ul class="dropdown-menu">
+                <li><button onclick="signOut()" class="signout-btn">Sign Out</button></li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
-
-      <!-- Suppliers Page -->
-      <div id="page-suppliers" class="page" style="display: none;">
-        <h2>Supplier Management</h2>
-        <div id="suppliers-content">
-          <h3>Add New Supplier</h3>
-          <input type="text" id="newSupplierName" placeholder="Supplier Name">
-          <input type="text" id="newSupplierContact" placeholder="Contact Number">
-          <input type="text" id="newSupplierGCash" placeholder="GCash Number">
-          <input type="text" id="newSupplierProduct" placeholder="Product Catalog (e.g., Item1, Item2)">
-          <button onclick="addSupplier()">Add Supplier</button>
-          <h3>Supplier List</h3>
-          <ul id="supplierList"></ul>
+      <div id="pages">
+        <div id="page-dashboard" class="page active">Dashboard content goes here</div>
+        <div id="page-inventory" class="page">
+          <h2>Inventory Management</h2>
+          <div class="filter-sort">
+            <input type="text" id="inventorySearch" placeholder="Search stock item...">
+            <button onclick="addItem()">+ Add Item</button>
+          </div>
+          <div id="inventoryList" class="inventory-container"></div>
+          <h3>Low Stock Alerts</h3>
+          <ul id="alerts"></ul>
         </div>
-      </div>
-
-      <!-- Branches Page -->
-      <div id="page-branches" class="page" style="display: none;">
-        <h2>Branch Management</h2>
-        <div id="branches-content">
-          <h3>Add New Branch</h3>
-          <input type="text" id="newBranchName" placeholder="Branch Name">
-          <button onclick="addBranch()">Add Branch</button>
-          <h3>Branch List</h3>
-          <ul id="branchList"></ul>
-        </div>
+        <div id="page-suppliers" class="page">Supplier Management content goes here</div>
+        <div id="page-orders" class="page">Order Management content goes here</div>
+        <div id="page-reports" class="page">Reports content goes here</div>
+        <div id="page-users" class="page">User Management content goes here</div>
+        <div id="page-settings" class="page">System Settings content goes here</div>
       </div>
     </div>
   </div>
@@ -67,5 +62,16 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="../js/admin.js"></script>
+  <script>
+    function toggleDropdown() {
+      const dropdown = document.querySelector('.dropdown');
+      dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+    }
+    document.addEventListener('click', (e) => {
+      const dropdown = document.querySelector('.dropdown');
+      const profile = document.querySelector('.profile');
+      if (!profile.contains(e.target)) dropdown.style.display = 'none';
+    });
+  </script>
 </body>
 </html>
