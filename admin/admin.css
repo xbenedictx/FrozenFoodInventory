@@ -66,11 +66,6 @@ body {
   gap: 15px;
 }
 
-.support, .notifications {
-  cursor: pointer;
-  color: #333;
-}
-
 .profile {
   cursor: pointer;
   position: relative;
@@ -93,11 +88,10 @@ body {
   margin: 0;
 }
 
-.dropdown-menu li a, .dropdown-menu li button {
+.dropdown-menu li button {
   display: block;
   padding: 10px;
-  color: #333;
-  text-decoration: none;
+  color: #ff4d4f;
   background: none;
   border: none;
   width: 100%;
@@ -105,11 +99,7 @@ body {
   cursor: pointer;
 }
 
-.dropdown-menu li button.signout-btn {
-  color: #ff4d4f;
-}
-
-.dropdown-menu li a:hover, .dropdown-menu li button:hover {
+.dropdown-menu li button:hover {
   background-color: #f0f0f0;
 }
 
@@ -129,13 +119,10 @@ body {
   margin-bottom: 15px;
 }
 
-.filter-sort select, .filter-sort input {
+.filter-sort input {
   padding: 6px;
   border: 1px solid #ff4d4f;
   border-radius: 3px;
-}
-
-.filter-sort input {
   width: 200px;
 }
 
@@ -156,6 +143,8 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 15px;
+  min-height: 200px;
+  visibility: visible;
 }
 
 .food-item {
@@ -164,7 +153,7 @@ body {
   border-radius: 5px;
   padding: 10px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  position: relative;
+  visibility: visible;
 }
 
 .food-item.low, .food-item.expired {
@@ -177,17 +166,33 @@ body {
   border-radius: 5px;
   margin-bottom: 10px;
   object-fit: cover;
+  display: block;
 }
 
-.food-item div {
-  margin-bottom: 5px;
+.food-item .item-details {
+  margin-bottom: 10px;
+}
+
+.food-item .item-name {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.food-item .item-description {
+  font-size: 14px;
+  color: #666;
+}
+
+.food-item .stock-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
   font-size: 14px;
 }
 
 .food-item .actions {
   display: flex;
   gap: 5px;
-  margin-top: 5px;
 }
 
 .food-item .actions button {
