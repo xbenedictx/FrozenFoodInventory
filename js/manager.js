@@ -1,3 +1,7 @@
+/**
+ * Firebase configuration object containing necessary credentials and settings
+ * to connect to the Firebase backend for the Frozen Filipino Food Inventory app.
+ */
 const firebaseConfig = {
   apiKey: "AIzaSyCqRgwfenGMbnj_rclROcQwlj6LFRxaEac",
   authDomain: "frozenfilipinofoodinventory.firebaseapp.com",
@@ -9,10 +13,15 @@ const firebaseConfig = {
   measurementId: "G-PRQ73N6GGF"
 };
 
+// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
 
+/**
+ * Signs out the current user and redirects to the login page.
+ * Removes the user role from local storage as part of the logout process.
+ */
 function signOut() {
   auth.signOut().then(() => {
     localStorage.removeItem("userRole");
@@ -20,6 +29,16 @@ function signOut() {
   });
 }
 
+
+
+//TODO: sa admin view, specify which account (or branch) to edit details na nasa dropdown list. nothing will show up unless the admin selects an account (categorized by branches)
+//TODO: dun sa inventory management, change it to something not tedious (ung hindi dialog boxes per property)
+
+/**
+ * Shows a specific page in the manager dashboard and loads its content.
+ * 
+ * @param {string} pageId - The ID of the page to display (e.g., "dashboard", "inventory")
+ */
 function showPage(pageId) {
   document.querySelectorAll(".page").forEach(page => page.classList.remove("active"));
   document.querySelectorAll(".nav-list a").forEach(link => link.classList.remove("active"));
@@ -31,6 +50,11 @@ function showPage(pageId) {
   // Add other page loaders as needed
 }
 
+/**
+ * Loads the inventory page content from Firebase.
+ * Sets up event listeners for searching inventory items.
+ * Falls back to default data if Firebase retrieval fails.
+ */
 function loadInventoryPage() {
   const page = document.getElementById("page-inventory");
   page.innerHTML = `
@@ -65,6 +89,13 @@ function loadInventoryPage() {
   });
 }
 
+/**
+ * Adjusts the stock amount of an inventory item.
+ * Prompts the user for the new stock amount, then updates the item's stock field in Firebase.
+ * 
+ * @param {string} id - The ID of the item to adjust
+ * @param {number} currentStock - The current stock amount of the item
+ */
 function adjustStock(id, currentStock) {
   const newStock = prompt("New Stock Amount:", currentStock);
   if (newStock) db.ref(`inventory/${id}`).update({ stock: parseInt(newStock) });
