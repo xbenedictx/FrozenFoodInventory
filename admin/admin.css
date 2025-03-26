@@ -253,3 +253,591 @@ body {
   margin-bottom: 15px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
+
+.branch-selector {
+    padding: 10px;
+    background: #f5f5f5;
+    margin-bottom: 20px;
+  }
+  
+  .branch-selector select {
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    width: 100%;
+    max-width: 300px;
+  }
+
+
+  /* ====================== */
+/* Modal Styles */
+/* ====================== */
+
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    background-color: rgba(0,0,0,0.5); /* Black w/ opacity */
+    overflow: auto; /* Enable scroll if needed */
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto; /* 5% from the top and centered */
+    padding: 25px;
+    border: 1px solid #888;
+    width: 80%; /* Could be more or less, depending on screen size */
+    max-width: 700px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    position: relative;
+}
+
+.close-button {
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #ff4d4f;
+    text-decoration: none;
+}
+
+/* Modal Content Styling */
+#itemDetailsContent {
+    padding: 10px;
+}
+
+/* View Mode Styling */
+.item-view {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.item-image {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.item-image img {
+    max-width: 100%;
+    max-height: 250px;
+    border-radius: 5px;
+    object-fit: contain;
+}
+
+.item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.item-info p {
+    margin: 5px 0;
+}
+
+.item-info strong {
+    color: #333;
+    min-width: 120px;
+    display: inline-block;
+}
+
+.item-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.item-actions button {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.item-actions button:first-child {
+    background-color: #ff4d4f;
+    color: white;
+}
+
+.item-actions button:last-child {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+/* Edit Mode Styling */
+.item-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-group textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.form-actions button {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.form-actions button[type="submit"] {
+    background-color: #ff4d4f;
+    color: white;
+}
+
+.form-actions button[type="button"] {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 90%;
+        margin: 10% auto;
+    }
+}
+
+/* ====================== */
+/* Enhanced Modal Styles */
+/* ====================== */
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 25px;
+    border: 1px solid #ddd;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    position: relative;
+}
+
+.modal h2 {
+    color: #ff4d4f;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.close-supplier-modal {
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-supplier-modal:hover,
+.close-supplier-modal:focus {
+    color: #ff4d4f;
+    text-decoration: none;
+}
+
+/* Form Styles (consistent with existing) */
+#supplierForm {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+#supplierForm .form-group {
+    margin-bottom: 15px;
+}
+
+#supplierForm label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+}
+
+#supplierForm input,
+#supplierForm textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+#supplierForm input:focus,
+#supplierForm textarea:focus {
+    border-color: #ff4d4f;
+    outline: none;
+}
+
+#supplierForm textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* Form Actions (consistent with your button styles) */
+#supplierForm .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+#supplierForm .form-actions button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.3s;
+}
+
+#supplierForm .form-actions button[type="submit"] {
+    background-color: #ff4d4f;
+    color: white;
+}
+
+#supplierForm .form-actions button[type="submit"]:hover {
+    background-color: #e63946;
+}
+
+#supplierForm .form-actions button[type="button"] {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+#supplierForm .form-actions button[type="button"]:hover {
+    background-color: #e0e0e0;
+}
+
+/* Loading state */
+#supplierForm .form-actions button[disabled] {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Error message styling */
+.supplier-error {
+    color: #ff4d4f;
+    font-size: 0.9rem;
+    margin-top: 5px;
+    display: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 90%;
+        margin: 10% auto;
+        padding: 15px;
+    }
+    
+    #supplierForm .form-actions {
+        flex-direction: column;
+    }
+    
+    #supplierForm .form-actions button {
+        width: 100%;
+    }
+}
+
+
+/* ====================== */
+/* Order Modal Styles */
+/* ====================== */
+#orderModal .modal-content {
+    max-width: 600px;
+    margin: 15% auto;
+    padding: 20px;
+    background: white;
+    border-radius: 5px;
+}
+
+#orderModal .form-group {
+    margin-bottom: 15px;
+}
+
+#orderModal label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+#orderModal input[type="text"],
+#orderModal input[type="number"],
+#orderModal select,
+#orderModal textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+#orderModal .form-actions {
+    margin-top: 20px;
+    text-align: right;
+}
+
+#orderModal button {
+    padding: 8px 15px;
+    margin-left: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#orderModal button[type="submit"] {
+    background-color: #4CAF50;
+    color: white;
+}
+
+#orderModal button[type="button"] {
+    background-color: #f44336;
+    color: white;
+}
+
+
+/* ====================== */
+/* Branch Management Styles */
+/* ====================== */
+
+.branch-management-container {
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.branch-form-container {
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    border: 1px solid #eee;
+}
+
+.branch-form-container h3 {
+    margin-top: 0;
+    color: #ff4d4f;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+#branchForm {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+#branchForm .form-group {
+    margin-bottom: 15px;
+}
+
+#branchForm label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+}
+
+#branchForm input,
+#branchForm select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+#branchManagers {
+    min-height: 100px;
+    padding: 8px;
+}
+
+#branchForm .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+#branchForm .form-actions button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.3s;
+}
+
+#branchForm .form-actions button[type="submit"] {
+    background-color: #ff4d4f;
+    color: white;
+}
+
+#branchForm .form-actions button[type="submit"]:hover {
+    background-color: #e63946;
+}
+
+#branchForm .form-actions button[type="button"] {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+#branchForm .form-actions button[type="button"]:hover {
+    background-color: #e0e0e0;
+}
+
+/* Branch List Styles */
+.branch-list {
+    margin-top: 30px;
+}
+
+.branch-list h3 {
+    color: #ff4d4f;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.branch-item {
+    background-color: #fff;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.branch-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.branch-info h4 {
+    margin: 0 0 5px 0;
+    color: #333;
+}
+
+.branch-info p {
+    margin: 5px 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.branch-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.branch-actions button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.branch-actions button:first-child {
+    background-color: #ff4d4f;
+    color: white;
+}
+
+.branch-actions button:first-child:hover {
+    background-color: #e63946;
+}
+
+.branch-actions button:last-child {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.branch-actions button:last-child:hover {
+    background-color: #e0e0e0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .branch-form-container {
+        padding: 15px;
+    }
+    
+    #branchForm .form-actions {
+        flex-direction: column;
+    }
+    
+    #branchForm .form-actions button {
+        width: 100%;
+    }
+    
+    .branch-item {
+        padding: 12px;
+    }
+    
+    .branch-actions {
+        flex-direction: column;
+    }
+    
+    .branch-actions button {
+        width: 100%;
+    }
+}
