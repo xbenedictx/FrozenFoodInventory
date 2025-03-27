@@ -302,6 +302,55 @@ body {
   color: #388e3c;
 }
 
+
+
+/* ====================== */
+/* Order Styles */
+/* ====================== */
+
+#orderItemsContainer {
+    margin-top: 10px;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+#orderItemsContainer ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.order-item-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.order-item-row:last-child {
+    border-bottom: none;
+}
+
+.remove-item-btn {
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+}
+
+.remove-item-btn:hover {
+    background: #cc0000;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 /* ====================== */
 /* Alert Styles */
 /* ====================== */
