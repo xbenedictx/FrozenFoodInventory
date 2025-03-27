@@ -352,6 +352,39 @@ body {
 }
 
 /* ====================== */
+/*  Order Payment Styles  */
+/* ====================== */
+#paymentModal .modal-content {
+    max-width: 500px;
+  }
+  
+  #gcashImageContainer {
+    margin: 10px 0;
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: center;
+  }
+  
+  #gcashImageContainer img {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
+  
+  .form-group p {
+    margin: 0;
+    padding: 5px;
+    background: #f5f5f5;
+    border-radius: 4px;
+  }
+
+
+/* ====================== */
 /* Alert Styles */
 /* ====================== */
 .alert-section {
@@ -681,6 +714,31 @@ body {
 .branch-actions button:hover {
   background-color: #e63946;
 }
+
+.supplier-item {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .supplier-item img {
+    max-width: 100px;
+    height: auto;
+    border: 1px solid #eee;
+  }
+  
+  .actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
+  .actions button {
+    margin: 5px 0;
+  }
 
 /* ====================== */
 /* Dashboard Metrics */
