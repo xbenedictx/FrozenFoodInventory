@@ -1,162 +1,323 @@
 {
-    "inventory": {
-      "item1": {
-        "name": "Adobo (Chicken)",
-        "description": "Chicken braised in soy sauce, vinegar, and garlic",
-        "stock": 40,
-        "minStock": 20,
-        "supplier": "Supplier A",
-        "expiration": "10-31-25"
+    "branch_inventory": {
+      "branch1": {
+        "item10": {
+          "description": "Pre-prepared menudo mix with pork and vegetables",
+          "expiration": "2025-04-01",
+          "image": "../images/menudo.jpg",
+          "minStock": 5,
+          "name": "Menudo (Ready-to-Cook)",
+          "stock": 14,
+          "supplier": "Supplier B"
+        },
+        "item11": {
+          "description": "Large prawns, cleaned and frozen",
+          "expiration": "11-04-25",
+          "minStock": 10,
+          "name": "Shrimp (Suahe)",
+          "stock": 25,
+          "supplier": "Supplier C"
+        },
+        "item12": {
+          "description": "Steamed dumplings filled with shrimp",
+          "expiration": "10-22-25",
+          "minStock": 15,
+          "name": "Siomai (Shrimp)",
+          "stock": 30,
+          "supplier": "Supplier B"
+        },
+        "item13": {
+          "description": "Steamed buns filled with pork asado",
+          "expiration": "11-04-25",
+          "minStock": 20,
+          "name": "Siopao (Asado)",
+          "stock": 45,
+          "supplier": "Supplier C"
+        },
+        "item14": {
+          "description": "Pre-cut squid rings, ready to cook",
+          "expiration": "10-31-25",
+          "minStock": 10,
+          "name": "Squid (Rings)",
+          "stock": 20,
+          "supplier": "Supplier A"
+        },
+        "item15": {
+          "description": "Fried banana rolls coated in caramelized sugar",
+          "expiration": "10-22-25",
+          "minStock": 5,
+          "name": "Turon",
+          "stock": 15,
+          "supplier": "Supplier B"
+        },
+        "item16": {
+          "description": "test",
+          "expiration": "2025-03-27",
+          "image": "data:image/png;base64,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",
+          "minStock": 12,
+          "name": "test",
+          "stock": 12,
+          "supplier": "test",
+          "timestamp": 1742961056282
+        },
+        "item2": {
+          "description": "Crispy pork belly, Ilocano style",
+          "expiration": "11-04-25",
+          "minStock": 10,
+          "name": "Bagnet (Ilocano)",
+          "stock": 20,
+          "supplier": "Supplier B"
+        },
+        "item3": {
+          "description": "Deep-fried bananas with caramelized sugar",
+          "expiration": "11-04-25",
+          "minStock": 20,
+          "name": "Banana Cue",
+          "stock": 50,
+          "supplier": "Supplier C"
+        },
+        "item4": {
+          "description": "Deboned milkfish, ready to cook",
+          "expiration": "10-31-25",
+          "minStock": 15,
+          "name": "Bangus (Boneless)",
+          "stock": 30,
+          "supplier": "Supplier A"
+        },
+        "item5": {
+          "description": "Pre-prepared beef caldereta mix",
+          "expiration": "10-22-25",
+          "minStock": 5,
+          "name": "Caldereta (Ready-to-Cook)",
+          "stock": 15,
+          "supplier": "Supplier B"
+        },
+        "item6": {
+          "description": "Savory pastries filled with ground meat",
+          "expiration": "10-31-25",
+          "minStock": 15,
+          "name": "Empanada (Meat)",
+          "stock": 40,
+          "supplier": "Supplier A"
+        },
+        "item7": {
+          "description": "Peanut sauce stew with oxtail and vegetables",
+          "expiration": "10-22-25",
+          "minStock": 10,
+          "name": "Kare-kare (Oxtail)",
+          "stock": 20,
+          "supplier": "Supplier B"
+        },
+        "item8": {
+          "description": "Ilocano sausage with garlic flavor",
+          "expiration": "11-04-25",
+          "minStock": 15,
+          "name": "Longganisa (Ilocano)",
+          "stock": 30,
+          "supplier": "Supplier C"
+        },
+        "item9": {
+          "description": "Fried spring rolls filled with pork and vegetables",
+          "expiration": "10-31-25",
+          "minStock": 20,
+          "name": "Lumpia (Pork)",
+          "stock": 50,
+          "supplier": "Supplier A"
+        }
       },
-      "item2": {
-        "name": "Bagnet (Ilocano)",
-        "description": "Crispy pork belly, Ilocano style",
-        "stock": 20,
-        "minStock": 10,
-        "supplier": "Supplier B",
-        "expiration": "11-04-25"
-      },
-      "item3": {
-        "name": "Banana Cue",
-        "description": "Deep-fried bananas with caramelized sugar",
-        "stock": 50,
-        "minStock": 20,
-        "supplier": "Supplier C",
-        "expiration": "11-04-25"
-      },
-      "item4": {
-        "name": "Bangus (Boneless)",
-        "description": "Deboned milkfish, ready to cook",
-        "stock": 30,
-        "minStock": 15,
-        "supplier": "Supplier A",
-        "expiration": "10-31-25"
-      },
-      "item5": {
-        "name": "Caldereta (Ready-to-Cook)",
-        "description": "Pre-prepared beef caldereta mix",
-        "stock": 15,
-        "minStock": 5,
-        "supplier": "Supplier B",
-        "expiration": "10-22-25"
-      },
-      "item6": {
-        "name": "Empanada (Meat)",
-        "description": "Savory pastries filled with ground meat",
-        "stock": 40,
-        "minStock": 15,
-        "supplier": "Supplier A",
-        "expiration": "10-31-25"
-      },
-      "item7": {
-        "name": "Kare-kare (Oxtail)",
-        "description": "Peanut sauce stew with oxtail and vegetables",
-        "stock": 20,
-        "minStock": 10,
-        "supplier": "Supplier B",
-        "expiration": "10-22-25"
-      },
-      "item8": {
-        "name": "Longganisa (Ilocano)",
-        "description": "Ilocano sausage with garlic flavor",
-        "stock": 30,
-        "minStock": 15,
-        "supplier": "Supplier C",
-        "expiration": "11-04-25"
-      },
-      "item9": {
-        "name": "Lumpia (Pork)",
-        "description": "Fried spring rolls filled with pork and vegetables",
-        "stock": 50,
-        "minStock": 20,
-        "supplier": "Supplier A",
-        "expiration": "10-31-25"
-      },
-      "item10": {
-        "name": "Menudo (Ready-to-Cook)",
-        "description": "Pre-prepared menudo mix with pork and vegetables",
-        "stock": 15,
-        "minStock": 5,
-        "supplier": "Supplier B",
-        "expiration": "10-22-25"
-      },
-      "item11": {
-        "name": "Shrimp (Suahe)",
-        "description": "Large prawns, cleaned and frozen",
-        "stock": 25,
-        "minStock": 10,
-        "supplier": "Supplier C",
-        "expiration": "11-04-25"
-      },
-      "item12": {
-        "name": "Siomai (Shrimp)",
-        "description": "Steamed dumplings filled with shrimp",
-        "stock": 30,
-        "minStock": 15,
-        "supplier": "Supplier B",
-        "expiration": "10-22-25"
-      },
-      "item13": {
-        "name": "Siopao (Asado)",
-        "description": "Steamed buns filled with pork asado",
-        "stock": 45,
-        "minStock": 20,
-        "supplier": "Supplier C",
-        "expiration": "11-04-25"
-      },
-      "item14": {
-        "name": "Squid (Rings)",
-        "description": "Pre-cut squid rings, ready to cook",
-        "stock": 20,
-        "minStock": 10,
-        "supplier": "Supplier A",
-        "expiration": "10-31-25"
-      },
-      "item15": {
-        "name": "Turon",
-        "description": "Fried banana rolls coated in caramelized sugar",
-        "stock": 15,
-        "minStock": 5,
-        "supplier": "Supplier B",
-        "expiration": "10-22-25"
+      "branch2": {
+        "item10": {
+          "description": "Pre-prepared menudo mix with pork and vegetables",
+          "expiration": "2025-04-01",
+          "image": "../images/menudo.jpg",
+          "minStock": 5,
+          "name": "Menudo (Ready-to-Cook)",
+          "stock": 8,
+          "supplier": "Supplier B"
+        },
+        "item11": {
+          "description": "Large prawns, cleaned and frozen",
+          "expiration": "11-04-25",
+          "minStock": 10,
+          "name": "Shrimp (Suahe)",
+          "stock": 25,
+          "supplier": "Supplier C"
+        },
+        "item12": {
+          "description": "Steamed dumplings filled with shrimp",
+          "expiration": "10-22-25",
+          "minStock": 10,
+          "name": "Siomai (Shrimp)",
+          "stock": 15,
+          "supplier": "Supplier B"
+        },
+        "item13": {
+          "description": "Steamed buns filled with pork asado",
+          "expiration": "11-04-25",
+          "minStock": 20,
+          "name": "Siopao (Asado)",
+          "stock": 45,
+          "supplier": "Supplier C"
+        },
+        "item14": {
+          "description": "Pre-cut squid rings, ready to cook",
+          "expiration": "10-31-25",
+          "minStock": 10,
+          "name": "Squid (Rings)",
+          "stock": 20,
+          "supplier": "Supplier A"
+        },
+        "item15": {
+          "description": "Fried banana rolls coated in caramelized sugar",
+          "expiration": "10-22-25",
+          "minStock": 5,
+          "name": "Turon",
+          "stock": 15,
+          "supplier": "Supplier B"
+        },
+        "item2": {
+          "description": "Crispy pork belly, Ilocano style",
+          "expiration": "11-04-25",
+          "minStock": 10,
+          "name": "Bagnet (Ilocano)",
+          "stock": 20,
+          "supplier": "Supplier B"
+        },
+        "item3": {
+          "description": "Deep-fried bananas with caramelized sugar",
+          "expiration": "11-04-25",
+          "minStock": 20,
+          "name": "Banana Cue",
+          "stock": 50,
+          "supplier": "Supplier C"
+        },
+        "item4": {
+          "description": "Deboned milkfish, ready to cook",
+          "expiration": "10-31-25",
+          "minStock": 15,
+          "name": "Bangus (Boneless)",
+          "stock": 30,
+          "supplier": "Supplier A"
+        },
+        "item5": {
+          "description": "Pre-prepared beef caldereta mix",
+          "expiration": "10-22-25",
+          "minStock": 5,
+          "name": "Caldereta (Ready-to-Cook)",
+          "stock": 15,
+          "supplier": "Supplier B"
+        },
+        "item6": {
+          "description": "Savory pastries filled with ground meat",
+          "expiration": "10-31-25",
+          "minStock": 15,
+          "name": "Empanada (Meat)",
+          "stock": 40,
+          "supplier": "Supplier A"
+        },
+        "item7": {
+          "description": "Peanut sauce stew with oxtail and vegetables",
+          "expiration": "10-22-25",
+          "minStock": 10,
+          "name": "Kare-kare (Oxtail)",
+          "stock": 20,
+          "supplier": "Supplier B"
+        },
+        "item8": {
+          "description": "Ilocano sausage with garlic flavor",
+          "expiration": "11-04-25",
+          "minStock": 15,
+          "name": "Longganisa (Ilocano)",
+          "stock": 30,
+          "supplier": "Supplier C"
+        },
+        "item9": {
+          "description": "Fried spring rolls filled with pork and vegetables",
+          "expiration": "10-31-25",
+          "minStock": 20,
+          "name": "Lumpia (Pork)",
+          "stock": 50,
+          "supplier": "Supplier A"
+        }
       }
     },
-    "suppliers": {
-      "supplier1": {
-        "name": "Supplier A",
-        "contact": "0917-123-4567",
-        "gcash": "0917-123-4567",
-        "products": "Adobo (Chicken), Bangus (Boneless), Empanada (Meat), Longganisa (Ilocano), Lumpia (Pork), Sinigang (Pork), Squid (Rings)"
+    "branch_orders": {
+      "branch1": {
+        "order1": {
+          "paymentStatus": "Pending",
+          "product": "Adobo (Chicken)",
+          "quantity": 10,
+          "status": "Pending",
+          "supplierId": "supplier1",
+          "timestamp": "2025-03-10T10:00:00Z"
+        }
       },
-      "supplier2": {
-        "name": "Supplier B",
-        "contact": "0917-234-5678",
-        "gcash": "0917-234-5678",
-        "products": "Bagnet (Ilocano), Caldereta (Ready-to-Cook), Kare-kare (Oxtail), Menudo (Ready-to-Cook), Siomai (Shrimp), Turon"
-      },
-      "supplier3": {
-        "name": "Supplier C",
-        "contact": "0917-345-6789",
-        "gcash": "0917-345-6789",
-        "products": "Banana Cue, Dinengdeng (Ilocano), Shrimp (Suahe), Siopao (Asado)"
+      "branch2": {
+        "order2": {
+          "paymentStatus": "Pending",
+          "product": "Bagnet (Ilocano)",
+          "quantity": 5,
+          "status": "Processing",
+          "supplierId": "supplier2",
+          "timestamp": "2025-03-09T14:30:00Z"
+        }
       }
     },
-    "orders": {
-      "order1": {
-        "supplierId": "supplier1",
-        "product": "Adobo (Chicken)",
-        "quantity": 10,
-        "status": "Pending",
-        "paymentStatus": "Pending",
-        "timestamp": "2025-03-10T10:00:00Z"
+    "branch_suppliers": {
+      "branch1": {
+        "supplier1": {
+          "contact": "0917-123-4567",
+          "gcash": "0917-123-4567",
+          "name": "Supplier A",
+          "products": "Adobo (Chicken), Bangus (Boneless), Empanada (Meat), Longganisa (Ilocano), Lumpia (Pork), Sinigang (Pork), Squid (Rings)",
+          "updatedAt": 1742963404609
+        },
+        "supplier2": {
+          "contact": "0917-234-5678",
+          "gcash": "0917-234-5678",
+          "name": "Supplier B",
+          "products": "Bagnet (Ilocano), Caldereta (Ready-to-Cook), Kare-kare (Oxtail), Menudo (Ready-to-Cook), Siomai (Shrimp), Turon"
+        },
+        "supplier3": {
+          "contact": "test",
+          "gcash": "test",
+          "name": "test",
+          "products": "test",
+          "timestamp": 1742943453986
+        }
       },
-      "order2": {
-        "supplierId": "supplier2",
-        "product": "Bagnet (Ilocano)",
-        "quantity": 5,
-        "status": "Processing",
-        "paymentStatus": "Pending",
-        "timestamp": "2025-03-09T14:30:00Z"
+      "branch2": {
+        "supplier2": {
+          "contact": "0917-234-5678",
+          "gcash": "0917-234-5678",
+          "name": "Supplier B",
+          "products": "Bagnet (Ilocano), Caldereta (Ready-to-Cook), Kare-kare (Oxtail), Menudo (Ready-to-Cook), Siomai (Shrimp), Turon"
+        },
+        "supplier3": {
+          "contact": "0917-345-6789",
+          "gcash": "0917-345-6789",
+          "name": "Supplier C",
+          "products": "Banana Cue, Dinengdeng (Ilocano), Shrimp (Suahe), Siopao (Asado)"
+        }
+      }
+    },
+    "branches": {
+      "branch1": {
+        "location": "123 Main Street, Manila",
+        "managers": {
+          "manager1": "manager1@example.com",
+          "manager2": "manager2@example.com"
+        },
+        "name": "Branch 1",
+        "updatedAt": "2025-03-20T10:00:00Z"
+      },
+      "branch2": {
+        "location": "456 North Avenue, Quezon City",
+        "managers": {
+          "manager3": "manager3@example.com"
+        },
+        "name": "Branch 2",
+        "updatedAt": "2025-03-19T14:30:00Z"
       }
     }
   }
