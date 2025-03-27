@@ -1,10 +1,7 @@
 For testing only:
 
-manager@example.com = password123 to test the Manager dashboard.
-admin@example.com = admin123 to test the Admin dashboard.
-
-
-
+benedictadmin@gmail.com = Benedict_123%% to test the Admin dashboard.
+beme.mendavia.up@phinmaed.com = Mendavia_123%% to test the Manager dashboard.
 What to see:
 ADMIN
 "Dashboard" will offer a quick overview of key metrics, including low stock alerts, recent orders, and supplier performance (based on the orders they fulfilled). 
