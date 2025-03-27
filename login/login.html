@@ -30,32 +30,14 @@
             <img src="../assets/reveal-pass.jpg" id="toggleIcon" alt="Toggle Password">
           </span>
         </div>
-        <button type="button" onclick="signIn()">Login</button>
+        <button type="submit">Login</button>
       </form>
-      <a href="#" class="forgot-password">Forgot Password?</a>
+      <a href="#" id="forgot-password" class="forgot-password">Forgot Password?</a>
+      <p id="error-message" style="display: none; color: #ff4d4f; text-align: center; margin-top: 10px;"></p>
       <p class="terms">
         Help & Documentation <br>
         By continuing, you must agree to our <a href="#">Terms</a>, <a href="#">Privacy Policy</a>, and <a href="#">Cookie Use</a>.
       </p>
-      <!-- Inline script for toggle -->
-      <script>
-        const toggleIcon = document.getElementById("toggleIcon");
-        if (toggleIcon) {
-          toggleIcon.addEventListener("click", () => {
-            const passwordInput = document.getElementById("password");
-            const toggleContainer = toggleIcon.parentElement;
-            if (passwordInput) {
-              if (passwordInput.type === "password") {
-                passwordInput.type = "text";
-                toggleContainer.classList.add("revealed");
-              } else {
-                passwordInput.type = "password";
-                toggleContainer.classList.remove("revealed");
-              }
-            }
-          });
-        }
-      </script>
     </div>
   </div>
 
@@ -66,5 +48,6 @@
 
   <!-- Login-specific script -->
   <script src="../js/login.js"></script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'926ec1d9af3b6753',t:'MTc0MzA3NzEzOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
