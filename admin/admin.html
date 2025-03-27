@@ -1,128 +1,182 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Toki Toki Inventory Management - Admin</title>
-  <link rel="stylesheet" href="../admin/admin.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-</head>
-<body>
-  <div id="admin-dashboard">
-    <div class="sidebar">
-      <div class="sidebar-header">
-        <h2>Admin</h2>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Toki Toki Inventory Management - Admin</title>
+    <link rel="stylesheet" href="../admin/admin.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div id="admin-dashboard">
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <h2>Admin</h2>
+        </div>
+        <ul class="nav-list">
+          <li>
+            <a
+              href="#"
+              id="nav-dashboard"
+              onclick="showPage('dashboard')"
+              class="active"
+              ><i class="fas fa-home"></i> Dashboard</a
+            >
+          </li>
+          <li>
+            <a href="#" id="nav-inventory" onclick="showPage('inventory')"
+              ><i class="fas fa-box"></i> Inventory Management</a
+            >
+          </li>
+          <li>
+            <a href="#" id="nav-suppliers" onclick="showPage('suppliers')"
+              ><i class="fas fa-truck"></i> Supplier Management</a
+            >
+          </li>
+          <li>
+            <a href="#" id="nav-orders" onclick="showPage('orders')"
+              ><i class="fas fa-shopping-cart"></i> Order Management</a
+            >
+          </li>
+          <li>
+            <a href="#" id="nav-reports" onclick="showPage('reports')"
+              ><i class="fas fa-chart-bar"></i> Reports</a
+            >
+          </li>
+          <li>
+            <a href="#" id="nav-branches" onclick="showPage('branches')"
+              ><i class="fas fa-building"></i> Branch Management</a
+            >
+          </li>
+          <li>
+            <a href="#" id="nav-users" onclick="showPage('users')"
+              ><i class="fas fa-users"></i> User Management</a
+            >
+          </li>
+          <li>
+            <a href="#" id="nav-settings" onclick="showPage('settings')"
+              ><i class="fas fa-cog"></i> System Settings</a
+            >
+          </li>
+        </ul>
       </div>
-      <ul class="nav-list">
-        <li><a href="#" id="nav-dashboard" onclick="showPage('dashboard')" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
-        <li><a href="#" id="nav-inventory" onclick="showPage('inventory')"><i class="fas fa-box"></i> Inventory Management</a></li>
-        <li><a href="#" id="nav-suppliers" onclick="showPage('suppliers')"><i class="fas fa-truck"></i> Supplier Management</a></li>
-        <li><a href="#" id="nav-orders" onclick="showPage('orders')"><i class="fas fa-shopping-cart"></i> Order Management</a></li>
-        <li><a href="#" id="nav-reports" onclick="showPage('reports')"><i class="fas fa-chart-bar"></i> Reports</a></li>
-        <li><a href="#" id="nav-branches" onclick="showPage('branches')">Branch Management</a></li>
-        <li><a href="#" id="nav-users" onclick="showPage('users')"><i class="fas fa-users"></i> User Management</a></li>
-        <li><a href="#" id="nav-settings" onclick="showPage('settings')"><i class="fas fa-cog"></i> System Settings</a></li>
-      </ul>
-    </div>
-    <div id="mainContent" class="main-content">
-      <div class="dashboard-header">
-        <h1 id="page-title">Dashboard</h1>
-        <div class="user-info">
-          <div class="profile" onclick="toggleDropdown()">
-            <span>Admin</span> <i class="fas fa-caret-down"></i>
-            <div class="dropdown">
-              <ul class="dropdown-menu">
-                <li><button onclick="signOut()" class="signout-btn">Sign Out</button></li>
-              </ul>
+      <div id="mainContent" class="main-content">
+        <div class="dashboard-header">
+          <h1 id="page-title">Dashboard</h1>
+          <div class="user-info">
+            <div class="profile" onclick="toggleDropdown()">
+              <span>Admin</span> <i class="fas fa-caret-down"></i>
+              <div class="dropdown">
+                <ul class="dropdown-menu">
+                  <li>
+                    <button onclick="signOut()" class="signout-btn">
+                      Sign Out
+                    </button>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      <div id="pages">
-        <div id="page-dashboard" class="page active">
-          <h2>Dashboard Overview</h2>
-          <div id="dashboard-metrics">
-            <!-- Metrics will be populated by JavaScript -->
+        <div id="pages">
+          <div id="page-dashboard" class="page active">
+            <h2>Dashboard Overview</h2>
+            <div id="dashboard-metrics">
+              <!-- Metrics will be populated by JavaScript -->
+            </div>
           </div>
-        </div>
-        <!-- Sidebar- Inventory-->
-        <div id="page-inventory" class="page"> 
-          <h2>Inventory Management</h2>
-          <div class="filter-sort">
-            <input type="text" id="inventorySearch" placeholder="Search stock item...">
-            <button onclick="addItem()">+ Add Item</button>
+          <!-- Sidebar- Inventory-->
+          <div id="page-inventory" class="page">
+            <h2>Inventory Management</h2>
+            
+            <!-- Search -->
+            <div class="filter-sort">
+              <input
+                type="text"
+                id="inventorySearch"
+                placeholder="Search stock item..."
+              />
+              <button onclick="addItem()">+ Add Item</button>
+            </div>
+          
+            <!-- Inventory List Container -->
+            <div id="inventoryList" class="inventory-items-container">
+              <!-- Items will be populated by JavaScript -->
+            </div>
           </div>
-          <div id="inventoryList" class="inventory-container"></div>
-          <h3>Low Stock Alerts</h3>
-          <ul id="alerts"></ul>
-        </div>
-        <!-- Sidebar- Suppliers-->
-        <div id="page-suppliers" class="page">
-          <h2>Supplier Management</h2>
-          <button onclick="addSupplier()">+ Add Supplier</button>
-          <div id="supplierList" class="list-container"></div>
-        </div>
-        <!-- Sidebar- Orders-->
-        <div id="page-orders" class="page">
-          <h2>Order Management</h2>
-          <button onclick="addOrder()">+ Create Order</button>
-          <div id="orderList" class="list-container"></div>
-        </div>
-        <!-- Sidebar- Reports-->
-        <div id="page-reports" class="page">
-          <h2>Reports</h2>
-          <select id="reportType">
-            <option value="inventory">Inventory Report</option>
-            <option value="supplier">Supplier Report</option>
-            <option value="order">Order Report</option>
-          </select>
-          <button onclick="generateReport()">Generate Report</button>
-          <div id="reportOutput"></div>
-        </div>
-        <!-- Sidebar- Users-->
-        <div id="page-users" class="page">
-          <h2>User Management</h2>
-          <button onclick="addUser()">+ Add User</button>
-          <div id="userList" class="list-container"></div>
-        </div>
-        <!-- Sidebar- Branches-->
-        <div id="page-branches" class="page">
-          <h2>Branch Management</h2>
-          <button onclick="showBranchModal()">+ Add Branch</button>
-          <div id="branchList" class="list-container"></div>
-        </div>
-        <!-- Sidebar- Settings-->
-        <div id="page-settings" class="page">
-          <h2>System Settings</h2>
-          <button onclick="backupData()">Backup Data</button>
-          <button onclick="restoreData()">Restore Data</button>
-          <div id="settingsOutput"></div>
+
+          <!-- Sidebar- Suppliers-->
+          <div id="page-suppliers" class="page">
+            <h2>Supplier Management</h2>
+            <button onclick="addSupplier()">+ Add Supplier</button>
+            <div id="supplierList" class="list-container"></div>
+          </div>
+          <!-- Sidebar- Orders-->
+          <div id="page-orders" class="page">
+            <h2>Order Management</h2>
+            <button onclick="addOrder()">+ Create Order</button>
+            <div id="orderList" class="list-container"></div>
+          </div>
+          <!-- Sidebar- Reports-->
+          <div id="page-reports" class="page">
+            <h2>Reports</h2>
+            <select id="reportType">
+              <option value="inventory">Inventory Report</option>
+              <option value="supplier">Supplier Report</option>
+              <option value="order">Order Report</option>
+            </select>
+            <button onclick="generateReport()">Generate Report</button>
+            <div id="reportOutput"></div>
+          </div>
+          <!-- Sidebar- Users-->
+          <div id="page-users" class="page">
+            <h2>User Management</h2>
+            <button onclick="addUser()">+ Add User</button>
+            <div id="userList" class="list-container"></div>
+          </div>
+          <!-- Sidebar- Branches-->
+          <div id="page-branches" class="page">
+            <h2>Branch Management</h2>
+            <button onclick="showBranchModal()">+ Add Branch</button>
+            <div id="branchList" class="list-container"></div>
+          </div>
+          <!-- Sidebar- Settings-->
+          <div id="page-settings" class="page">
+            <h2>System Settings</h2>
+            <button onclick="backupData()">Backup Data</button>
+            <button onclick="restoreData()">Restore Data</button>
+            <div id="settingsOutput"></div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
     <div id="itemDetailsModal" class="modal">
-    <div class="modal-content">
-      <span class="close-button">&times;</span>
-      <div id="itemDetailsContent"></div>
+      <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <div id="itemDetailsContent"></div>
+      </div>
     </div>
-  </div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script src="../js/admin.js"></script>
-  <script>
-    function toggleDropdown() {
-      const dropdown = document.querySelector('.dropdown');
-      dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-    }
-    document.addEventListener('click', (e) => {
-      const dropdown = document.querySelector('.dropdown');
-      const profile = document.querySelector('.profile');
-      if (!profile.contains(e.target)) dropdown.style.display = 'none';
-    });
-  </script>
-</body>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="../js/admin.js"></script>
+    <script src="../js/inventory.js"></script>
+    <script>
+      function toggleDropdown() {
+        const dropdown = document.querySelector(".dropdown");
+        dropdown.style.display =
+          dropdown.style.display === "block" ? "none" : "block";
+      }
+      document.addEventListener("click", (e) => {
+        const dropdown = document.querySelector(".dropdown");
+        const profile = document.querySelector(".profile");
+        if (!profile.contains(e.target)) dropdown.style.display = "none";
+      });
+    </script>
+  </body>
 </html>
