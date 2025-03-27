@@ -1498,39 +1498,32 @@ function renderOrderList(orders) {
  * Creates an order list item element
  */
 function createOrderListItem(id, order) {
-  const div = document.createElement("div");
-  div.className = "order-item";
-  div.innerHTML = `
-          <div>
-              <strong>Order ID: </strong>${id}<br>
-              <strong>Supplier: </strong>${
-                order.supplierName || order.supplierID
-              }<br>
-              <strong>Products: </strong>${formatOrderProducts(
-                order.products
-              )}<br>
-              <strong>Status: </strong>${order.status || "Pending"}<br>
-              <strong>Payment Status: </strong>${
-                order.paymentStatus || "Pending"
-              }<br>
-              <strong>Timestamp: </strong>${
-                order.timestamp
-                  ? new Date(order.timestamp).toLocaleString()
-                  : "N/A"
-              }
-          </div>
-          <div class="actions">
-              ${
-                order.paymentStatus === "Pending" && order.status === "Pending"
-                  ? `<button onclick="showPaymentModal('${id}', '${order.supplierID}')">Pay</button>`
-                  : ""
-              }
-              <button onclick="editOrder('${id}')">Edit</button>
-              <button onclick="deleteOrder('${id}')">Delete</button>
-          </div>
-      `;
-  return div;
-}
+    const div = document.createElement("div");
+    div.className = "order-item";
+    div.innerHTML = `
+            <div>
+                <strong>Order ID: </strong>${id}<br>
+                <strong>Supplier: </strong>${order.supplierName || order.supplierID}<br>
+                <strong>Products: </strong>${formatOrderProducts(order.products)}<br>
+                <strong>Status: </strong>${order.status || "Pending"}<br>
+                <strong>Payment Status: </strong>${order.paymentStatus || "Pending"}<br>
+                <strong>Timestamp: </strong>${
+                  order.timestamp ? new Date(order.timestamp).toLocaleString() : "N/A"
+                }
+            </div>
+            <div class="actions">
+                <button onclick="viewOrderDetails('${id}')">View Details</button>
+                ${
+                  order.paymentStatus === "Pending" && order.status === "Pending"
+                    ? `<button onclick="showPaymentModal('${id}', '${order.supplierID}')">Pay</button>`
+                    : ""
+                }
+                <button onclick="editOrder('${id}')">Edit</button>
+                <button onclick="deleteOrder('${id}')">Delete</button>
+            </div>
+        `;
+    return div;
+  }
 /**
  * Formats order products for display
  */
@@ -1541,6 +1534,100 @@ function formatOrderProducts(products) {
     .join(", ");
 }
 
+/**
+ * Shows detailed view of an order
+ */
+function viewOrderDetails(orderId) {
+    // Create modal if it doesn't exist
+    if (!document.getElementById("orderDetailsModal")) {
+        const modalHTML = `
+            <div id="orderDetailsModal" class="modal">
+                <div class="modal-content" style="max-width: 600px;">
+                    <span class="close-details-modal">&times;</span>
+                    <h2>Order Details</h2>
+                    <div id="orderDetailsContent"></div>
+                </div>
+            </div>`;
+        document.body.insertAdjacentHTML("beforeend", modalHTML);
+        
+        // Initialize modal close button
+        document.querySelector(".close-details-modal").addEventListener("click", () => {
+            document.getElementById("orderDetailsModal").style.display = "none";
+        });
+
+        // Add click handler to close modal when clicking outside content
+        document.getElementById("orderDetailsModal").addEventListener("click", function(e) {
+            if (e.target === this) {
+                this.style.display = "none";
+            }
+        });
+    }
+
+    const modal = document.getElementById("orderDetailsModal");
+    const content = document.getElementById("orderDetailsContent");
+    
+    // Show loading state
+    modal.style.display = "block";
+    content.innerHTML = "<p>Loading order details...</p>";
+
+    // Load order data
+    db.ref(`branch_orders/${currentBranch}/${orderId}`).once("value")
+        .then((snapshot) => {
+            const order = snapshot.val();
+            if (!order) {
+                content.innerHTML = "<p>Order not found</p>";
+                return;
+            }
+
+            // Format the order details
+            let detailsHTML = `
+                <div class="order-detail">
+                    <strong>Order ID:</strong> ${orderId}
+                </div>
+                <div class="order-detail">
+                    <strong>Supplier:</strong> ${order.supplierName || order.supplierID}
+                </div>
+                <div class="order-detail">
+                    <strong>Status:</strong> ${order.status || "Pending"}
+                </div>
+                <div class="order-detail">
+                    <strong>Payment Status:</strong> ${order.paymentStatus || "Pending"}
+                </div>
+                <div class="order-detail">
+                    <strong>Date:</strong> ${order.timestamp ? new Date(order.timestamp).toLocaleString() : "N/A"}
+                </div>
+                <div class="order-detail">
+                    <strong>Products:</strong>
+                    <ul class="order-products-list">`;
+
+            // Add each product to the list
+            if (order.products) {
+                Object.entries(order.products).forEach(([product, quantity]) => {
+                    detailsHTML += `<li>${product} - ${quantity}</li>`;
+                });
+            } else {
+                detailsHTML += `<li>No products found</li>`;
+            }
+
+            detailsHTML += `</ul></div>`;
+
+            // Add payment proof if available
+            if (order.paymentProof) {
+                detailsHTML += `
+                <div class="order-detail">
+                    <strong>Payment Proof:</strong><br>
+                    <img src="${order.paymentProof}" style="max-width: 200px; margin-top: 10px;">
+                </div>`;
+            }
+
+            content.innerHTML = detailsHTML;
+        })
+        .catch((error) => {
+            console.error("Error loading order details:", error);
+            content.innerHTML = `<p>Error loading order details: ${error.message}</p>`;
+        });
+}
+
 /* ============================================= */
 /* ============ ORDER CRUD OPERATIONS ========== */
 /* ============================================= */
@@ -1549,16 +1636,28 @@ function formatOrderProducts(products) {
  * Opens modal to create a new order
  */
 function addOrder() {
-  if (!currentBranch) {
-    alert("Please select a branch first");
-    return;
+    if (!currentBranch) {
+      alert("Please select a branch first");
+      return;
+    }
+  
+    // Clear any existing order items
+    currentOrderItems = [];
+    updateOrderItemsDisplay();
+  
+    // Reset supplier selection
+    currentSupplierId = null;
+    document.getElementById("orderSupplier").value = "";
+  
+    if (!document.getElementById("orderModal")) {
+      createOrderModal();
+    }
+    
+    // Set the title to "Add New Order"
+    document.querySelector("#orderModal h2").textContent = "Add New Order";
+    
+    showOrderModal();
   }
-
-  if (!document.getElementById("orderModal")) {
-    createOrderModal();
-  }
-  showOrderModal();
-}
 
 /**
  * Edits an existing order in the database
@@ -1617,33 +1716,37 @@ function deleteOrder(orderId) {
  * @param {object} order - The order data
  */
 function populateOrderForm(orderId, order) {
-  currentSupplierId = order.supplierID || ""; // Set the current supplier
-  document.getElementById("orderSupplier").value = currentSupplierId;
-  document.getElementById("orderStatus").value = order.status || "Pending";
-  document.getElementById("orderPaymentStatus").value =
-    order.paymentStatus || "Pending";
-  document.getElementById("orderForm").dataset.editId = orderId;
-
-  // Handle the promise properly
-  loadSupplierProducts(order.supplierID)
-    .then(() => {
-      if (order.products) {
-        currentOrderItems = Object.entries(order.products).map(
-          ([product, quantity]) => ({
-            product,
-            quantity: parseInt(quantity),
-          })
-        );
-        updateOrderItemsDisplay();
-      }
-      document.querySelector("#orderModal h2").textContent = "Edit Order";
-    })
-    .catch((error) => {
-      console.error("Error loading products:", error);
-      alert("Failed to load supplier products");
-    });
-}
-
+    // Store the original supplier ID before any changes
+    const originalSupplierId = order.supplierID || "";
+    currentSupplierId = originalSupplierId;
+    
+    // Set the form values
+    document.getElementById("orderSupplier").value = originalSupplierId;
+    document.getElementById("orderStatus").value = order.status || "Pending";
+    document.getElementById("orderPaymentStatus").value = 
+      order.paymentStatus || "Pending";
+    document.getElementById("orderForm").dataset.editId = orderId;
+    document.getElementById("orderForm").dataset.originalSupplier = originalSupplierId;
+  
+    // Load products for the supplier
+    loadSupplierProducts(originalSupplierId)
+      .then(() => {
+        if (order.products) {
+          currentOrderItems = Object.entries(order.products).map(
+            ([product, quantity]) => ({
+              product,
+              quantity: parseInt(quantity),
+            })
+          );
+          updateOrderItemsDisplay();
+        }
+        document.querySelector("#orderModal h2").textContent = "Edit Order";
+      })
+      .catch((error) => {
+        console.error("Error loading products:", error);
+        alert("Failed to load supplier products");
+      });
+  }
 /* ============================================= */
 /* ============ ORDER FORM MANAGEMENT ========== */
 /* ============================================= */
@@ -1740,24 +1843,25 @@ function initializeOrderModal() {
     orderId ? handleOrderUpdate(orderId) : handleOrderSubmit(e);
   });
 
-  orderSupplier?.addEventListener("change", function () {
-    // Check if we already have a selected supplier and items in the order
-    if (currentSupplierId && currentOrderItems.length > 0) {
-      if (
-        !confirm(
-          "Changing the supplier will clear your current order items. Continue?"
-        )
-      ) {
-        // Reset to the previous supplier if user cancels
-        this.value = currentSupplierId;
+  orderSupplier?.addEventListener("change", function() {
+    // Get the original supplier from the form data
+    const originalSupplier = orderForm.dataset.originalSupplier;
+    const isEditing = !!orderForm.dataset.editId;
+    
+    // If we're editing and the supplier is being changed from the original
+    if (isEditing && this.value !== originalSupplier) {
+      if (!confirm("Changing the supplier will clear your current order items. Continue?")) {
+        // Reset to the original supplier if user cancels
+        this.value = originalSupplier;
         return;
       }
-
-      // Clear current order items
+      
+      // Clear current order items if they proceed
       currentOrderItems = [];
       updateOrderItemsDisplay();
     }
-
+    
+    // Load products for the new supplier
     loadSupplierProducts(this.value);
   });
 
@@ -1797,23 +1901,25 @@ function showOrderModal() {
  * Closes the order modal and resets form
  */
 function closeOrderModal() {
-  document.getElementById("orderModal").style.display = "none";
-  document.getElementById("orderForm").reset();
-
-  // Reset UI elements
-  document.getElementById("productSelectionGroup").style.display = "none";
-  document.getElementById("quantityGroup").style.display = "none";
-  document.getElementById("orderProduct").disabled = true;
-
-  // Clear temporary data
-  selectedSupplierProducts = [];
-  currentOrderItems = [];
-  currentSupplierId = null; // Reset the current supplier
-
-  // Reset form title and edit state
-  document.querySelector("#orderModal h2").textContent = "Add New Order";
-  document.getElementById("orderForm").removeAttribute("data-edit-id");
-}
+    document.getElementById("orderModal").style.display = "none";
+    document.getElementById("orderForm").reset();
+    
+    // Reset UI elements
+    document.getElementById("productSelectionGroup").style.display = "none";
+    document.getElementById("quantityGroup").style.display = "none";
+    document.getElementById("orderProduct").disabled = true;
+    
+    // Clear temporary data
+    selectedSupplierProducts = [];
+    currentOrderItems = [];
+    currentSupplierId = null;
+    updateOrderItemsDisplay();
+    
+    // Reset form title and edit state
+    document.querySelector("#orderModal h2").textContent = "Add New Order";
+    document.getElementById("orderForm").removeAttribute("data-edit-id");
+    document.getElementById("orderForm").removeAttribute("data-original-supplier");
+  }
 
 function validateOrderForm(supplierId, status, paymentStatus) {
   // Only check for supplier, status, and payment status
@@ -2341,87 +2447,104 @@ function loadSupplierProductsWithRetry(supplierId, retries = 3) {
  * Handles new order submission
  */
 async function handleOrderSubmit(e) {
-  e.preventDefault();
-
-  const supplierId = document.getElementById("orderSupplier").value;
-  const status = document.getElementById("orderStatus").value;
-  const paymentStatus = document.getElementById("orderPaymentStatus").value;
-
-  // Validate form (won't check product/quantity fields)
-  if (!validateOrderForm(supplierId, status, paymentStatus)) {
-    return;
+    e.preventDefault();
+  
+    const supplierId = document.getElementById("orderSupplier").value;
+    const status = document.getElementById("orderStatus").value;
+    const paymentStatus = document.getElementById("orderPaymentStatus").value;
+  
+    // Validate form (won't check product/quantity fields)
+    if (!validateOrderForm(supplierId, status, paymentStatus)) {
+      return;
+    }
+  
+    const saveBtn = document.getElementById("saveOrderBtn");
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving...";
+  
+    try {
+      // Get supplier name for display
+      const supplierSnap = await db
+        .ref(`branch_suppliers/${currentBranch}/${supplierId}`)
+        .once("value");
+      const supplierName = supplierSnap.val()?.name || supplierId;
+  
+      // Format products as an object {productName: quantity}
+      const products = {};
+      currentOrderItems.forEach((item) => {
+        products[item.product] = item.quantity;
+      });
+  
+      // Get the next sequential ID
+      const newOrderId = await getNextOrderId(currentBranch);
+      const timestamp = new Date().toISOString();
+  
+      const orderData = {
+        supplierID: supplierId,
+        supplierName,
+        products,
+        status,
+        paymentStatus,
+        timestamp,
+      };
+  
+      await db.ref(`branch_orders/${currentBranch}/${newOrderId}`).set(orderData);
+  
+      console.log("Order added successfully with ID:", newOrderId);
+      showSuccessMessage("Order saved successfully");
+      closeOrderModal();
+      
+      // Refresh the order list to show the new order
+      loadOrderPage();
+    } catch (error) {
+      console.error("Error adding order:", error.message);
+      alert("Error adding order: " + error.message);
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Save Order";
+    }
   }
-
-  const saveBtn = document.getElementById("saveOrderBtn");
-  saveBtn.disabled = true;
-  saveBtn.textContent = "Saving...";
-
-  try {
-    // Get supplier name for display
-    const supplierSnap = await db
-      .ref(`branch_suppliers/${currentBranch}/${supplierId}`)
-      .once("value");
-    const supplierName = supplierSnap.val()?.name || supplierId;
-
-    // Format products as an object {productName: quantity}
-    const products = {};
-    currentOrderItems.forEach((item) => {
-      products[item.product] = item.quantity;
-    });
-
-    // Get the next sequential ID
-    const newOrderId = await getNextOrderId(currentBranch);
-    const timestamp = new Date().toISOString();
-
-    const orderData = {
-      supplierID: supplierId,
-      supplierName,
-      products,
-      status,
-      paymentStatus,
-      timestamp,
-    };
-
-    await db.ref(`branch_orders/${currentBranch}/${newOrderId}`).set(orderData);
-
-    console.log("Order added successfully with ID:", newOrderId);
-    showSuccessMessage("Order saved successfully");
-    closeOrderModal();
-  } catch (error) {
-    console.error("Error adding order:", error.message);
-    alert("Error adding order: " + error.message);
-  } finally {
-    saveBtn.disabled = false;
-    saveBtn.textContent = "Save Order";
-  }
-}
 
 /**
  * Handles order update
  */
 async function handleOrderUpdate(orderId) {
-  const supplierId = document.getElementById("orderSupplier").value;
-  const status = document.getElementById("orderStatus").value;
-  const paymentStatus = document.getElementById("orderPaymentStatus").value;
-
-  if (!validateOrderForm(supplierId, status, paymentStatus)) return;
-
-  const saveBtn = document.querySelector('#orderForm button[type="submit"]');
-  saveBtn.disabled = true;
-  saveBtn.textContent = "Updating...";
-
-  try {
-    await updateOrder(orderId, supplierId, status, paymentStatus);
-    showSuccessMessage("Order updated successfully");
-    closeOrderModal();
-  } catch (error) {
-    console.error("Error updating order:", error.message);
-    alert("Error updating order: " + error.message);
-  } finally {
-    saveBtn.disabled = false;
-    saveBtn.textContent = "Save Order";
+    const supplierId = document.getElementById("orderSupplier").value;
+    const status = document.getElementById("orderStatus").value;
+    const paymentStatus = document.getElementById("orderPaymentStatus").value;
+    const originalSupplier = document.getElementById("orderForm").dataset.originalSupplier;
+  
+    // Validate form
+    if (!validateOrderForm(supplierId, status, paymentStatus)) return;
+  
+    const saveBtn = document.querySelector('#orderForm button[type="submit"]');
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Updating...";
+  
+    try {
+      // If supplier changed, we need to verify all products belong to new supplier
+      if (supplierId !== originalSupplier) {
+        const invalidProducts = currentOrderItems.filter(
+          item => !selectedSupplierProducts.includes(item.product)
+        );
+        
+        if (invalidProducts.length > 0) {
+          alert("All products must belong to the selected supplier");
+          return;
+        }
+      }
+  
+      await updateOrder(orderId, supplierId, status, paymentStatus);
+      showSuccessMessage("Order updated successfully");
+      closeOrderModal();
+    } catch (error) {
+      console.error("Error updating order:", error.message);
+      alert("Error updating order: " + error.message);
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Save Order";
+    }
   }
-}
 
 /**
  * Validates order form inputs

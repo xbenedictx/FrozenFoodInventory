@@ -856,3 +856,30 @@ body {
     width: 100%;
   }
 }
+
+
+/* Order Details Modal Styles */
+#orderDetailsModal .modal-content {
+    padding: 20px;
+    background: white;
+    border-radius: 5px;
+}
+
+.order-detail {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.order-detail:last-child {
+    border-bottom: none;
+}
+
+.order-products-list {
+    margin-top: 5px;
+    padding-left: 20px;
+}
+
+.order-products-list li {
+    margin-bottom: 5px;
+}
