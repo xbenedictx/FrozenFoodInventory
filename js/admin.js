@@ -2773,60 +2773,44 @@ function generateReport() {
 /* ============ BRANCH SECTION ================= */
 /* ============================================= */
 
+
 /**
  * Loads the branch management page content by retrieving branch data from Firebase.
- * Displays each branch's name, location, and assigned managers, with options to edit or delete.
+ * Displays each branch's name, location, and assigned managers, with options to view, edit or delete.
  */
 function loadBranchPage() {
-  const branchList = document.getElementById("branchList");
-  branchList.innerHTML = "<p>Loading branches...</p>";
-
-  // Create modal if it doesn't exist
-  if (!document.getElementById("branchModal")) {
-    createBranchModal();
-  }
-
-  db.ref("branches").on(
-    "value",
-    (snapshot) => {
-      branchList.innerHTML = "";
-      if (snapshot.exists()) {
-        snapshot.forEach((child) => {
-          const branch = child.val();
-          branch.id = child.key;
-          const div = document.createElement("div");
-          div.className = "branch-item";
-
-          // Format managers list
-          let managersList = "No managers assigned";
-          if (branch.managers && Object.keys(branch.managers).length > 0) {
-            managersList = Object.values(branch.managers).join(", ");
-          }
-
-          div.innerHTML = `
-                            <div>
-                                <strong>${branch.name}</strong><br><br>
-                                <strong>Location: </strong>${branch.location}<br>
-                                <strong>Managers: </strong>${managersList}
-                            </div>
-                            <div class="actions">
-                                <button onclick="editBranch('${branch.id}')">Edit</button>
-                                <button onclick="deleteBranch('${branch.id}')">Delete</button>
-                            </div>
-                        `;
-          branchList.appendChild(div);
-        });
-      } else {
-        branchList.innerHTML =
-          "<p>No branches found. Add a branch to start.</p>";
-      }
-    },
-    (error) => {
-      console.error("Error loading branches:", error.message);
-      branchList.innerHTML = `<p>Error loading branches: ${error.message}</p>`;
+    const branchList = document.getElementById("branchList");
+    branchList.innerHTML = "<p>Loading branches...</p>";
+  
+    // Create modals if they don't exist
+    if (!document.getElementById("branchModal")) {
+      createBranchModal();
     }
-  );
-}
+    if (!document.getElementById("branchDetailsModal")) {
+      createBranchDetailsModal();
+    }
+  
+    db.ref("branches").on(
+      "value",
+      (snapshot) => {
+        branchList.innerHTML = "";
+        if (snapshot.exists()) {
+          snapshot.forEach((child) => {
+            const branch = child.val();
+            branch.id = child.key;
+            displayBranchItem(branch);
+          });
+        } else {
+          branchList.innerHTML = "<p>No branches found. Add a branch to start.</p>";
+        }
+      },
+      (error) => {
+        console.error("Error loading branches:", error.message);
+        branchList.innerHTML = `<p>Error loading branches: ${error.message}</p>`;
+      }
+    );
+  }
+  
 
 // Function to load branches from Firebase
 function loadBranches() {
@@ -2888,34 +2872,35 @@ function initializeBranchManagement() {
 }
 
 /**
- * Displays a single branch item in the list
+ * Displays a single branch item in the list with view, edit and delete buttons
  * @param {Object} branch - The branch data
  */
 function displayBranchItem(branch) {
-  const branchList = document.getElementById("branchList");
-  const div = document.createElement("div");
-  div.className = "branch-item";
-
-  // Format managers list
-  let managersList = "No managers assigned";
-  if (branch.managers && Object.keys(branch.managers).length > 0) {
-    managersList = Object.values(branch.managers).join(", ");
+    const branchList = document.getElementById("branchList");
+    const div = document.createElement("div");
+    div.className = "branch-item";
+  
+    // Format managers list
+    let managersList = "No managers assigned";
+    if (branch.managers && typeof branch.managers === 'object') {
+      managersList = Object.values(branch.managers).join(", ");
+    }
+  
+    div.innerHTML = `
+      <div class="branch-info">
+        <h4>${branch.name}</h4>
+        <p><strong>Location:</strong> ${branch.location}</p>
+        <p><strong>Managers:</strong> ${managersList}</p>
+      </div>
+      <div class="actions">
+        <button class="view" onclick="viewBranchDetails('${branch.id}')">View</button>
+        <button class="edit" onclick="editBranch('${branch.id}')">Edit</button>
+        <button class="delete" onclick="deleteBranch('${branch.id}')">Delete</button>
+      </div>
+    `;
+  
+    branchList.appendChild(div);
   }
-
-  div.innerHTML = `
-          <div class="branch-info">
-            <h4>${branch.name}</h4>
-            <p><strong>Location:</strong> ${branch.location}</p>
-            <p><strong>Managers:</strong> ${managersList}</p>
-          </div>
-          <div class="actions">
-            <button onclick="editBranch('${branch.id}')">Edit</button>
-            <button onclick="deleteBranch('${branch.id}')">Delete</button>
-          </div>
-        `;
-
-  branchList.appendChild(div);
-}
 
 /**
  * Sets the current branch to the given branch ID and reloads the current page.
@@ -2974,86 +2959,31 @@ function addBranchSelector(pageId) {
   pageElement.insertBefore(branchSelector, pageElement.firstChild);
 }
 
+/**
+ * Edits an existing branch
+ * @param {string} branchId - The ID of the branch to edit
+ */
 function editBranch(branchId) {
-  // Ensure modal exists
-  createBranchModal();
-
-  // Add a delay to ensure DOM is ready
-  setTimeout(() => {
-    const modalTitle = document.getElementById("branchModalTitle");
-    const branchName = document.getElementById("branchName");
-    const branchLocation = document.getElementById("branchLocation");
-    const managersSelect = document.getElementById("branchManagers");
-    const saveButton = document.getElementById("saveBranchBtn");
-
-    // Log all elements to diagnose
-    console.log("Modal elements:", {
-      modalTitle,
-      branchName,
-      branchLocation,
-      managersSelect,
-      saveButton,
-    });
-
-    // Validate elements exist
-    const elementsToCheck = [
-      { element: modalTitle, name: "Modal Title" },
-      { element: branchName, name: "Branch Name Input" },
-      { element: branchLocation, name: "Branch Location Input" },
-      { element: managersSelect, name: "Managers Select" },
-      { element: saveButton, name: "Save Button" },
-    ];
-
-    const missingElements = elementsToCheck
-      .filter((item) => !item.element)
-      .map((item) => item.name);
-
-    if (missingElements.length > 0) {
-      console.error("Missing DOM elements:", missingElements);
-      alert(
-        `Unable to edit branch: Missing elements: ${missingElements.join(", ")}`
-      );
-      return;
-    }
-
+    createBranchModal();
     currentEditingBranchId = branchId;
-
-    db.ref(`branches/${branchId}`)
-      .once("value")
-      .then((snapshot) => {
-        const branch = snapshot.val();
-
-        if (!branch) {
-          console.error("No branch data found for ID:", branchId);
-          alert("Branch not found");
-          return;
-        }
-
-        // Safely set form values with additional checks
-        if (branchName) branchName.value = branch.name || "";
-        if (branchLocation) branchLocation.value = branch.location || "";
-
-        // Select assigned managers
-        if (branch.managers && managersSelect) {
-          for (let i = 0; i < managersSelect.options.length; i++) {
-            const optionValue = managersSelect.options[i].value;
-            managersSelect.options[i].selected =
-              branch.managers[optionValue] !== undefined;
-          }
-        }
-
-        // Update UI
-        if (modalTitle) modalTitle.textContent = "Edit Branch";
-        if (saveButton) saveButton.textContent = "Update Branch";
-
+  
+    db.ref(`branches/${branchId}`).once("value").then((snapshot) => {
+      const branch = snapshot.val();
+      
+      // Set basic fields
+      document.getElementById("branchName").value = branch.name || "";
+      document.getElementById("branchLocation").value = branch.location || "";
+      document.getElementById("branchModalTitle").textContent = "Edit Branch";
+      document.getElementById("saveBranchBtn").textContent = "Update Branch";
+  
+      // Load managers and select the assigned ones
+      loadManagersForBranch(branchId).then(() => {
+        // Update the selected managers display
+        updateSelectedManagersDisplay();
         showBranchModal();
-      })
-      .catch((error) => {
-        console.error("Error loading branch for editing:", error);
-        alert("Failed to load branch data for editing.");
       });
-  }, 100); // Small delay to ensure DOM is ready
-}
+    });
+  }
 function deleteBranch(branchId) {
   if (
     confirm(
@@ -3082,219 +3012,318 @@ function deleteBranch(branchId) {
   }
 }
 
+/**
+ * Creates the branch edit modal with manager assignment
+ */
 function createBranchModal() {
-  if (branchModalCreated) return;
-
-  // Create modal elements
-  const modal = document.createElement("div");
-  modal.id = "branchModal";
-  modal.className = "modal";
-
-  const modalContent = document.createElement("div");
-  modalContent.className = "modal-content";
-
-  const closeButton = document.createElement("span");
-  closeButton.className = "close-branch-modal";
-  closeButton.innerHTML = "&times;";
-  closeButton.addEventListener("click", closeBranchModal);
-
-  const title = document.createElement("h2");
-  title.id = "branchModalTitle";
-  title.textContent = "Add New Branch";
-
-  const form = document.createElement("form");
-  form.id = "branchForm";
-
-  // Create form groups
-  const nameGroup = createFormGroup("branchName", "Branch Name:", "text", true);
-  const locationGroup = createFormGroup(
-    "branchLocation",
-    "Location:",
-    "text",
-    true
-  );
-
-  // Create managers select
-  const managersGroup = document.createElement("div");
-  managersGroup.className = "form-group";
-
-  const managersLabel = document.createElement("label");
-  managersLabel.htmlFor = "branchManagers";
-  managersLabel.textContent = "Managers:";
-
-  const managersSelect = document.createElement("select");
-  managersSelect.id = "branchManagers";
-  managersSelect.multiple = true;
-
-  const managersNote = document.createElement("small");
-  managersNote.textContent = "Hold Ctrl/Cmd to select multiple";
-
-  managersGroup.appendChild(managersLabel);
-  managersGroup.appendChild(managersSelect);
-  managersGroup.appendChild(managersNote);
-
-  // Create form actions
-  const actionsGroup = document.createElement("div");
-  actionsGroup.className = "form-actions";
-
-  const saveButton = document.createElement("button");
-  saveButton.type = "submit";
-  saveButton.id = "saveBranchBtn";
-  saveButton.textContent = "Save Branch";
-
-  const cancelButton = document.createElement("button");
-  cancelButton.type = "button";
-  cancelButton.id = "cancelBranchBtn";
-  cancelButton.textContent = "Cancel";
-  cancelButton.addEventListener("click", closeBranchModal);
-
-  actionsGroup.appendChild(saveButton);
-  actionsGroup.appendChild(cancelButton);
-
-  // Assemble the form
-  form.appendChild(nameGroup);
-  form.appendChild(locationGroup);
-  form.appendChild(managersGroup);
-  form.appendChild(actionsGroup);
-
-  // Assemble the modal content
-  modalContent.appendChild(closeButton);
-  modalContent.appendChild(title);
-  modalContent.appendChild(form);
-
-  // Assemble the modal
-  modal.appendChild(modalContent);
-
-  // Add modal to the body
-  document.body.appendChild(modal);
-
-  // Add form submit handler
-  form.addEventListener("submit", handleBranchSubmit);
-
-  // Close modal when clicking outside
-  modal.addEventListener("click", function (e) {
-    if (e.target === this) {
-      closeBranchModal();
-    }
-  });
-
-  branchModalCreated = true;
-
-  // Load managers into the dropdown
-  loadManagersForBranch();
-}
-/**
- * Shows the branch modal
- */
-function showBranchModal() {
-  createBranchModal(); // Ensure modal exists
-  document.getElementById("branchModal").style.display = "block";
-  document.getElementById("branchName").focus();
-}
-/**
- * Closes the branch modal
- */
-function closeBranchModal() {
-  const modal = document.getElementById("branchModal");
-  if (modal) {
-    modal.style.display = "none";
-    document.getElementById("branchForm").reset();
-    document.getElementById("branchModalTitle").textContent = "Add New Branch";
-    document.getElementById("saveBranchBtn").textContent = "Save Branch";
-    currentEditingBranchId = null;
-  }
-}
-async function handleBranchSubmit(e) {
-  e.preventDefault();
-
-  const name = document.getElementById("branchName").value.trim();
-  const location = document.getElementById("branchLocation").value.trim();
-  const managersSelect = document.getElementById("branchManagers");
-
-  if (!name || !location) {
-    alert("Please fill in all required fields.");
-    return;
+    const modalHTML = `
+      <div id="branchModal" class="modal">
+        <div class="modal-content">
+          <span class="close-branch-modal">&times;</span>
+          <h2 id="branchModalTitle">Add New Branch</h2>
+          <form id="branchForm">
+            <div class="form-group">
+              <label for="branchName">Branch Name:</label>
+              <input type="text" id="branchName" required>
+            </div>
+            <div class="form-group">
+              <label for="branchLocation">Location:</label>
+              <input type="text" id="branchLocation" required>
+            </div>
+            <div class="form-group">
+              <label for="branchManagers">Managers:</label>
+              <div class="managers-selection">
+                <select id="branchManagers" multiple class="managers-select">
+                  <option value="">Loading managers...</option>
+                </select>
+                <div class="selected-managers" id="selectedManagersList"></div>
+              </div>
+              <small>Hold Ctrl/Cmd to select multiple managers</small>
+            </div>
+            <div class="form-actions">
+              <button type="submit" id="saveBranchBtn">Save Branch</button>
+              <button type="button" id="cancelBranchBtn">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+  
+    document.body.insertAdjacentHTML("beforeend", modalHTML);
+  
+    // Add event listeners
+    document.querySelector(".close-branch-modal").addEventListener("click", closeBranchModal);
+    document.getElementById("cancelBranchBtn").addEventListener("click", closeBranchModal);
+    document.getElementById("branchForm").addEventListener("submit", handleBranchSubmit);
+  
+    // Manager selection handler
+    const managersSelect = document.getElementById("branchManagers");
+    managersSelect.addEventListener("change", updateSelectedManagersDisplay);
+  
+    // Close modal when clicking outside
+    document.getElementById("branchModal").addEventListener("click", function(e) {
+      if (e.target === this) {
+        closeBranchModal();
+      }
+    });
   }
 
-  // Get selected managers
-  const managers = {};
-  for (let i = 0; i < managersSelect.options.length; i++) {
-    if (managersSelect.options[i].selected) {
-      const managerId = managersSelect.options[i].value;
-      const managerEmail = managersSelect.options[i].text.split(" (")[0];
-      managers[managerId] = managerEmail;
+/**
+ * Updates the display of selected managers in the edit modal
+ */
+function updateSelectedManagersDisplay() {
+    const select = document.getElementById("branchManagers");
+    const selectedList = document.getElementById("selectedManagersList");
+    
+    selectedList.innerHTML = "";
+    
+    Array.from(select.selectedOptions).forEach(option => {
+      if (option.value) {
+        const managerDiv = document.createElement("div");
+        managerDiv.className = "selected-manager";
+        managerDiv.innerHTML = `
+          <span>${option.text}</span>
+          <button type="button" onclick="deselectManager('${option.value}')" class="remove-manager">×</button>
+        `;
+        selectedList.appendChild(managerDiv);
+      }
+    });
+  }
+
+  /**
+ * Deselects a manager in the dropdown
+ */
+function deselectManager(managerId) {
+    const select = document.getElementById("branchManagers");
+    const option = Array.from(select.options).find(opt => opt.value === managerId);
+    if (option) {
+      option.selected = false;
+      updateSelectedManagersDisplay();
     }
   }
 
-  const branchData = {
-    name,
-    location,
-    managers,
-    updatedAt: firebase.database.ServerValue.TIMESTAMP,
-  };
-
-  const saveBtn = document.getElementById("saveBranchBtn");
-  saveBtn.disabled = true;
-  saveBtn.textContent = "Saving...";
-
-  try {
-    if (currentEditingBranchId) {
-      // Update existing branch
-      await db.ref(`branches/${currentEditingBranchId}`).update(branchData);
-      console.log("Branch updated successfully");
-    } else {
-      // Add new branch
-      await db.ref("branches").push(branchData);
-      console.log("Branch added successfully");
-    }
-
-    closeBranchModal();
-    loadBranchPage(); // Refresh the branch list
-  } catch (error) {
-    console.error("Error saving branch:", error);
-    alert("Error saving branch: " + error.message);
-  } finally {
-    saveBtn.disabled = false;
-    saveBtn.textContent = "Save Branch";
-    currentEditingBranchId = null;
+/**
+ * Creates the branch details modal (read-only)
+ */
+function createBranchDetailsModal() {
+    const modalHTML = `
+      <div id="branchDetailsModal" class="modal">
+        <div class="modal-content">
+          <span class="close-details-modal">&times;</span>
+          <h2>Branch Details</h2>
+          <div id="branchDetailsContent"></div>
+        </div>
+      </div>
+    `;
+  
+    document.body.insertAdjacentHTML("beforeend", modalHTML);
+  
+    // Add event listeners
+    document.querySelector(".close-details-modal").addEventListener("click", () => {
+      document.getElementById("branchDetailsModal").style.display = "none";
+    });
+  
+    // Close modal when clicking outside
+    document.getElementById("branchDetailsModal").addEventListener("click", function(e) {
+      if (e.target === this) {
+        this.style.display = "none";
+      }
+    });
   }
-}
 
 /**
- * Loads managers into the branch managers dropdown
+ * Shows detailed information about a branch (read-only)
+ * @param {string} branchId - The ID of the branch to view
  */
-function loadManagersForBranch() {
-  const managersSelect = document.getElementById("branchManagers");
-  if (!managersSelect) return;
-
-  managersSelect.innerHTML = '<option value="">Loading managers...</option>';
-
-  db.ref("users")
-    .orderByChild("role")
-    .equalTo("manager")
-    .once("value")
-    .then((snapshot) => {
-      managersSelect.innerHTML = "";
-
-      if (snapshot.exists()) {
-        snapshot.forEach((child) => {
-          const user = child.val();
-          const option = document.createElement("option");
-          option.value = child.key;
-          option.textContent = `${user.email} (${user.name || "No name"})`;
-          managersSelect.appendChild(option);
+function viewBranchDetails(branchId) {
+    const modal = document.getElementById("branchDetailsModal");
+    const content = document.getElementById("branchDetailsContent");
+  
+    // Show loading state
+    modal.style.display = "block";
+    content.innerHTML = "<p>Loading branch details...</p>";
+  
+    // Load branch data
+    db.ref(`branches/${branchId}`).once("value").then((snapshot) => {
+      const branch = snapshot.val();
+      if (!branch) {
+        content.innerHTML = "<p>Branch not found</p>";
+        return;
+      }
+  
+      // Format managers list
+      let managersHTML = "<p>No managers assigned</p>";
+      if (branch.managers && Object.keys(branch.managers).length > 0) {
+        managersHTML = "<ul class='manager-list'>";
+        
+        // Load manager details from users node
+        const managerPromises = Object.keys(branch.managers).map(managerId => {
+          return db.ref(`users/${managerId}`).once("value").then((userSnap) => {
+            const user = userSnap.val();
+            return {
+              id: managerId,
+              email: branch.managers[managerId],
+              name: user?.name || "No name",
+              role: user?.role || "manager"
+            };
+          });
+        });
+  
+        Promise.all(managerPromises).then(managers => {
+          managers.forEach(manager => {
+            managersHTML += `
+              <li class="manager-item">
+                <div class="manager-info">
+                  <strong>${manager.name}</strong>
+                  <p>Email: ${manager.email}</p>
+                  <p>Role: ${manager.role}</p>
+                </div>
+              </li>
+            `;
+          });
+          
+          managersHTML += "</ul>";
+          
+          // Render the full details
+          content.innerHTML = `
+            <div class="branch-details">
+              <h3>${branch.name}</h3>
+              <p><strong>Location:</strong> ${branch.location}</p>
+              <p><strong>Last Updated:</strong> ${formatDisplayDate(branch.updatedAt)}</p>
+              
+              <div class="managers-section">
+                <h4>Assigned Managers</h4>
+                ${managersHTML}
+              </div>
+              
+              <div class="modal-actions">
+                <button onclick="editBranch('${branchId}')">Edit Branch</button>
+                <button onclick="document.getElementById('branchDetailsModal').style.display='none'">Close</button>
+              </div>
+            </div>
+          `;
         });
       } else {
-        managersSelect.innerHTML =
-          '<option value="">No managers found</option>';
+        // Render without manager details
+        content.innerHTML = `
+          <div class="branch-details">
+            <h3>${branch.name}</h3>
+            <p><strong>Location:</strong> ${branch.location}</p>
+            <p><strong>Last Updated:</strong> ${formatDisplayDate(branch.updatedAt)}</p>
+            
+            <div class="managers-section">
+              <h4>Assigned Managers</h4>
+              ${managersHTML}
+            </div>
+            
+            <div class="modal-actions">
+              <button onclick="editBranch('${branchId}')">Edit Branch</button>
+              <button onclick="document.getElementById('branchDetailsModal').style.display='none'">Close</button>
+            </div>
+          </div>
+        `;
       }
-    })
-    .catch((error) => {
-      console.error("Error loading managers:", error);
-      managersSelect.innerHTML =
-        '<option value="">Error loading managers</option>';
+    }).catch((error) => {
+      console.error("Error loading branch details:", error);
+      content.innerHTML = `<p>Error loading branch details: ${error.message}</p>`;
     });
-}
+  }
+  
+
+/**
+ * Shows the branch edit modal
+ */
+function showBranchModal() {
+    document.getElementById("branchModal").style.display = "block";
+    document.getElementById("branchName").focus();
+  }
+/**
+ * Closes the branch edit modal
+ */
+function closeBranchModal() {
+    const modal = document.getElementById("branchModal");
+    if (modal) {
+      modal.style.display = "none";
+      document.getElementById("branchForm").reset();
+      document.getElementById("branchModalTitle").textContent = "Add New Branch";
+      document.getElementById("saveBranchBtn").textContent = "Save Branch";
+      document.getElementById("selectedManagersList").innerHTML = "";
+      currentEditingBranchId = null;
+    }
+  }
+/**
+ * Handles branch form submission (both add and edit)
+ * @param {Event} e - The form submission event
+ */
+async function handleBranchSubmit(e) {
+    e.preventDefault();
+  
+    const name = document.getElementById("branchName").value.trim();
+    const location = document.getElementById("branchLocation").value.trim();
+    const managersSelect = document.getElementById("branchManagers");
+  
+    if (!name || !location) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+  
+    // Get selected managers as an object {managerId: managerEmail}
+    const managers = {};
+    const selectedOptions = Array.from(managersSelect.selectedOptions);
+    
+    // We need to get the email for each selected manager
+    const managerPromises = selectedOptions
+      .filter(option => option.value)
+      .map(option => {
+        return db.ref(`users/${option.value}`).once("value").then(snapshot => {
+          const user = snapshot.val();
+          return {
+            id: option.value,
+            email: user.email
+          };
+        });
+      });
+  
+    try {
+      const managerResults = await Promise.all(managerPromises);
+      managerResults.forEach(manager => {
+        managers[manager.id] = manager.email;
+      });
+  
+      const branchData = {
+        name,
+        location,
+        managers,
+        updatedAt: firebase.database.ServerValue.TIMESTAMP,
+      };
+  
+      const saveBtn = document.getElementById("saveBranchBtn");
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Saving...";
+  
+      if (currentEditingBranchId) {
+        // Update existing branch
+        await db.ref(`branches/${currentEditingBranchId}`).update(branchData);
+        console.log("Branch updated successfully");
+      } else {
+        // Add new branch
+        await db.ref("branches").push(branchData);
+        console.log("Branch added successfully");
+      }
+  
+      closeBranchModal();
+      loadBranchPage(); // Refresh the branch list
+    } catch (error) {
+      console.error("Error saving branch:", error);
+      alert("Error saving branch: " + error.message);
+    } finally {
+      const saveBtn = document.getElementById("saveBranchBtn");
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = currentEditingBranchId ? "Update Branch" : "Save Branch";
+      }
+    }
+  }
 
 /**
  * Handles branch form submission (both add and edit)
@@ -3380,40 +3409,78 @@ function cancelEdit() {
 }
 
 /**
- * Loads available managers into the dropdown select
+ * Loads managers for the branch edit modal dropdown
+ * @param {string} branchId - The branch ID (optional)
  */
-function loadManagersDropdown() {
-  const managersSelect = document.getElementById("branchManagers");
-  managersSelect.innerHTML = "<option value=''>Loading managers...</option>";
-
-  db.ref("users")
-    .orderByChild("role")
-    .equalTo("manager")
-    .on(
-      "value",
-      (snapshot) => {
-        managersSelect.innerHTML = "";
-
-        if (snapshot.exists()) {
-          snapshot.forEach((child) => {
-            const user = child.val();
-            const option = document.createElement("option");
-            option.value = user.id;
-            option.textContent = `${user.email} (${user.name || "No name"})`;
-            managersSelect.appendChild(option);
-          });
-        } else {
-          managersSelect.innerHTML =
-            "<option value=''>No managers found</option>";
-        }
-      },
-      (error) => {
-        console.error("Error loading managers:", error);
-        managersSelect.innerHTML =
-          "<option value=''>Error loading managers</option>";
+async function loadManagersForBranch(branchId) {
+    const managersSelect = document.getElementById("branchManagers");
+    if (!managersSelect) return;
+  
+    managersSelect.innerHTML = '<option value="">Loading managers...</option>';
+  
+    try {
+      // Load all users with manager role
+      const usersSnapshot = await db.ref("users")
+        .orderByChild("role")
+        .equalTo("manager")
+        .once("value");
+  
+      // Load managers already assigned to this branch (if branchId provided)
+      let assignedManagers = {};
+      if (branchId) {
+        const branchManagersSnapshot = await db.ref(`branches/${branchId}/managers`).once("value");
+        assignedManagers = branchManagersSnapshot.val() || {};
       }
-    );
-}
+  
+      // Populate the select element
+      managersSelect.innerHTML = '';
+      
+      if (usersSnapshot.exists()) {
+        usersSnapshot.forEach((child) => {
+          const user = child.val();
+          const option = document.createElement("option");
+          option.value = child.key;
+          option.textContent = `${user.name || 'No name'} (${user.email})`;
+          
+          // Mark as selected if already assigned to branch
+          if (branchId) {
+            option.selected = assignedManagers[child.key] !== undefined;
+          }
+          
+          managersSelect.appendChild(option);
+        });
+      } else {
+        managersSelect.innerHTML = '<option value="">No managers found</option>';
+      }
+    } catch (error) {
+      console.error("Error loading managers:", error);
+      managersSelect.innerHTML = '<option value="">Error loading managers</option>';
+    }
+  }
+  /**
+ * Removes a manager from a branch
+ * @param {string} branchId - The branch ID
+ * @param {string} managerId - The manager ID to remove
+ */
+function removeManagerFromBranch(branchId, managerId) {
+    if (confirm("Are you sure you want to remove this manager from the branch?")) {
+      db.ref(`branches/${branchId}/managers/${managerId}`).remove()
+        .then(() => {
+          // Refresh the details view
+          viewBranchDetails(branchId);
+          // Also refresh the branch list
+          loadBranchPage();
+        })
+        .catch((error) => {
+          console.error("Error removing manager:", error);
+          alert("Failed to remove manager. Please try again.");
+        });
+    }
+  }
+
+  window.viewBranchDetails = viewBranchDetails;
+  window.editBranch = editBranch;
+  window.deselectManager = deselectManager;
 
 /* ============================================= */
 /* ============ USER SECTION =================== */
