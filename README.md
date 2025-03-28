@@ -1,7 +1,6 @@
 For testing only:
 
-elevazobenedict@gmail.com  = Benedict_123$$ to test the Admin dashboard.
-
+elevazobenedict@gmail.com = Benedict_123$$ to test the Admin dashboard.
 beme.mendavia.up@phinmaed.com = Mendavia_123%% to test the Manager dashboard.
 
 
