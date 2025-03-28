@@ -302,6 +302,88 @@ body {
   color: #388e3c;
 }
 
+
+
+/* ====================== */
+/* Order Styles */
+/* ====================== */
+
+#orderItemsContainer {
+    margin-top: 10px;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+#orderItemsContainer ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.order-item-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.order-item-row:last-child {
+    border-bottom: none;
+}
+
+.remove-item-btn {
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+}
+
+.remove-item-btn:hover {
+    background: #cc0000;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ====================== */
+/*  Order Payment Styles  */
+/* ====================== */
+#paymentModal .modal-content {
+    max-width: 500px;
+  }
+  
+  #gcashImageContainer {
+    margin: 10px 0;
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: center;
+  }
+  
+  #gcashImageContainer img {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
+  
+  .form-group p {
+    margin: 0;
+    padding: 5px;
+    background: #f5f5f5;
+    border-radius: 4px;
+  }
+
+
 /* ====================== */
 /* Alert Styles */
 /* ====================== */
@@ -633,6 +715,31 @@ body {
   background-color: #e63946;
 }
 
+.supplier-item {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .supplier-item img {
+    max-width: 100px;
+    height: auto;
+    border: 1px solid #eee;
+  }
+  
+  .actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
+  .actions button {
+    margin: 5px 0;
+  }
+
 /* ====================== */
 /* Dashboard Metrics */
 /* ====================== */
@@ -748,4 +855,31 @@ body {
   .branch-actions button {
     width: 100%;
   }
+}
+
+
+/* Order Details Modal Styles */
+#orderDetailsModal .modal-content {
+    padding: 20px;
+    background: white;
+    border-radius: 5px;
+}
+
+.order-detail {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.order-detail:last-child {
+    border-bottom: none;
+}
+
+.order-products-list {
+    margin-top: 5px;
+    padding-left: 20px;
+}
+
+.order-products-list li {
+    margin-bottom: 5px;
 }
