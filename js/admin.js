@@ -1603,6 +1603,7 @@ let selectedSupplierProducts = [];
 let currentOrderItems = [];
 let currentSupplierId = null;
 let orderListListener = null;
+let supplierProductsWithPrices = {};
 
 /* ============================================= */
 /* ============ ORDER DISPLAY FUNCTIONS ======== */
@@ -1657,52 +1658,63 @@ function renderOrderList(orders) {
 /**
  * Creates an order list item element
  */
-/**
- * Creates an order list item element
- */
 function createOrderListItem(id, order) {
-  const div = document.createElement("div");
-  div.className = "order-item";
-  div.innerHTML = `
-            <div>
-                <strong>Order ID: </strong>${id}<br>
-                <strong>Supplier: </strong>${
-                  order.supplierName || order.supplierID
-                }<br>
-                <strong>Products: </strong>${formatOrderProducts(
-                  order.products
-                )}<br>
-                <strong>Status: </strong>${order.status || "Pending"}<br>
-                <strong>Payment Status: </strong>${
-                  order.paymentStatus || "Pending"
-                }<br>
-                <strong>Timestamp: </strong>${
-                  order.timestamp
-                    ? new Date(order.timestamp).toLocaleString()
-                    : "N/A"
-                }
-            </div>
-            <div class="actions">
-                <button onclick="viewOrderDetails('${id}')">View Details</button>
-                ${
-                  order.paymentStatus === "Pending" &&
-                  order.status === "Pending"
-                    ? `<button onclick="showPaymentModal('${id}', '${order.supplierID}')">Pay</button>`
-                    : ""
-                }
-                <button onclick="editOrder('${id}')">Edit</button>
-                <button onclick="deleteOrder('${id}')">Delete</button>
-            </div>
-        `;
-  return div;
-}
+    const div = document.createElement("div");
+    div.className = "order-item";
+    
+    // Calculate total if not already in order data (for backward compatibility)
+    const orderTotal = order.total || (order.products ? 
+      Object.values(order.products).reduce((sum, product) => {
+        if (typeof product === 'object') {
+          return sum + (product.total || product.price * product.quantity || 0);
+        }
+        return sum;
+      }, 0) : 0);
+  
+    div.innerHTML = `
+      <div>
+        <strong>Order ID: </strong>${id}<br>
+        <strong>Supplier: </strong>${order.supplierName || order.supplierID}<br>
+        <strong>Products: </strong>${formatOrderProducts(order.products)}<br>
+        <strong>Total: </strong>${orderTotal.toFixed(2)} PHP<br>
+        <strong>Status: </strong>${order.status || "Pending"}<br>
+        <strong>Payment Status: </strong>${order.paymentStatus || "Pending"}<br>
+        <strong>Date: </strong>${
+          order.timestamp ? new Date(order.timestamp).toLocaleString() : "N/A"
+        }
+      </div>
+      <div class="actions">
+        <button onclick="viewOrderDetails('${id}')">View Details</button>
+        ${
+          order.paymentStatus === "Pending" && order.status === "Pending"
+            ? `<button onclick="showPaymentModal('${id}', '${order.supplierID}')">Pay</button>`
+            : ""
+        }
+        <button onclick="editOrder('${id}')">Edit</button>
+        <button onclick="deleteOrder('${id}')">Delete</button>
+      </div>
+    `;
+    return div;
+  }
+
+
 /**
  * Formats order products for display
  */
 function formatOrderProducts(products) {
   if (!products) return "N/A";
+  
+  if (typeof products === 'string') {
+    return products; // For backward compatibility
+  }
+  
   return Object.entries(products)
-    .map(([product, quantity]) => `${product} (${quantity})`)
+    .map(([product, details]) => {
+      if (typeof details === 'object') {
+        return `${product} (${details.quantity} kg × ${details.price.toFixed(2)} PHP)`;
+      }
+      return `${product} (${details})`; // For backward compatibility
+    })
     .join(", ");
 }
 
@@ -1787,14 +1799,38 @@ function viewOrderDetails(orderId) {
 
       // Add each product to the list
       if (order.products) {
-        Object.entries(order.products).forEach(([product, quantity]) => {
-          detailsHTML += `<li>${product} - ${quantity}</li>`;
+        Object.entries(order.products).forEach(([product, details]) => {
+          if (typeof details === 'object') {
+            const quantity = details.quantity;
+            const price = details.price || 0;
+            const total = details.total || (price * quantity);
+            detailsHTML += `
+              <li>
+                ${product} - ${quantity} kg × ${price.toFixed(2)} PHP = ${total.toFixed(2)} PHP
+              </li>`;
+          } else {
+            detailsHTML += `<li>${product} - ${details}</li>`;
+          }
         });
       } else {
         detailsHTML += `<li>No products found</li>`;
       }
 
-      detailsHTML += `</ul></div>`;
+        // Add order total
+  const orderTotal = order.total || (order.products ? 
+    Object.values(order.products).reduce((sum, product) => {
+      if (typeof product === 'object') {
+        return sum + (product.total || product.price * product.quantity || 0);
+      }
+      return sum;
+    }, 0) : 0);
+
+    detailsHTML += `
+    </ul>
+    </div>
+    <div class="order-detail">
+      <strong>Order Total:</strong> ${orderTotal.toFixed(2)} PHP
+    </div>`;
 
       // Add payment proof if available
       if (order.paymentProof) {
@@ -1915,45 +1951,75 @@ function deleteOrder(orderId) {
  * @param {object} order - The order data
  */
 function populateOrderForm(orderId, order) {
-  // Store the original supplier ID before any changes
-  const originalSupplierId = order.supplierID || "";
-  currentSupplierId = originalSupplierId;
+    // Store the original supplier ID before any changes
+    const originalSupplierId = order.supplierID || "";
+    currentSupplierId = originalSupplierId;
+  
+    // Set the form values
+    document.getElementById("orderSupplier").value = originalSupplierId;
+    document.getElementById("orderForm").dataset.editId = orderId;
+    document.getElementById("orderForm").dataset.originalSupplier = originalSupplierId;
 
-  // Set the form values
-  document.getElementById("orderSupplier").value = originalSupplierId;
-  document.getElementById("orderStatus").value = order.status || "Pending";
-  document.getElementById("orderPaymentStatus").value =
-    order.paymentStatus || "Pending";
-  document.getElementById("orderForm").dataset.editId = orderId;
-  document.getElementById("orderForm").dataset.originalSupplier =
-    originalSupplierId;
-
-  // Load products for the supplier
-  loadSupplierProducts(originalSupplierId)
-    .then(() => {
-      if (order.products) {
-        currentOrderItems = Object.entries(order.products).map(
-          ([product, quantity]) => ({
-            product,
-            quantity: parseInt(quantity),
-          })
-        );
-        updateOrderItemsDisplay();
-      }
-      document.querySelector("#orderModal h2").textContent = "Edit Order";
-    })
-    .catch((error) => {
-      console.error("Error loading products:", error);
-      alert("Failed to load supplier products");
-    });
+    // Add status fields to the form (since they're not in the template)
+    const form = document.getElementById("orderForm");
+    const supplierGroup = document.querySelector("#orderForm .form-group:first-child");
+    
+    // Create status field group
+    const statusGroup = document.createElement("div");
+    statusGroup.className = "form-group";
+    statusGroup.innerHTML = `
+        <label for="orderStatus">Status:</label>
+        <select id="orderStatus" required>
+            <option value="Pending">Pending</option>
+            <option value="Processing">Processing</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
+        </select>
+    `;
+    
+    // Create payment status field group
+    const paymentStatusGroup = document.createElement("div");
+    paymentStatusGroup.className = "form-group";
+    paymentStatusGroup.innerHTML = `
+        <label for="orderPaymentStatus">Payment Status:</label>
+        <select id="orderPaymentStatus" required>
+            <option value="Pending">Pending</option>
+            <option value="Paid">Paid</option>
+            <option value="Failed">Failed</option>
+        </select>
+    `;
+    
+    // Insert after supplier group
+    supplierGroup.insertAdjacentElement("afterend", statusGroup);
+    statusGroup.insertAdjacentElement("afterend", paymentStatusGroup);
+    
+    // Set values from the order
+    document.getElementById("orderStatus").value = order.status || "Pending";
+    document.getElementById("orderPaymentStatus").value = order.paymentStatus || "Pending";
+  
+    // Load products for the supplier
+    loadSupplierProducts(originalSupplierId)
+      .then(() => {
+        if (order.products) {
+          currentOrderItems = Object.entries(order.products).map(
+            ([product, details]) => ({
+              product,
+              quantity: typeof details === 'object' ? details.quantity : parseInt(details)
+            })
+          );
+          updateOrderItemsDisplay();
+        }
+        document.querySelector("#orderModal h2").textContent = "Edit Order";
+      })
+      .catch((error) => {
+        console.error("Error loading products:", error);
+        alert("Failed to load supplier products");
+      });
 }
 /* ============================================= */
 /* ============ ORDER FORM MANAGEMENT ========== */
 /* ============================================= */
 
-/**
- * Creates and initializes the order modal
- */
 /**
  * Creates and initializes the order modal
  */
@@ -1974,16 +2040,19 @@ function createOrderModal() {
               </select>
             </div>
             
+            <!-- Status fields removed from here - they'll be added dynamically when needed -->
+            
             <div id="productSelectionGroup" class="form-group" style="display: none;">
               <label for="orderProduct">Product:</label>
               <select id="orderProduct" disabled>
                 <option value="">-- Select Product --</option>
               </select>
+              <div id="productPriceDisplay" style="margin-top: 5px;"></div>
             </div>
             
             <div id="quantityGroup" class="form-group" style="display: none;">
-              <label for="orderQuantity">Quantity:</label>
-              <input type="number" id="orderQuantity" min="1" value="1" disabled>
+              <label for="orderQuantity">Quantity (kg):</label>
+              <input type="number" id="orderQuantity" min="0.1" step="0.1" value="1" disabled>
             </div>
             
             <div class="form-group">
@@ -1992,22 +2061,15 @@ function createOrderModal() {
             
             <div id="orderItemsContainer"></div>
             
-            <div class="form-group">
-              <label for="orderStatus">Status:</label>
-              <select id="orderStatus">
-                <option value="Pending">Pending</option>
-                <option value="Processing">Processing</option>
-                <option value="Completed">Completed</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label for="orderPaymentStatus">Payment Status:</label>
-              <select id="orderPaymentStatus">
-                <option value="Pending">Pending</option>
-                <option value="Paid">Paid</option>
-              </select>
+            <div class="order-summary">
+              <div class="summary-row">
+                <span>Subtotal:</span>
+                <span id="orderSubtotal">0.00 PHP</span>
+              </div>
+              <div class="summary-row">
+                <span>Total:</span>
+                <span id="orderTotal">0.00 PHP</span>
+              </div>
             </div>
             
             <div class="form-actions">
@@ -2020,8 +2082,7 @@ function createOrderModal() {
   
     document.body.insertAdjacentHTML("beforeend", modalHTML);
     initializeOrderModal();
-  }
-
+}
 /**
  * Initializes order modal event listeners
  */
@@ -2132,6 +2193,12 @@ function closeOrderModal() {
   
     const orderForm = document.getElementById("orderForm");
     if (orderForm) {
+      // Remove any dynamically added status fields
+      const statusSelect = document.getElementById("orderStatus");
+      const paymentStatusSelect = document.getElementById("orderPaymentStatus");
+      if (statusSelect) statusSelect.parentElement.remove();
+      if (paymentStatusSelect) paymentStatusSelect.parentElement.remove();
+      
       orderForm.reset();
       orderForm.removeAttribute("data-edit-id");
       orderForm.removeAttribute("data-original-supplier");
@@ -2154,33 +2221,33 @@ function closeOrderModal() {
     if (modalTitle) {
       modalTitle.textContent = "Add New Order";
     }
-  }
+}
 
 function validateOrderForm(supplierId, status, paymentStatus) {
-  // Only check for supplier, status, and payment status
-  if (!supplierId || !status || !paymentStatus) {
-    alert("Please select a supplier and set statuses");
-    return false;
+    // Only check for supplier (status and payment status are always set for new orders)
+    if (!supplierId) {
+      alert("Please select a supplier");
+      return false;
+    }
+  
+    // Check if at least one order item exists
+    if (currentOrderItems.length === 0) {
+      alert("Please add at least one product to the order");
+      return false;
+    }
+  
+    // Check if all products belong to the selected supplier
+    const invalidProducts = currentOrderItems.filter(
+      (item) => !selectedSupplierProducts.includes(item.product)
+    );
+  
+    if (invalidProducts.length > 0) {
+      alert("All products must belong to the selected supplier");
+      return false;
+    }
+  
+    return true;
   }
-
-  // Check if at least one order item exists
-  if (currentOrderItems.length === 0) {
-    alert("Please add at least one product to the order");
-    return false;
-  }
-
-  // Check if all products belong to the selected supplier
-  const invalidProducts = currentOrderItems.filter(
-    (item) => !selectedSupplierProducts.includes(item.product)
-  );
-
-  if (invalidProducts.length > 0) {
-    alert("All products must belong to the selected supplier");
-    return false;
-  }
-
-  return true;
-}
 
 /* ============================================= */
 /* ========== ORDER PAYMENT MANAGEMENT ========= */
@@ -2463,38 +2530,55 @@ function loadGcashImage(supplierId) {
  * Updates the displayed list of order items
  */
 function updateOrderItemsDisplay() {
-  const container = document.getElementById("orderItemsContainer");
-  if (!container) return;
-
-  container.innerHTML = "";
-
-  if (currentOrderItems.length === 0) {
-    container.innerHTML = "<p class='no-items'>No items added yet</p>";
-    return;
+    const container = document.getElementById("orderItemsContainer");
+    if (!container) return;
+  
+    container.innerHTML = "";
+  
+    if (currentOrderItems.length === 0) {
+      container.innerHTML = "<p class='no-items'>No items added yet</p>";
+      updateOrderTotals();
+      return;
+    }
+  
+    const list = document.createElement("ul");
+    list.className = "order-items-list";
+  
+    currentOrderItems.forEach((item, index) => {
+      const productPrice = supplierProductsWithPrices[item.product]?.price || 0;
+      const itemTotal = productPrice * item.quantity;
+      
+      const li = document.createElement("li");
+      li.className = "order-item-row";
+      li.innerHTML = `
+        <div class="item-details">
+          <span class="product-name">${item.product}</span>
+          <span class="product-quantity">${item.quantity} kg</span>
+        </div>
+        <div class="item-price">
+          <span>${productPrice.toFixed(2)} PHP/kg</span>
+          <span class="item-total">${itemTotal.toFixed(2)} PHP</span>
+          <button onclick="removeOrderItem(${index})" class="remove-item-btn">×</button>
+        </div>
+      `;
+      list.appendChild(li);
+    });
+  
+    container.appendChild(list);
+    updateOrderTotals();
   }
-
-  const list = document.createElement("ul");
-  list.className = "order-items-list";
-
-  currentOrderItems.forEach((item, index) => {
-    const li = document.createElement("li");
-    li.className = "order-item-row";
-    li.innerHTML = `
-            <span class="product-name">${item.product}</span>
-            <span class="product-quantity">${item.quantity}</span>
-            <button onclick="removeOrderItem(${index})" class="remove-item-btn">×</button>
-        `;
-    list.appendChild(li);
-  });
-
-  container.appendChild(list);
-
-  // Update save button state
-  const saveBtn = document.getElementById("saveOrderBtn");
-  if (saveBtn) {
-    saveBtn.disabled = currentOrderItems.length === 0;
+  
+  function updateOrderTotals() {
+    let subtotal = 0;
+    
+    currentOrderItems.forEach(item => {
+      const productPrice = supplierProductsWithPrices[item.product]?.price || 0;
+      subtotal += productPrice * item.quantity;
+    });
+  
+    document.getElementById("orderSubtotal").textContent = subtotal.toFixed(2) + " PHP";
+    document.getElementById("orderTotal").textContent = subtotal.toFixed(2) + " PHP";
   }
-}
 
 /**
  * Creates HTML list of order items
@@ -2516,41 +2600,42 @@ function createOrderItemsList() {
  * Adds product to current order items
  */
 function addProductToOrder() {
-  const productSelect = document.getElementById("orderProduct");
-  const quantityInput = document.getElementById("orderQuantity");
-
-  const product = productSelect.value;
-  const quantity = parseInt(quantityInput.value);
-
-  if (!product || isNaN(quantity)) {
-    alert("Please select a product and enter a valid quantity");
-    return;
+    const productSelect = document.getElementById("orderProduct");
+    const quantityInput = document.getElementById("orderQuantity");
+  
+    const product = productSelect.value;
+    const quantity = parseFloat(quantityInput.value);
+  
+    if (!product || isNaN(quantity)) {
+      alert("Please select a product and enter a valid quantity");
+      return;
+    }
+  
+    // Verify the product belongs to the current supplier
+    if (!selectedSupplierProducts.includes(product)) {
+      alert("Selected product doesn't belong to the current supplier");
+      return;
+    }
+  
+    // Check if product already exists in order
+    const existingItemIndex = currentOrderItems.findIndex(
+      (item) => item.product === product
+    );
+    if (existingItemIndex >= 0) {
+      currentOrderItems[existingItemIndex].quantity += quantity;
+    } else {
+      currentOrderItems.push({ product, quantity });
+    }
+  
+    // Update display
+    updateOrderItemsDisplay();
+  
+    // Reset selection
+    productSelect.value = "";
+    quantityInput.value = "";
+    quantityInput.disabled = true;
+    document.getElementById("productPriceDisplay").innerHTML = "";
   }
-
-  // Verify the product belongs to the current supplier
-  if (!selectedSupplierProducts.includes(product)) {
-    alert("Selected product doesn't belong to the current supplier");
-    return;
-  }
-
-  // Check if product already exists in order
-  const existingItemIndex = currentOrderItems.findIndex(
-    (item) => item.product === product
-  );
-  if (existingItemIndex >= 0) {
-    currentOrderItems[existingItemIndex].quantity += quantity;
-  } else {
-    currentOrderItems.push({ product, quantity });
-  }
-
-  // Update display
-  updateOrderItemsDisplay();
-
-  // Reset selection (but don't clear if we want to add same product again)
-  productSelect.value = "";
-  quantityInput.value = "";
-  quantityInput.disabled = true;
-}
 
 /**
  * Removes an item from the current order
@@ -2609,60 +2694,78 @@ function loadSuppliersForOrder() {
  * @returns {Promise} A promise that resolves when products are loaded
  */
 function loadSupplierProducts(supplierId) {
-  return new Promise((resolve, reject) => {
-    currentSupplierId = supplierId;
-
-    const productSelect = document.getElementById("orderProduct");
-    const productGroup = document.getElementById("productSelectionGroup");
-    const quantityGroup = document.getElementById("quantityGroup");
-
-    // Reset product selection
-    productSelect.innerHTML = '<option value="">-- Select Product --</option>';
-    productSelect.disabled = true;
-    document.getElementById("orderQuantity").value = "";
-
-    if (!supplierId) {
-      productGroup.style.display = "none";
-      quantityGroup.style.display = "none";
-      resolve(); // Resolve even when no supplier is selected
-      return;
-    }
-
-    productGroup.style.display = "block";
-    productSelect.innerHTML = '<option value="">Loading products...</option>';
-
-    db.ref(`branch_suppliers/${currentBranch}/${supplierId}`)
-      .once("value")
-      .then((snapshot) => {
-        const supplier = snapshot.val();
-        if (!supplier || !supplier.products) {
-          productSelect.innerHTML =
-            '<option value="">No products found</option>';
-          resolve();
-          return;
-        }
-
-        selectedSupplierProducts = supplier.products
-          .split(",")
-          .map((p) => p.trim());
-        productSelect.innerHTML =
-          '<option value="">-- Select Product --</option>';
-        selectedSupplierProducts.forEach((product) => {
-          productSelect.innerHTML += `<option value="${product}">${product}</option>`;
-        });
-
-        productSelect.disabled = false;
-        quantityGroup.style.display = "block";
+    return new Promise((resolve, reject) => {
+      currentSupplierId = supplierId;
+      supplierProductsWithPrices = {}; // Reset prices
+  
+      const productSelect = document.getElementById("orderProduct");
+      const productGroup = document.getElementById("productSelectionGroup");
+      const quantityGroup = document.getElementById("quantityGroup");
+  
+      productSelect.innerHTML = '<option value="">-- Select Product --</option>';
+      productSelect.disabled = true;
+      document.getElementById("orderQuantity").value = "";
+  
+      if (!supplierId) {
+        productGroup.style.display = "none";
+        quantityGroup.style.display = "none";
         resolve();
-      })
-      .catch((error) => {
-        console.error("Error loading supplier products:", error);
-        productSelect.innerHTML =
-          '<option value="">Error loading products</option>';
-        reject(error); // Reject the promise on error
-      });
-  });
-}
+        return;
+      }
+  
+      productGroup.style.display = "block";
+      productSelect.innerHTML = '<option value="">Loading products...</option>';
+  
+      db.ref(`branch_suppliers/${currentBranch}/${supplierId}`)
+        .once("value")
+        .then((snapshot) => {
+          const supplier = snapshot.val();
+          if (!supplier || !supplier.products) {
+            productSelect.innerHTML = '<option value="">No products found</option>';
+            resolve();
+            return;
+          }
+  
+          // Handle both old (string) and new (object) product formats
+          if (typeof supplier.products === 'string') {
+            selectedSupplierProducts = supplier.products.split(',').map(p => p.trim());
+            selectedSupplierProducts.forEach((product) => {
+              productSelect.innerHTML += `<option value="${product}">${product}</option>`;
+              supplierProductsWithPrices[product] = { price: 0, unit: 'kg' }; // Default price
+            });
+          } else {
+            selectedSupplierProducts = Object.keys(supplier.products);
+            Object.entries(supplier.products).forEach(([product, details]) => {
+              productSelect.innerHTML += `<option value="${product}" data-price="${details.price}">${product} (${details.price} PHP/kg)</option>`;
+              supplierProductsWithPrices[product] = details;
+            });
+          }
+  
+          productSelect.disabled = false;
+          quantityGroup.style.display = "block";
+          
+          // Add event listener for product selection
+          productSelect.addEventListener('change', function() {
+            const selectedProduct = this.value;
+            const priceDisplay = document.getElementById("productPriceDisplay");
+            
+            if (selectedProduct && supplierProductsWithPrices[selectedProduct]) {
+              const price = supplierProductsWithPrices[selectedProduct].price;
+              priceDisplay.innerHTML = `Price: ${price.toFixed(2)} PHP per kg`;
+            } else {
+              priceDisplay.innerHTML = '';
+            }
+          });
+  
+          resolve();
+        })
+        .catch((error) => {
+          console.error("Error loading supplier products:", error);
+          productSelect.innerHTML = '<option value="">Error loading products</option>';
+          reject(error);
+        });
+    });
+  }
 
 function loadSupplierProductsWithRetry(supplierId, retries = 3) {
   return loadSupplierProducts(supplierId).catch((error) => {
@@ -2682,64 +2785,85 @@ function loadSupplierProductsWithRetry(supplierId, retries = 3) {
  * Handles new order submission
  */
 async function handleOrderSubmit(e) {
-  e.preventDefault();
-
-  const supplierId = document.getElementById("orderSupplier").value;
-  const status = document.getElementById("orderStatus").value;
-  const paymentStatus = document.getElementById("orderPaymentStatus").value;
-
-  // Validate form (won't check product/quantity fields)
-  if (!validateOrderForm(supplierId, status, paymentStatus)) {
-    return;
-  }
-
-  const saveBtn = document.getElementById("saveOrderBtn");
-  saveBtn.disabled = true;
-  saveBtn.textContent = "Saving...";
-
-  try {
-    // Get supplier name for display
-    const supplierSnap = await db
-      .ref(`branch_suppliers/${currentBranch}/${supplierId}`)
-      .once("value");
-    const supplierName = supplierSnap.val()?.name || supplierId;
-
-    // Format products as an object {productName: quantity}
-    const products = {};
-    currentOrderItems.forEach((item) => {
-      products[item.product] = item.quantity;
-    });
-
-    // Get the next sequential ID
-    const newOrderId = await getNextOrderId(currentBranch);
-    const timestamp = new Date().toISOString();
-
-    const orderData = {
-      supplierID: supplierId,
-      supplierName,
-      products,
-      status,
-      paymentStatus,
-      timestamp,
-    };
-
-    await db.ref(`branch_orders/${currentBranch}/${newOrderId}`).set(orderData);
-
-    console.log("Order added successfully with ID:", newOrderId);
-    showSuccessMessage("Order saved successfully");
-    closeOrderModal();
-
-    // Refresh the order list to show the new order
-    loadOrderPage();
-  } catch (error) {
-    console.error("Error adding order:", error.message);
-    alert("Error adding order: " + error.message);
-  } finally {
-    saveBtn.disabled = false;
-    saveBtn.textContent = "Save Order";
-  }
+    e.preventDefault();
+  
+    const supplierSelect = document.getElementById("orderSupplier");
+    const saveBtn = document.getElementById("saveOrderBtn");
+    
+    // Check if elements exist
+    if (!supplierSelect || !saveBtn) {
+        console.error("Required form elements not found");
+        return;
+    }
+    
+    const supplierId = supplierSelect.value;
+    // Set default status values for new orders
+    const status = "Pending";
+    const paymentStatus = "Pending";
+  
+    // Validate form
+    if (!validateOrderForm(supplierId, status, paymentStatus)) {
+      return;
+    }
+  
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving...";
+  
+    try {
+      // Get supplier name for display
+      const supplierSnap = await db
+        .ref(`branch_suppliers/${currentBranch}/${supplierId}`)
+        .once("value");
+      const supplierName = supplierSnap.val()?.name || supplierId;
+  
+      // Format products with prices
+      const products = {};
+      currentOrderItems.forEach((item) => {
+        const productPrice = supplierProductsWithPrices[item.product]?.price || 0;
+        products[item.product] = {
+          quantity: item.quantity,
+          price: productPrice,
+          total: productPrice * item.quantity
+        };
+      });
+  
+      // Calculate order total
+      const orderTotal = currentOrderItems.reduce((total, item) => {
+        const productPrice = supplierProductsWithPrices[item.product]?.price || 0;
+        return total + (productPrice * item.quantity);
+      }, 0);
+  
+      // Get the next sequential ID
+      const newOrderId = await getNextOrderId(currentBranch);
+      const timestamp = new Date().toISOString();
+  
+      const orderData = {
+        supplierID: supplierId,
+        supplierName,
+        products,
+        status,
+        paymentStatus,
+        subtotal: orderTotal,
+        total: orderTotal,
+        timestamp,
+      };
+  
+      await db.ref(`branch_orders/${currentBranch}/${newOrderId}`).set(orderData);
+  
+      console.log("Order added successfully with ID:", newOrderId);
+      showSuccessMessage("Order saved successfully");
+      closeOrderModal();
+  
+      // Refresh the order list to show the new order
+      loadOrderPage();
+    } catch (error) {
+      console.error("Error adding order:", error.message);
+      alert("Error adding order: " + error.message);
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Save Order";
+    }
 }
-
 /**
  * Handles order update
  */
@@ -2831,27 +2955,41 @@ async function saveOrder(orderId, supplierId, status, paymentStatus) {
  * Updates existing order in database
  */
 async function updateOrder(orderId, supplierId, status, paymentStatus) {
-  const supplierSnap = await db
-    .ref(`branch_suppliers/${currentBranch}/${supplierId}`)
-    .once("value");
-  const supplierName = supplierSnap.val()?.name || supplierId;
-
-  const products = {};
-  currentOrderItems.forEach((item) => {
-    products[item.product] = item.quantity;
-  });
-
-  const updateData = {
-    supplierID: supplierId,
-    supplierName,
-    products,
-    status,
-    paymentStatus,
-    updatedAt: firebase.database.ServerValue.TIMESTAMP,
-  };
-
-  await db.ref(`branch_orders/${currentBranch}/${orderId}`).update(updateData);
-}
+    const supplierSnap = await db
+      .ref(`branch_suppliers/${currentBranch}/${supplierId}`)
+      .once("value");
+    const supplierName = supplierSnap.val()?.name || supplierId;
+  
+    // Format products with prices
+    const products = {};
+    currentOrderItems.forEach((item) => {
+      const productPrice = supplierProductsWithPrices[item.product]?.price || 0;
+      products[item.product] = {
+        quantity: item.quantity,
+        price: productPrice,
+        total: productPrice * item.quantity
+      };
+    });
+  
+    // Calculate order total
+    const orderTotal = currentOrderItems.reduce((total, item) => {
+      const productPrice = supplierProductsWithPrices[item.product]?.price || 0;
+      return total + (productPrice * item.quantity);
+    }, 0);
+  
+    const updateData = {
+      supplierID: supplierId,
+      supplierName,
+      products,
+      status,
+      paymentStatus,
+      subtotal: orderTotal,
+      total: orderTotal,
+      updatedAt: firebase.database.ServerValue.TIMESTAMP,
+    };
+  
+    await db.ref(`branch_orders/${currentBranch}/${orderId}`).update(updateData);
+  }
 
 /* ============================================= */
 /* ============ UTILITY FUNCTIONS ============== */
@@ -2861,22 +2999,24 @@ async function updateOrder(orderId, supplierId, status, paymentStatus) {
  * Generates the next sequential order ID
  */
 async function getNextOrderId(branchId) {
-  const snapshot = await db.ref(`branch_orders/${branchId}`).once("value");
-  const orders = snapshot.val() || {};
-  const orderIds = Object.keys(orders);
-
-  let maxNumber = 0;
-  orderIds.forEach((id) => {
-    const match = id.match(/^order(\d+)$/);
-    if (match) {
-      const num = parseInt(match[1]);
-      if (num > maxNumber) maxNumber = num;
-    }
-  });
-
-  return `order${maxNumber + 1}`;
-}
-
+    const snapshot = await db.ref(`branch_orders/${branchId}`).once("value");
+    const orders = snapshot.val() || {};
+  
+    // Extract all order IDs
+    const orderIds = Object.keys(orders);
+  
+    // Find the highest existing number
+    let maxNumber = 0;
+    orderIds.forEach((id) => {
+      const match = id.match(/^order(\d+)$/);
+      if (match) {
+        const num = parseInt(match[1]);
+        if (num > maxNumber) maxNumber = num;
+      }
+    });
+  
+    return `order${maxNumber + 1}`;
+  }
 /**
  * Shows loading state
  */

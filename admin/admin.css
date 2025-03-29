@@ -1271,3 +1271,78 @@ body {
     width: 100%;
     box-sizing: border-box;
   }
+
+
+  .order-summary {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f5f5f5;
+    border-radius: 4px;
+  }
+  
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 16px;
+  }
+  
+  .summary-row:last-child {
+    font-weight: bold;
+    font-size: 18px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #ddd;
+  }
+
+
+  .order-items-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .order-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .item-details {
+    flex: 2;
+  }
+  
+  .item-price {
+    flex: 1;
+    text-align: right;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  
+  .item-price span {
+    margin-left: 10px;
+  }
+  
+  .item-total {
+    font-weight: bold;
+    min-width: 80px;
+    display: inline-block;
+  }
+  
+  .remove-item-btn {
+    background: #ff6b6b;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    cursor: pointer;
+    margin-left: 10px;
+  }
+  
+  .remove-item-btn:hover {
+    background: #ff5252;
+  }
