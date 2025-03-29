@@ -91,7 +91,7 @@
           <!-- Sidebar- Inventory-->
           <div id="page-inventory" class="page">
             <h2>Inventory Management</h2>
-            
+
             <!-- Search -->
             <div class="filter-sort">
               <input
@@ -101,7 +101,7 @@
               />
               <button onclick="addItem()">+ Add Item</button>
             </div>
-          
+
             <!-- Inventory List Container -->
             <div id="inventoryList" class="inventory-items-container">
               <!-- Items will be populated by JavaScript -->
@@ -165,7 +165,17 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="../js/admin.js"></script>
-    <script src="../js/inventory.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    
+    <!-- For PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+      window.jspdf = window.jspdf.jsPDF;
+    </script>
+
+    <!-- For Excel export (optional) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script>
       function toggleDropdown() {
         const dropdown = document.querySelector(".dropdown");

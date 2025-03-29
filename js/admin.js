@@ -193,95 +193,105 @@ async function showPage(pageId) {
  * Displays low stock alerts, recent orders, and supplier performance.
  */
 function loadDashboardPage() {
-    const metrics = document.getElementById("dashboard-metrics");
-    metrics.innerHTML = "<p>Loading metrics...</p>";
-  
-    if (!currentBranch) {
-      metrics.innerHTML = "<p>Please select a branch first</p>";
-      return;
-    }
-  
-    Promise.all([
-      db.ref(`branch_inventory/${currentBranch}`).once("value"),
-      db.ref(`branch_orders/${currentBranch}`).once("value"),
-      db.ref(`branch_suppliers/${currentBranch}`).once("value"),
-    ])
-      .then(([inventorySnap, ordersSnap, suppliersSnap]) => {
-        const inventoryData = [];
-        inventorySnap.forEach((child) => {
-          const item = child.val();
-          // Ensure numeric values and handle undefined minStock
-          item.stock = typeof item.stock === 'number' ? item.stock : 0;
-          item.minStock = typeof item.minStock === 'number' ? item.minStock : 0;
-          inventoryData.push({ id: child.key, ...item });
-        });
-  
-        // Improved low stock calculation (only counts if minStock > 0)
-        const lowStockItems = inventoryData.filter(item => 
-          item.minStock > 0 && item.stock <= item.minStock
-        );
-        const lowStock = lowStockItems.length;
-  
-        const recentOrders = [];
-        const ordersBySupplier = {};
-        if (ordersSnap.val()) {
-          ordersSnap.forEach((child) => {
-            const order = child.val();
-            order.id = child.key;
-            
-            // Process products - this is the key fix
-            let productsInfo = "No products";
-            if (order.products && typeof order.products === 'object') {
-              productsInfo = Object.entries(order.products)
-                .map(([product, quantity]) => `${product} (${quantity})`)
-                .join(", ");
-            }
-            
-            recentOrders.push({
-              ...order,
-              productsInfo // Add the formatted products string
-            });
-            
-            const supplierId = order.supplierID;
-            ordersBySupplier[supplierId] = (ordersBySupplier[supplierId] || 0) + 1;
+  const metrics = document.getElementById("dashboard-metrics");
+  metrics.innerHTML = "<p>Loading metrics...</p>";
+
+  if (!currentBranch) {
+    metrics.innerHTML = "<p>Please select a branch first</p>";
+    return;
+  }
+
+  Promise.all([
+    db.ref(`branch_inventory/${currentBranch}`).once("value"),
+    db.ref(`branch_orders/${currentBranch}`).once("value"),
+    db.ref(`branch_suppliers/${currentBranch}`).once("value"),
+  ])
+    .then(([inventorySnap, ordersSnap, suppliersSnap]) => {
+      const inventoryData = [];
+      inventorySnap.forEach((child) => {
+        const item = child.val();
+        // Ensure numeric values and handle undefined minStock
+        item.stock = typeof item.stock === "number" ? item.stock : 0;
+        item.minStock = typeof item.minStock === "number" ? item.minStock : 0;
+        inventoryData.push({ id: child.key, ...item });
+      });
+
+      // Improved low stock calculation (only counts if minStock > 0)
+      const lowStockItems = inventoryData.filter(
+        (item) => item.minStock > 0 && item.stock <= item.minStock
+      );
+      const lowStock = lowStockItems.length;
+
+      const recentOrders = [];
+      const ordersBySupplier = {};
+      if (ordersSnap.val()) {
+        ordersSnap.forEach((child) => {
+          const order = child.val();
+          order.id = child.key;
+
+          // Process products - this is the key fix
+          let productsInfo = "No products";
+          if (order.products && typeof order.products === "object") {
+            productsInfo = Object.entries(order.products)
+              .map(([product, quantity]) => `${product} (${quantity})`)
+              .join(", ");
+          }
+
+          recentOrders.push({
+            ...order,
+            productsInfo, // Add the formatted products string
           });
-        }
-        
-        // Sort orders by timestamp (newest first) and take the last 3
-        const recentOrdersList = recentOrders
-          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-          .slice(0, 3);
-  
-        const suppliers = suppliersSnap.val()
-          ? Object.entries(suppliersSnap.val()).reduce((acc, [id, supplier]) => {
-              acc[id] = supplier;
-              return acc;
-            }, {})
-          : {};
-  
-        const supplierPerformance = suppliersSnap.val()
-          ? Object.entries(suppliersSnap.val()).map(([id, s]) => ({
-              name: s.name,
-              orders: ordersBySupplier[id] || 0,
-            }))
-          : [];
-  
-        metrics.innerHTML = `
+
+          const supplierId = order.supplierID;
+          ordersBySupplier[supplierId] =
+            (ordersBySupplier[supplierId] || 0) + 1;
+        });
+      }
+
+      // Sort orders by timestamp (newest first) and take the last 3
+      const recentOrdersList = recentOrders
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .slice(0, 3);
+
+      const suppliers = suppliersSnap.val()
+        ? Object.entries(suppliersSnap.val()).reduce((acc, [id, supplier]) => {
+            acc[id] = supplier;
+            return acc;
+          }, {})
+        : {};
+
+      const supplierPerformance = suppliersSnap.val()
+        ? Object.entries(suppliersSnap.val()).map(([id, s]) => ({
+            name: s.name,
+            orders: ordersBySupplier[id] || 0,
+          }))
+        : [];
+
+      metrics.innerHTML = `
           <div class="metric-card">
             <h3>Low Stock Alerts</h3>
             <p>${lowStock} items</p>
-            ${lowStock > 0 ? `
+            ${
+              lowStock > 0
+                ? `
               <div class="low-stock-details">
                 <ul>
-                  ${lowStockItems.slice(0, 3).map(item => `
+                  ${lowStockItems
+                    .slice(0, 3)
+                    .map(
+                      (item) => `
                     <li>
                       <strong>${item.name}</strong>: 
                       ${item.stock} in stock (min: ${item.minStock})
                     </li>
-                  `).join('')}
+                  `
+                    )
+                    .join("")}
                 </ul>
               </div>
-            ` : ''}
+            `
+                : ""
+            }
           </div>
           <div class="metric-card">
             <h3>Recent Orders</h3>
@@ -295,7 +305,9 @@ function loadDashboardPage() {
                   Products: ${o.productsInfo}<br>
                   Status: ${o.status || "N/A"}<br>
                   Payment Status: ${o.paymentStatus || "N/A"}<br>
-                  Date: ${o.timestamp ? new Date(o.timestamp).toLocaleString() : "N/A"}
+                  Date: ${
+                    o.timestamp ? new Date(o.timestamp).toLocaleString() : "N/A"
+                  }
                 </li>
               `
                 )
@@ -309,12 +321,12 @@ function loadDashboardPage() {
               .join("")}</ul>
           </div>
         `;
-      })
-      .catch((error) => {
-        console.error("Error loading dashboard metrics:", error.message);
-        metrics.innerHTML = `<p>Error loading metrics: ${error.message}</p>`;
-      });
-  }
+    })
+    .catch((error) => {
+      console.error("Error loading dashboard metrics:", error.message);
+      metrics.innerHTML = `<p>Error loading metrics: ${error.message}</p>`;
+    });
+}
 
 /* ============================================= */
 /* ============ INVENTORY SECTION ============== */
@@ -623,7 +635,6 @@ function showItemDetails(itemId) {
  *
  * @throws {Error} If any of the input fields are invalid
  */
-
 async function saveItemDetails(itemId) {
   // Collect values from input fields
   const newName = document.getElementById("edit-name").value;
@@ -909,51 +920,80 @@ function renderItemList(items, container, isLowStock, isExpired) {
  */
 function createItemModal() {
   const modalHTML = `
-          <div id="itemModal" class="modal">
-            <div class="modal-content">
-              <span class="close-item-modal">&times;</span>
-              <h2>Add New Inventory Item</h2>
-              <form id="itemForm">
-                <div class="form-group">
-                  <label for="itemName">Product Name:</label>
-                  <input type="text" id="itemName" required>
-                </div>
-                <div class="form-group">
-                  <label for="itemDescription">Description:</label>
-                  <textarea id="itemDescription"></textarea>
-                </div>
-                <div class="form-group">
-                  <label for="itemStock">Initial Stock (kg):</label>
-                  <input type="number" id="itemStock" min="0" required>
-                </div>
-                <div class="form-group">
-                  <label for="itemMinStock">Minimum Stock (kg):</label>
-                  <input type="number" id="itemMinStock" min="0" required>
-                </div>
-                <div class="form-group">
-                  <label for="itemSupplier">Supplier:</label>
-                  <input type="text" id="itemSupplier">
-                </div>
-                <div class="form-group">
-                  <label for="itemExpiration">Expiration Date:</label>
-                  <input type="date" id="itemExpiration" required>
-                </div>
-                <div class="form-group">
-                  <label for="itemImage">Product Image:</label>
-                  <input type="file" id="itemImage" accept="image/*">
-                  <small>Recommended size: 500x500 pixels (max 1MB)</small>
-                  <div id="imagePreview" style="margin-top: 10px;"></div>
-                </div>
-                <div class="form-actions">
-                  <button type="submit">Save Item</button>
-                  <button type="button" id="cancelItem">Cancel</button>
-                </div>
-              </form>
+            <div id="itemModal" class="modal">
+              <div class="modal-content">
+                <span class="close-item-modal">&times;</span>
+                <h2>Add New Inventory Item</h2>
+                <form id="itemForm">
+                  <div class="form-group">
+                    <label for="itemName">Product Name:</label>
+                    <input type="text" id="itemName" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="itemDescription">Description:</label>
+                    <textarea id="itemDescription"></textarea>
+                  </div>
+                  <div class="form-group">
+                    <label for="itemStock">Initial Stock (kg):</label>
+                    <input type="number" id="itemStock" min="0" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="itemMinStock">Minimum Stock (kg):</label>
+                    <input type="number" id="itemMinStock" min="0" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="itemSupplier">Supplier:</label>
+                    <input type="text" id="itemSupplier">
+                  </div>
+                  <div class="form-group">
+                    <label for="itemExpiration">Expiration Date:</label>
+                    <input type="date" id="itemExpiration" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="itemImage">Product Image:</label>
+                    <input type="file" id="itemImage" accept="image/*">
+                    <small>Recommended size: 500x500 pixels (max 1MB)</small>
+                    <div id="imagePreview" style="margin-top: 10px;"></div>
+                  </div>
+                  <div class="form-actions">
+                    <button type="submit">Save Item</button>
+                    <button type="button" id="cancelItem">Cancel</button>
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
-        `;
+          `;
 
   document.body.insertAdjacentHTML("beforeend", modalHTML);
+
+  // Add event listeners for closing the modal
+  const modal = document.getElementById("itemModal");
+  const closeButton = modal.querySelector(".close-item-modal");
+  const cancelButton = modal.querySelector("#cancelItem");
+
+  // Close modal when clicking X button
+  closeButton.addEventListener("click", closeItemModal);
+
+  // Close modal when clicking Cancel button
+  cancelButton.addEventListener("click", closeItemModal);
+
+  // Close modal when clicking outside the modal content
+  modal.addEventListener("click", function (event) {
+    if (event.target === modal) {
+      closeItemModal();
+    }
+  });
+
+  // Prevent clicks inside modal content from closing the modal
+  const modalContent = modal.querySelector(".modal-content");
+  modalContent.addEventListener("click", function (event) {
+    event.stopPropagation();
+  });
+
+  // Add form submission handler
+  document
+    .getElementById("itemForm")
+    .addEventListener("submit", handleItemSubmit);
 
   // Add image preview and size validation
   document.getElementById("itemImage").addEventListener("change", function (e) {
@@ -974,8 +1014,6 @@ function createItemModal() {
       reader.readAsDataURL(file);
     }
   });
-
-  // Rest of your event listeners...
 }
 
 function closeItemModal() {
@@ -1537,23 +1575,32 @@ function renderOrderList(orders) {
  * Creates an order list item element
  */
 function createOrderListItem(id, order) {
-    const div = document.createElement("div");
-    div.className = "order-item";
-    div.innerHTML = `
+  const div = document.createElement("div");
+  div.className = "order-item";
+  div.innerHTML = `
             <div>
                 <strong>Order ID: </strong>${id}<br>
-                <strong>Supplier: </strong>${order.supplierName || order.supplierID}<br>
-                <strong>Products: </strong>${formatOrderProducts(order.products)}<br>
+                <strong>Supplier: </strong>${
+                  order.supplierName || order.supplierID
+                }<br>
+                <strong>Products: </strong>${formatOrderProducts(
+                  order.products
+                )}<br>
                 <strong>Status: </strong>${order.status || "Pending"}<br>
-                <strong>Payment Status: </strong>${order.paymentStatus || "Pending"}<br>
+                <strong>Payment Status: </strong>${
+                  order.paymentStatus || "Pending"
+                }<br>
                 <strong>Timestamp: </strong>${
-                  order.timestamp ? new Date(order.timestamp).toLocaleString() : "N/A"
+                  order.timestamp
+                    ? new Date(order.timestamp).toLocaleString()
+                    : "N/A"
                 }
             </div>
             <div class="actions">
                 <button onclick="viewOrderDetails('${id}')">View Details</button>
                 ${
-                  order.paymentStatus === "Pending" && order.status === "Pending"
+                  order.paymentStatus === "Pending" &&
+                  order.status === "Pending"
                     ? `<button onclick="showPaymentModal('${id}', '${order.supplierID}')">Pay</button>`
                     : ""
                 }
@@ -1561,8 +1608,8 @@ function createOrderListItem(id, order) {
                 <button onclick="deleteOrder('${id}')">Delete</button>
             </div>
         `;
-    return div;
-  }
+  return div;
+}
 /**
  * Formats order products for display
  */
@@ -1577,9 +1624,9 @@ function formatOrderProducts(products) {
  * Shows detailed view of an order
  */
 function viewOrderDetails(orderId) {
-    // Create modal if it doesn't exist
-    if (!document.getElementById("orderDetailsModal")) {
-        const modalHTML = `
+  // Create modal if it doesn't exist
+  if (!document.getElementById("orderDetailsModal")) {
+    const modalHTML = `
             <div id="orderDetailsModal" class="modal">
                 <div class="modal-content" style="max-width: 600px;">
                     <span class="close-details-modal">&times;</span>
@@ -1587,84 +1634,97 @@ function viewOrderDetails(orderId) {
                     <div id="orderDetailsContent"></div>
                 </div>
             </div>`;
-        document.body.insertAdjacentHTML("beforeend", modalHTML);
-        
-        // Initialize modal close button
-        document.querySelector(".close-details-modal").addEventListener("click", () => {
-            document.getElementById("orderDetailsModal").style.display = "none";
-        });
+    document.body.insertAdjacentHTML("beforeend", modalHTML);
 
-        // Add click handler to close modal when clicking outside content
-        document.getElementById("orderDetailsModal").addEventListener("click", function(e) {
-            if (e.target === this) {
-                this.style.display = "none";
-            }
-        });
-    }
+    // Initialize modal close button
+    document
+      .querySelector(".close-details-modal")
+      .addEventListener("click", () => {
+        document.getElementById("orderDetailsModal").style.display = "none";
+      });
 
-    const modal = document.getElementById("orderDetailsModal");
-    const content = document.getElementById("orderDetailsContent");
-    
-    // Show loading state
-    modal.style.display = "block";
-    content.innerHTML = "<p>Loading order details...</p>";
+    // Add click handler to close modal when clicking outside content
+    document
+      .getElementById("orderDetailsModal")
+      .addEventListener("click", function (e) {
+        if (e.target === this) {
+          this.style.display = "none";
+        }
+      });
+  }
 
-    // Load order data
-    db.ref(`branch_orders/${currentBranch}/${orderId}`).once("value")
-        .then((snapshot) => {
-            const order = snapshot.val();
-            if (!order) {
-                content.innerHTML = "<p>Order not found</p>";
-                return;
-            }
+  const modal = document.getElementById("orderDetailsModal");
+  const content = document.getElementById("orderDetailsContent");
 
-            // Format the order details
-            let detailsHTML = `
+  // Show loading state
+  modal.style.display = "block";
+  content.innerHTML = "<p>Loading order details...</p>";
+
+  // Load order data
+  db.ref(`branch_orders/${currentBranch}/${orderId}`)
+    .once("value")
+    .then((snapshot) => {
+      const order = snapshot.val();
+      if (!order) {
+        content.innerHTML = "<p>Order not found</p>";
+        return;
+      }
+
+      // Format the order details
+      let detailsHTML = `
                 <div class="order-detail">
                     <strong>Order ID:</strong> ${orderId}
                 </div>
                 <div class="order-detail">
-                    <strong>Supplier:</strong> ${order.supplierName || order.supplierID}
+                    <strong>Supplier:</strong> ${
+                      order.supplierName || order.supplierID
+                    }
                 </div>
                 <div class="order-detail">
                     <strong>Status:</strong> ${order.status || "Pending"}
                 </div>
                 <div class="order-detail">
-                    <strong>Payment Status:</strong> ${order.paymentStatus || "Pending"}
+                    <strong>Payment Status:</strong> ${
+                      order.paymentStatus || "Pending"
+                    }
                 </div>
                 <div class="order-detail">
-                    <strong>Date:</strong> ${order.timestamp ? new Date(order.timestamp).toLocaleString() : "N/A"}
+                    <strong>Date:</strong> ${
+                      order.timestamp
+                        ? new Date(order.timestamp).toLocaleString()
+                        : "N/A"
+                    }
                 </div>
                 <div class="order-detail">
                     <strong>Products:</strong>
                     <ul class="order-products-list">`;
 
-            // Add each product to the list
-            if (order.products) {
-                Object.entries(order.products).forEach(([product, quantity]) => {
-                    detailsHTML += `<li>${product} - ${quantity}</li>`;
-                });
-            } else {
-                detailsHTML += `<li>No products found</li>`;
-            }
+      // Add each product to the list
+      if (order.products) {
+        Object.entries(order.products).forEach(([product, quantity]) => {
+          detailsHTML += `<li>${product} - ${quantity}</li>`;
+        });
+      } else {
+        detailsHTML += `<li>No products found</li>`;
+      }
 
-            detailsHTML += `</ul></div>`;
+      detailsHTML += `</ul></div>`;
 
-            // Add payment proof if available
-            if (order.paymentProof) {
-                detailsHTML += `
+      // Add payment proof if available
+      if (order.paymentProof) {
+        detailsHTML += `
                 <div class="order-detail">
                     <strong>Payment Proof:</strong><br>
                     <img src="${order.paymentProof}" style="max-width: 200px; margin-top: 10px;">
                 </div>`;
-            }
+      }
 
-            content.innerHTML = detailsHTML;
-        })
-        .catch((error) => {
-            console.error("Error loading order details:", error);
-            content.innerHTML = `<p>Error loading order details: ${error.message}</p>`;
-        });
+      content.innerHTML = detailsHTML;
+    })
+    .catch((error) => {
+      console.error("Error loading order details:", error);
+      content.innerHTML = `<p>Error loading order details: ${error.message}</p>`;
+    });
 }
 
 /* ============================================= */
@@ -1675,28 +1735,28 @@ function viewOrderDetails(orderId) {
  * Opens modal to create a new order
  */
 function addOrder() {
-    if (!currentBranch) {
-      alert("Please select a branch first");
-      return;
-    }
-  
-    // Clear any existing order items
-    currentOrderItems = [];
-    updateOrderItemsDisplay();
-  
-    // Reset supplier selection
-    currentSupplierId = null;
-    document.getElementById("orderSupplier").value = "";
-  
-    if (!document.getElementById("orderModal")) {
-      createOrderModal();
-    }
-    
-    // Set the title to "Add New Order"
-    document.querySelector("#orderModal h2").textContent = "Add New Order";
-    
-    showOrderModal();
+  if (!currentBranch) {
+    alert("Please select a branch first");
+    return;
   }
+
+  // Clear any existing order items
+  currentOrderItems = [];
+  updateOrderItemsDisplay();
+
+  // Reset supplier selection
+  currentSupplierId = null;
+  document.getElementById("orderSupplier").value = "";
+
+  if (!document.getElementById("orderModal")) {
+    createOrderModal();
+  }
+
+  // Set the title to "Add New Order"
+  document.querySelector("#orderModal h2").textContent = "Add New Order";
+
+  showOrderModal();
+}
 
 /**
  * Edits an existing order in the database
@@ -1755,37 +1815,38 @@ function deleteOrder(orderId) {
  * @param {object} order - The order data
  */
 function populateOrderForm(orderId, order) {
-    // Store the original supplier ID before any changes
-    const originalSupplierId = order.supplierID || "";
-    currentSupplierId = originalSupplierId;
-    
-    // Set the form values
-    document.getElementById("orderSupplier").value = originalSupplierId;
-    document.getElementById("orderStatus").value = order.status || "Pending";
-    document.getElementById("orderPaymentStatus").value = 
-      order.paymentStatus || "Pending";
-    document.getElementById("orderForm").dataset.editId = orderId;
-    document.getElementById("orderForm").dataset.originalSupplier = originalSupplierId;
-  
-    // Load products for the supplier
-    loadSupplierProducts(originalSupplierId)
-      .then(() => {
-        if (order.products) {
-          currentOrderItems = Object.entries(order.products).map(
-            ([product, quantity]) => ({
-              product,
-              quantity: parseInt(quantity),
-            })
-          );
-          updateOrderItemsDisplay();
-        }
-        document.querySelector("#orderModal h2").textContent = "Edit Order";
-      })
-      .catch((error) => {
-        console.error("Error loading products:", error);
-        alert("Failed to load supplier products");
-      });
-  }
+  // Store the original supplier ID before any changes
+  const originalSupplierId = order.supplierID || "";
+  currentSupplierId = originalSupplierId;
+
+  // Set the form values
+  document.getElementById("orderSupplier").value = originalSupplierId;
+  document.getElementById("orderStatus").value = order.status || "Pending";
+  document.getElementById("orderPaymentStatus").value =
+    order.paymentStatus || "Pending";
+  document.getElementById("orderForm").dataset.editId = orderId;
+  document.getElementById("orderForm").dataset.originalSupplier =
+    originalSupplierId;
+
+  // Load products for the supplier
+  loadSupplierProducts(originalSupplierId)
+    .then(() => {
+      if (order.products) {
+        currentOrderItems = Object.entries(order.products).map(
+          ([product, quantity]) => ({
+            product,
+            quantity: parseInt(quantity),
+          })
+        );
+        updateOrderItemsDisplay();
+      }
+      document.querySelector("#orderModal h2").textContent = "Edit Order";
+    })
+    .catch((error) => {
+      console.error("Error loading products:", error);
+      alert("Failed to load supplier products");
+    });
+}
 /* ============================================= */
 /* ============ ORDER FORM MANAGEMENT ========== */
 /* ============================================= */
@@ -1882,24 +1943,28 @@ function initializeOrderModal() {
     orderId ? handleOrderUpdate(orderId) : handleOrderSubmit(e);
   });
 
-  orderSupplier?.addEventListener("change", function() {
+  orderSupplier?.addEventListener("change", function () {
     // Get the original supplier from the form data
     const originalSupplier = orderForm.dataset.originalSupplier;
     const isEditing = !!orderForm.dataset.editId;
-    
+
     // If we're editing and the supplier is being changed from the original
     if (isEditing && this.value !== originalSupplier) {
-      if (!confirm("Changing the supplier will clear your current order items. Continue?")) {
+      if (
+        !confirm(
+          "Changing the supplier will clear your current order items. Continue?"
+        )
+      ) {
         // Reset to the original supplier if user cancels
         this.value = originalSupplier;
         return;
       }
-      
+
       // Clear current order items if they proceed
       currentOrderItems = [];
       updateOrderItemsDisplay();
     }
-    
+
     // Load products for the new supplier
     loadSupplierProducts(this.value);
   });
@@ -1940,25 +2005,27 @@ function showOrderModal() {
  * Closes the order modal and resets form
  */
 function closeOrderModal() {
-    document.getElementById("orderModal").style.display = "none";
-    document.getElementById("orderForm").reset();
-    
-    // Reset UI elements
-    document.getElementById("productSelectionGroup").style.display = "none";
-    document.getElementById("quantityGroup").style.display = "none";
-    document.getElementById("orderProduct").disabled = true;
-    
-    // Clear temporary data
-    selectedSupplierProducts = [];
-    currentOrderItems = [];
-    currentSupplierId = null;
-    updateOrderItemsDisplay();
-    
-    // Reset form title and edit state
-    document.querySelector("#orderModal h2").textContent = "Add New Order";
-    document.getElementById("orderForm").removeAttribute("data-edit-id");
-    document.getElementById("orderForm").removeAttribute("data-original-supplier");
-  }
+  document.getElementById("orderModal").style.display = "none";
+  document.getElementById("orderForm").reset();
+
+  // Reset UI elements
+  document.getElementById("productSelectionGroup").style.display = "none";
+  document.getElementById("quantityGroup").style.display = "none";
+  document.getElementById("orderProduct").disabled = true;
+
+  // Clear temporary data
+  selectedSupplierProducts = [];
+  currentOrderItems = [];
+  currentSupplierId = null;
+  updateOrderItemsDisplay();
+
+  // Reset form title and edit state
+  document.querySelector("#orderModal h2").textContent = "Add New Order";
+  document.getElementById("orderForm").removeAttribute("data-edit-id");
+  document
+    .getElementById("orderForm")
+    .removeAttribute("data-original-supplier");
+}
 
 function validateOrderForm(supplierId, status, paymentStatus) {
   // Only check for supplier, status, and payment status
@@ -2486,104 +2553,105 @@ function loadSupplierProductsWithRetry(supplierId, retries = 3) {
  * Handles new order submission
  */
 async function handleOrderSubmit(e) {
-    e.preventDefault();
-  
-    const supplierId = document.getElementById("orderSupplier").value;
-    const status = document.getElementById("orderStatus").value;
-    const paymentStatus = document.getElementById("orderPaymentStatus").value;
-  
-    // Validate form (won't check product/quantity fields)
-    if (!validateOrderForm(supplierId, status, paymentStatus)) {
-      return;
-    }
-  
-    const saveBtn = document.getElementById("saveOrderBtn");
-    saveBtn.disabled = true;
-    saveBtn.textContent = "Saving...";
-  
-    try {
-      // Get supplier name for display
-      const supplierSnap = await db
-        .ref(`branch_suppliers/${currentBranch}/${supplierId}`)
-        .once("value");
-      const supplierName = supplierSnap.val()?.name || supplierId;
-  
-      // Format products as an object {productName: quantity}
-      const products = {};
-      currentOrderItems.forEach((item) => {
-        products[item.product] = item.quantity;
-      });
-  
-      // Get the next sequential ID
-      const newOrderId = await getNextOrderId(currentBranch);
-      const timestamp = new Date().toISOString();
-  
-      const orderData = {
-        supplierID: supplierId,
-        supplierName,
-        products,
-        status,
-        paymentStatus,
-        timestamp,
-      };
-  
-      await db.ref(`branch_orders/${currentBranch}/${newOrderId}`).set(orderData);
-  
-      console.log("Order added successfully with ID:", newOrderId);
-      showSuccessMessage("Order saved successfully");
-      closeOrderModal();
-      
-      // Refresh the order list to show the new order
-      loadOrderPage();
-    } catch (error) {
-      console.error("Error adding order:", error.message);
-      alert("Error adding order: " + error.message);
-    } finally {
-      saveBtn.disabled = false;
-      saveBtn.textContent = "Save Order";
-    }
+  e.preventDefault();
+
+  const supplierId = document.getElementById("orderSupplier").value;
+  const status = document.getElementById("orderStatus").value;
+  const paymentStatus = document.getElementById("orderPaymentStatus").value;
+
+  // Validate form (won't check product/quantity fields)
+  if (!validateOrderForm(supplierId, status, paymentStatus)) {
+    return;
   }
+
+  const saveBtn = document.getElementById("saveOrderBtn");
+  saveBtn.disabled = true;
+  saveBtn.textContent = "Saving...";
+
+  try {
+    // Get supplier name for display
+    const supplierSnap = await db
+      .ref(`branch_suppliers/${currentBranch}/${supplierId}`)
+      .once("value");
+    const supplierName = supplierSnap.val()?.name || supplierId;
+
+    // Format products as an object {productName: quantity}
+    const products = {};
+    currentOrderItems.forEach((item) => {
+      products[item.product] = item.quantity;
+    });
+
+    // Get the next sequential ID
+    const newOrderId = await getNextOrderId(currentBranch);
+    const timestamp = new Date().toISOString();
+
+    const orderData = {
+      supplierID: supplierId,
+      supplierName,
+      products,
+      status,
+      paymentStatus,
+      timestamp,
+    };
+
+    await db.ref(`branch_orders/${currentBranch}/${newOrderId}`).set(orderData);
+
+    console.log("Order added successfully with ID:", newOrderId);
+    showSuccessMessage("Order saved successfully");
+    closeOrderModal();
+
+    // Refresh the order list to show the new order
+    loadOrderPage();
+  } catch (error) {
+    console.error("Error adding order:", error.message);
+    alert("Error adding order: " + error.message);
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Save Order";
+  }
+}
 
 /**
  * Handles order update
  */
 async function handleOrderUpdate(orderId) {
-    const supplierId = document.getElementById("orderSupplier").value;
-    const status = document.getElementById("orderStatus").value;
-    const paymentStatus = document.getElementById("orderPaymentStatus").value;
-    const originalSupplier = document.getElementById("orderForm").dataset.originalSupplier;
-  
-    // Validate form
-    if (!validateOrderForm(supplierId, status, paymentStatus)) return;
-  
-    const saveBtn = document.querySelector('#orderForm button[type="submit"]');
-    saveBtn.disabled = true;
-    saveBtn.textContent = "Updating...";
-  
-    try {
-      // If supplier changed, we need to verify all products belong to new supplier
-      if (supplierId !== originalSupplier) {
-        const invalidProducts = currentOrderItems.filter(
-          item => !selectedSupplierProducts.includes(item.product)
-        );
-        
-        if (invalidProducts.length > 0) {
-          alert("All products must belong to the selected supplier");
-          return;
-        }
+  const supplierId = document.getElementById("orderSupplier").value;
+  const status = document.getElementById("orderStatus").value;
+  const paymentStatus = document.getElementById("orderPaymentStatus").value;
+  const originalSupplier =
+    document.getElementById("orderForm").dataset.originalSupplier;
+
+  // Validate form
+  if (!validateOrderForm(supplierId, status, paymentStatus)) return;
+
+  const saveBtn = document.querySelector('#orderForm button[type="submit"]');
+  saveBtn.disabled = true;
+  saveBtn.textContent = "Updating...";
+
+  try {
+    // If supplier changed, we need to verify all products belong to new supplier
+    if (supplierId !== originalSupplier) {
+      const invalidProducts = currentOrderItems.filter(
+        (item) => !selectedSupplierProducts.includes(item.product)
+      );
+
+      if (invalidProducts.length > 0) {
+        alert("All products must belong to the selected supplier");
+        return;
       }
-  
-      await updateOrder(orderId, supplierId, status, paymentStatus);
-      showSuccessMessage("Order updated successfully");
-      closeOrderModal();
-    } catch (error) {
-      console.error("Error updating order:", error.message);
-      alert("Error updating order: " + error.message);
-    } finally {
-      saveBtn.disabled = false;
-      saveBtn.textContent = "Save Order";
     }
+
+    await updateOrder(orderId, supplierId, status, paymentStatus);
+    showSuccessMessage("Order updated successfully");
+    closeOrderModal();
+  } catch (error) {
+    console.error("Error updating order:", error.message);
+    alert("Error updating order: " + error.message);
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Save Order";
   }
+}
 
 /**
  * Validates order form inputs
@@ -2725,131 +2793,362 @@ function cleanupOrderListeners() {
 /* ============================================= */
 /* ============ REPORTS SECTION ================ */
 /* ============================================= */
-// TODO: USE CHART API
 
 /**
- * Loads the report page by setting a default message in the report output element.
- * This function is used to prompt the user to select a report type and generate it
- * to view the details.
+ * Fetches data from Firebase using Firebase SDK
+ * @param {string} path - Database path (e.g. 'branch_inventory/branch1')
+ * @returns {Promise} Promise with the data
  */
+// Replace your fetchFirebaseData function with:
+async function fetchFirebaseData(path) {
+    try {
+      const snapshot = await db.ref(path).once('value');
+      return snapshot.val();
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      throw error;
+    }
+  }
+
+
 function loadReportPage() {
   const reportOutput = document.getElementById("reportOutput");
   reportOutput.innerHTML =
     "<p>Select a report type and generate to view details.</p>";
 }
 
-/**
- * Generates a report based on the selected report type.
- * Reports are generated by reading data from the corresponding Firebase
- * Realtime Database location and displaying it in a formatted manner.
- * If there is an error generating the report, an error message is displayed.
- * @param {string} reportType - The type of report to generate. One of "inventory",
- * "supplier", or "order".
- */
-function generateReport() {
-  const reportType = document.getElementById("reportType").value;
-  const reportOutput = document.getElementById("reportOutput");
-  reportOutput.innerHTML = "<p>Generating report...</p>";
-
-  switch (reportType) {
-    case "inventory":
-      db.ref("inventory")
-        .once("value")
-        .then((snapshot) => {
-          const data = snapshot.val() ? Object.values(snapshot.val()) : [];
-          reportOutput.innerHTML = `<h3>Inventory Report</h3><pre>${JSON.stringify(
-            data,
-            null,
-            2
-          )}</pre>`;
-        })
-        .catch((error) => {
-          console.error("Error generating inventory report:", error.message);
-          reportOutput.innerHTML = `<p>Error: ${error.message}</p>`;
-        });
-      break;
-    case "supplier":
-      db.ref("suppliers")
-        .once("value")
-        .then((snapshot) => {
-          const data = snapshot.val() ? Object.values(snapshot.val()) : [];
-          reportOutput.innerHTML = `<h3>Supplier Report</h3><pre>${JSON.stringify(
-            data,
-            null,
-            2
-          )}</pre>`;
-        })
-        .catch((error) => {
-          console.error("Error generating supplier report:", error.message);
-          reportOutput.innerHTML = `<p>Error: ${error.message}</p>`;
-        });
-      break;
-    case "order":
-      db.ref("orders")
-        .once("value")
-        .then((snapshot) => {
-          const data = snapshot.val()
-            ? Object.entries(snapshot.val()).map(([id, order]) => ({
-                id,
-                ...order,
-              }))
-            : [];
-          reportOutput.innerHTML = `<h3>Order Report</h3><pre>${JSON.stringify(
-            data,
-            null,
-            2
-          )}</pre>`;
-        })
-        .catch((error) => {
-          console.error("Error generating order report:", error.message);
-          reportOutput.innerHTML = `<p>Error: ${error.message}</p>`;
-        });
-      break;
+async function generateReport() {
+    const reportType = document.getElementById("reportType").value;
+    const reportOutput = document.getElementById("reportOutput");
+    reportOutput.innerHTML = "<p>Generating report...</p>";
+  
+    try {
+      let snapshot;
+      switch (reportType) {
+        case "inventory":
+          snapshot = await db.ref(`branch_inventory/${currentBranch}`).once('value');
+          const inventoryData = snapshot.val();
+          reportOutput.innerHTML = `
+            <h3>Inventory Report - ${currentBranch}</h3>
+            ${formatInventoryReport(inventoryData)}
+            <div class="export-buttons"></div>
+          `;
+          addExportButtons('inventory', inventoryData, reportOutput);
+          break;
+  
+        case "supplier":
+          snapshot = await db.ref(`branch_suppliers/${currentBranch}`).once('value');
+          const supplierData = snapshot.val();
+          reportOutput.innerHTML = `
+            <h3>Supplier Report - ${currentBranch}</h3>
+            ${formatSupplierReport(supplierData)}
+            <div class="export-buttons"></div>
+          `;
+          addExportButtons('supplier', supplierData, reportOutput);
+          break;
+  
+        case "order":
+          snapshot = await db.ref(`branch_orders/${currentBranch}`).once('value');
+          const orderData = snapshot.val();
+          reportOutput.innerHTML = `
+            <h3>Order Report - ${currentBranch}</h3>
+            ${formatOrderReport(orderData)}
+            <div class="export-buttons"></div>
+          `;
+          addExportButtons('order', orderData, reportOutput);
+          break;
+      }
+    } catch (error) {
+      console.error(`Error generating ${reportType} report:`, error);
+      reportOutput.innerHTML = `
+        <p class="error">Error generating report: ${error.message}</p>
+        ${error.stack ? `<details><summary>Technical details</summary>${error.stack}</details>` : ''}
+      `;
+    }
   }
+  function addExportButtons(reportType, data, container) {
+    const buttonsDiv = container.querySelector('.export-buttons');
+    
+    // CSV Button
+    const csvBtn = document.createElement('button');
+    csvBtn.textContent = 'Export to CSV';
+    csvBtn.addEventListener('click', () => exportToCSV(reportType, data));
+    buttonsDiv.appendChild(csvBtn);
+    
+    // PDF Button
+    const pdfBtn = document.createElement('button');
+    pdfBtn.textContent = 'Export to PDF';
+    pdfBtn.addEventListener('click', () => exportToPDF(reportType, data));
+    buttonsDiv.appendChild(pdfBtn);
+  }
+  
+
+/* ============ REPORT FORMATTING FUNCTIONS ============ */
+
+function formatInventoryReport(data) {
+  if (!data) return "<p>No inventory data found</p>";
+
+  const items = Object.entries(data).map(([id, item]) => ({
+    id,
+    ...item,
+    status: item.stock <= item.minStock ? "Low Stock" : "OK",
+  }));
+
+  return `
+      <div class="report-summary">
+        <p>Total Items: ${items.length}</p>
+        <p>Low Stock Items: ${
+          items.filter((i) => i.status === "Low Stock").length
+        }</p>
+      </div>
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Stock</th>
+            <th>Min Stock</th>
+            <th>Status</th>
+            <th>Expiration</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items
+            .map(
+              (item) => `
+            <tr class="${item.status === "Low Stock" ? "low-stock" : ""}">
+              <td>${item.name}</td>
+              <td>${item.stock}</td>
+              <td>${item.minStock}</td>
+              <td>${item.status}</td>
+              <td>${item.expiration}</td>
+            </tr>
+          `
+            )
+            .join("")}
+        </tbody>
+      </table>
+    `;
 }
+
+function formatSupplierReport(data) {
+    if (!data || Object.keys(data).length === 0) {
+        return `
+          <div class="empty-state">
+            <i class="fas fa-box-open"></i>
+            <p>No supplier data found for ${currentBranch}</p>
+          </div>
+        `;
+      }
+
+  const suppliers = Object.entries(data).map(([id, supplier]) => ({
+    id,
+    ...supplier,
+  }));
+
+  return `
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th>Supplier</th>
+            <th>Contact</th>
+            <th>GCash</th>
+            <th>Products</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${suppliers
+            .map(
+              (supplier) => `
+            <tr>
+              <td>${supplier.name}</td>
+              <td>${supplier.contact}</td>
+              <td>${supplier.gcash}</td>
+              <td>${supplier.products}</td>
+            </tr>
+          `
+            )
+            .join("")}
+        </tbody>
+      </table>
+    `;
+}
+
+function formatOrderReport(data) {
+  if (!data) return "<p>No order data found</p>";
+
+  const orders = Object.entries(data).map(([id, order]) => ({
+    id,
+    ...order,
+    date: new Date(order.timestamp).toLocaleDateString(),
+  }));
+
+  return `
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Date</th>
+            <th>Supplier</th>
+            <th>Status</th>
+            <th>Payment</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${orders
+            .map(
+              (order) => `
+            <tr>
+              <td>${order.id}</td>
+              <td>${order.date}</td>
+              <td>${order.supplierName}</td>
+              <td>${order.status}</td>
+              <td>${order.paymentStatus}</td>
+            </tr>
+          `
+            )
+            .join("")}
+        </tbody>
+      </table>
+    `;
+}
+
+/* ============ EXPORT FUNCTIONS ============ */
+
+function exportToCSV(reportType, data) {
+    let csvContent = "";
+    
+    switch(reportType) {
+      case "inventory":
+        csvContent = "Name,Current Stock,Min Stock,Status,Expiration,Supplier\n";
+        Object.values(data).forEach(item => {
+          const status = item.stock < item.minStock ? 'Low Stock' : 'OK';
+          csvContent += `"${item.name}",${item.stock},${item.minStock},${status},"${item.expiration}","${item.supplier}"\n`;
+        });
+        break;
+        
+      case "supplier":
+        csvContent = "Name,Contact,GCash,Products\n";
+        Object.values(data).forEach(supplier => {
+          csvContent += `"${supplier.name}","${supplier.contact}","${supplier.gcash}","${supplier.products}"\n`;
+        });
+        break;
+        
+      case "order":
+        csvContent = "Order ID,Date,Supplier,Status,Payment,Products\n";
+        Object.entries(data).forEach(([id, order]) => {
+          const date = new Date(order.timestamp).toLocaleDateString();
+          const products = Object.entries(order.products || {}).map(([name, qty]) => `${name} (${qty})`).join(", ");
+          csvContent += `"${id}","${date}","${order.supplierName}","${order.status}","${order.paymentStatus}","${products}"\n`;
+        });
+        break;
+    }
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${reportType}_report_${currentBranch}_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+  
+  function exportToPDF(reportType, data) {
+    // Using jsPDF (must include the library in your HTML)
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.setFontSize(18);
+    doc.text(`${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report - ${currentBranch}`, 14, 15);
+    doc.setFontSize(12);
+    
+    let yPosition = 25;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 14;
+    
+    switch(reportType) {
+      case "inventory":
+        // Table headers
+        doc.text("Item", margin, yPosition);
+        doc.text("Stock", margin + 60, yPosition);
+        doc.text("Min", margin + 90, yPosition);
+        doc.text("Status", margin + 120, yPosition);
+        doc.text("Expires", margin + 150, yPosition);
+        yPosition += 7;
+        
+        // Table rows
+        Object.values(data).forEach(item => {
+          if (yPosition > 280) { // Add new page if needed
+            doc.addPage();
+            yPosition = 20;
+          }
+          
+          const status = item.stock < item.minStock ? 'Low Stock' : 'OK';
+          doc.text(item.name.substring(0, 20), margin, yPosition);
+          doc.text(item.stock.toString(), margin + 60, yPosition);
+          doc.text(item.minStock.toString(), margin + 90, yPosition);
+          doc.text(status, margin + 120, yPosition);
+          doc.text(item.expiration, margin + 150, yPosition);
+          yPosition += 7;
+        });
+        break;
+        
+      case "supplier":
+        // Similar implementation for suppliers
+        break;
+        
+      case "order":
+        // Similar implementation for orders
+        break;
+    }
+    
+    // Save the PDF
+    doc.save(`${reportType}_report_${currentBranch}_${new Date().toISOString().split('T')[0]}.pdf`);
+  }
 
 /* ============================================= */
 /* ============ BRANCH SECTION ================= */
 /* ============================================= */
-
 
 /**
  * Loads the branch management page content by retrieving branch data from Firebase.
  * Displays each branch's name, location, and assigned managers, with options to view, edit or delete.
  */
 function loadBranchPage() {
-    const branchList = document.getElementById("branchList");
-    branchList.innerHTML = "<p>Loading branches...</p>";
-  
-    // Create modals if they don't exist
-    if (!document.getElementById("branchModal")) {
-      createBranchModal();
-    }
-    if (!document.getElementById("branchDetailsModal")) {
-      createBranchDetailsModal();
-    }
-  
-    db.ref("branches").on(
-      "value",
-      (snapshot) => {
-        branchList.innerHTML = "";
-        if (snapshot.exists()) {
-          snapshot.forEach((child) => {
-            const branch = child.val();
-            branch.id = child.key;
-            displayBranchItem(branch);
-          });
-        } else {
-          branchList.innerHTML = "<p>No branches found. Add a branch to start.</p>";
-        }
-      },
-      (error) => {
-        console.error("Error loading branches:", error.message);
-        branchList.innerHTML = `<p>Error loading branches: ${error.message}</p>`;
-      }
-    );
+  const branchList = document.getElementById("branchList");
+  branchList.innerHTML = "<p>Loading branches...</p>";
+
+  // Create modals if they don't exist
+  if (!document.getElementById("branchModal")) {
+    createBranchModal();
   }
-  
+  if (!document.getElementById("branchDetailsModal")) {
+    createBranchDetailsModal();
+  }
+
+  db.ref("branches").on(
+    "value",
+    (snapshot) => {
+      branchList.innerHTML = "";
+      if (snapshot.exists()) {
+        snapshot.forEach((child) => {
+          const branch = child.val();
+          branch.id = child.key;
+          displayBranchItem(branch);
+        });
+      } else {
+        branchList.innerHTML =
+          "<p>No branches found. Add a branch to start.</p>";
+      }
+    },
+    (error) => {
+      console.error("Error loading branches:", error.message);
+      branchList.innerHTML = `<p>Error loading branches: ${error.message}</p>`;
+    }
+  );
+}
 
 // Function to load branches from Firebase
 function loadBranches() {
@@ -2915,17 +3214,17 @@ function initializeBranchManagement() {
  * @param {Object} branch - The branch data
  */
 function displayBranchItem(branch) {
-    const branchList = document.getElementById("branchList");
-    const div = document.createElement("div");
-    div.className = "branch-item";
-  
-    // Format managers list
-    let managersList = "No managers assigned";
-    if (branch.managers && typeof branch.managers === 'object') {
-      managersList = Object.values(branch.managers).join(", ");
-    }
-  
-    div.innerHTML = `
+  const branchList = document.getElementById("branchList");
+  const div = document.createElement("div");
+  div.className = "branch-item";
+
+  // Format managers list
+  let managersList = "No managers assigned";
+  if (branch.managers && typeof branch.managers === "object") {
+    managersList = Object.values(branch.managers).join(", ");
+  }
+
+  div.innerHTML = `
       <div class="branch-info">
         <h4>${branch.name}</h4>
         <p><strong>Location:</strong> ${branch.location}</p>
@@ -2937,9 +3236,9 @@ function displayBranchItem(branch) {
         <button class="delete" onclick="deleteBranch('${branch.id}')">Delete</button>
       </div>
     `;
-  
-    branchList.appendChild(div);
-  }
+
+  branchList.appendChild(div);
+}
 
 /**
  * Sets the current branch to the given branch ID and reloads the current page.
@@ -3003,18 +3302,20 @@ function addBranchSelector(pageId) {
  * @param {string} branchId - The ID of the branch to edit
  */
 function editBranch(branchId) {
-    createBranchModal();
-    currentEditingBranchId = branchId;
-  
-    db.ref(`branches/${branchId}`).once("value").then((snapshot) => {
+  createBranchModal();
+  currentEditingBranchId = branchId;
+
+  db.ref(`branches/${branchId}`)
+    .once("value")
+    .then((snapshot) => {
       const branch = snapshot.val();
-      
+
       // Set basic fields
       document.getElementById("branchName").value = branch.name || "";
       document.getElementById("branchLocation").value = branch.location || "";
       document.getElementById("branchModalTitle").textContent = "Edit Branch";
       document.getElementById("saveBranchBtn").textContent = "Update Branch";
-  
+
       // Load managers and select the assigned ones
       loadManagersForBranch(branchId).then(() => {
         // Update the selected managers display
@@ -3022,7 +3323,7 @@ function editBranch(branchId) {
         showBranchModal();
       });
     });
-  }
+}
 function deleteBranch(branchId) {
   if (
     confirm(
@@ -3055,7 +3356,7 @@ function deleteBranch(branchId) {
  * Creates the branch edit modal with manager assignment
  */
 function createBranchModal() {
-    const modalHTML = `
+  const modalHTML = `
       <div id="branchModal" class="modal">
         <div class="modal-content">
           <span class="close-branch-modal">&times;</span>
@@ -3087,65 +3388,75 @@ function createBranchModal() {
         </div>
       </div>
     `;
-  
-    document.body.insertAdjacentHTML("beforeend", modalHTML);
-  
-    // Add event listeners
-    document.querySelector(".close-branch-modal").addEventListener("click", closeBranchModal);
-    document.getElementById("cancelBranchBtn").addEventListener("click", closeBranchModal);
-    document.getElementById("branchForm").addEventListener("submit", handleBranchSubmit);
-  
-    // Manager selection handler
-    const managersSelect = document.getElementById("branchManagers");
-    managersSelect.addEventListener("change", updateSelectedManagersDisplay);
-  
-    // Close modal when clicking outside
-    document.getElementById("branchModal").addEventListener("click", function(e) {
+
+  document.body.insertAdjacentHTML("beforeend", modalHTML);
+
+  // Add event listeners
+  document
+    .querySelector(".close-branch-modal")
+    .addEventListener("click", closeBranchModal);
+  document
+    .getElementById("cancelBranchBtn")
+    .addEventListener("click", closeBranchModal);
+  document
+    .getElementById("branchForm")
+    .addEventListener("submit", handleBranchSubmit);
+
+  // Manager selection handler
+  const managersSelect = document.getElementById("branchManagers");
+  managersSelect.addEventListener("change", updateSelectedManagersDisplay);
+
+  // Close modal when clicking outside
+  document
+    .getElementById("branchModal")
+    .addEventListener("click", function (e) {
       if (e.target === this) {
         closeBranchModal();
       }
     });
-  }
+}
 
 /**
  * Updates the display of selected managers in the edit modal
  */
 function updateSelectedManagersDisplay() {
-    const select = document.getElementById("branchManagers");
-    const selectedList = document.getElementById("selectedManagersList");
-    
-    selectedList.innerHTML = "";
-    
-    Array.from(select.selectedOptions).forEach(option => {
-      if (option.value) {
-        const managerDiv = document.createElement("div");
-        managerDiv.className = "selected-manager";
-        managerDiv.innerHTML = `
+  const select = document.getElementById("branchManagers");
+  const selectedList = document.getElementById("selectedManagersList");
+
+  selectedList.innerHTML = "";
+
+  Array.from(select.selectedOptions).forEach((option) => {
+    if (option.value) {
+      const managerDiv = document.createElement("div");
+      managerDiv.className = "selected-manager";
+      managerDiv.innerHTML = `
           <span>${option.text}</span>
           <button type="button" onclick="deselectManager('${option.value}')" class="remove-manager">×</button>
         `;
-        selectedList.appendChild(managerDiv);
-      }
-    });
-  }
+      selectedList.appendChild(managerDiv);
+    }
+  });
+}
 
-  /**
+/**
  * Deselects a manager in the dropdown
  */
 function deselectManager(managerId) {
-    const select = document.getElementById("branchManagers");
-    const option = Array.from(select.options).find(opt => opt.value === managerId);
-    if (option) {
-      option.selected = false;
-      updateSelectedManagersDisplay();
-    }
+  const select = document.getElementById("branchManagers");
+  const option = Array.from(select.options).find(
+    (opt) => opt.value === managerId
+  );
+  if (option) {
+    option.selected = false;
+    updateSelectedManagersDisplay();
   }
+}
 
 /**
  * Creates the branch details modal (read-only)
  */
 function createBranchDetailsModal() {
-    const modalHTML = `
+  const modalHTML = `
       <div id="branchDetailsModal" class="modal">
         <div class="modal-content">
           <span class="close-details-modal">&times;</span>
@@ -3154,62 +3465,73 @@ function createBranchDetailsModal() {
         </div>
       </div>
     `;
-  
-    document.body.insertAdjacentHTML("beforeend", modalHTML);
-  
-    // Add event listeners
-    document.querySelector(".close-details-modal").addEventListener("click", () => {
+
+  document.body.insertAdjacentHTML("beforeend", modalHTML);
+
+  // Add event listeners
+  document
+    .querySelector(".close-details-modal")
+    .addEventListener("click", () => {
       document.getElementById("branchDetailsModal").style.display = "none";
     });
-  
-    // Close modal when clicking outside
-    document.getElementById("branchDetailsModal").addEventListener("click", function(e) {
+
+  // Close modal when clicking outside
+  document
+    .getElementById("branchDetailsModal")
+    .addEventListener("click", function (e) {
       if (e.target === this) {
         this.style.display = "none";
       }
     });
-  }
+}
 
 /**
  * Shows detailed information about a branch (read-only)
  * @param {string} branchId - The ID of the branch to view
  */
 function viewBranchDetails(branchId) {
-    const modal = document.getElementById("branchDetailsModal");
-    const content = document.getElementById("branchDetailsContent");
-  
-    // Show loading state
-    modal.style.display = "block";
-    content.innerHTML = "<p>Loading branch details...</p>";
-  
-    // Load branch data
-    db.ref(`branches/${branchId}`).once("value").then((snapshot) => {
+  const modal = document.getElementById("branchDetailsModal");
+  const content = document.getElementById("branchDetailsContent");
+
+  // Show loading state
+  modal.style.display = "block";
+  content.innerHTML = "<p>Loading branch details...</p>";
+
+  // Load branch data
+  db.ref(`branches/${branchId}`)
+    .once("value")
+    .then((snapshot) => {
       const branch = snapshot.val();
       if (!branch) {
         content.innerHTML = "<p>Branch not found</p>";
         return;
       }
-  
+
       // Format managers list
       let managersHTML = "<p>No managers assigned</p>";
       if (branch.managers && Object.keys(branch.managers).length > 0) {
         managersHTML = "<ul class='manager-list'>";
-        
+
         // Load manager details from users node
-        const managerPromises = Object.keys(branch.managers).map(managerId => {
-          return db.ref(`users/${managerId}`).once("value").then((userSnap) => {
-            const user = userSnap.val();
-            return {
-              id: managerId,
-              email: branch.managers[managerId],
-              name: user?.name || "No name",
-              role: user?.role || "manager"
-            };
-          });
-        });
-  
-        Promise.all(managerPromises).then(managers => {
-          managers.forEach(manager => {
+        const managerPromises = Object.keys(branch.managers).map(
+          (managerId) => {
+            return db
+              .ref(`users/${managerId}`)
+              .once("value")
+              .then((userSnap) => {
+                const user = userSnap.val();
+                return {
+                  id: managerId,
+                  email: branch.managers[managerId],
+                  name: user?.name || "No name",
+                  role: user?.role || "manager",
+                };
+              });
+          }
+        );
+
+        Promise.all(managerPromises).then((managers) => {
+          managers.forEach((manager) => {
             managersHTML += `
               <li class="manager-item">
                 <div class="manager-info">
@@ -3220,15 +3542,17 @@ function viewBranchDetails(branchId) {
               </li>
             `;
           });
-          
+
           managersHTML += "</ul>";
-          
+
           // Render the full details
           content.innerHTML = `
             <div class="branch-details">
               <h3>${branch.name}</h3>
               <p><strong>Location:</strong> ${branch.location}</p>
-              <p><strong>Last Updated:</strong> ${formatDisplayDate(branch.updatedAt)}</p>
+              <p><strong>Last Updated:</strong> ${formatDisplayDate(
+                branch.updatedAt
+              )}</p>
               
               <div class="managers-section">
                 <h4>Assigned Managers</h4>
@@ -3248,7 +3572,9 @@ function viewBranchDetails(branchId) {
           <div class="branch-details">
             <h3>${branch.name}</h3>
             <p><strong>Location:</strong> ${branch.location}</p>
-            <p><strong>Last Updated:</strong> ${formatDisplayDate(branch.updatedAt)}</p>
+            <p><strong>Last Updated:</strong> ${formatDisplayDate(
+              branch.updatedAt
+            )}</p>
             
             <div class="managers-section">
               <h4>Assigned Managers</h4>
@@ -3262,107 +3588,112 @@ function viewBranchDetails(branchId) {
           </div>
         `;
       }
-    }).catch((error) => {
+    })
+    .catch((error) => {
       console.error("Error loading branch details:", error);
       content.innerHTML = `<p>Error loading branch details: ${error.message}</p>`;
     });
-  }
-  
+}
 
 /**
  * Shows the branch edit modal
  */
 function showBranchModal() {
-    document.getElementById("branchModal").style.display = "block";
-    document.getElementById("branchName").focus();
-  }
+  document.getElementById("branchModal").style.display = "block";
+  document.getElementById("branchName").focus();
+}
 /**
  * Closes the branch edit modal
  */
 function closeBranchModal() {
-    const modal = document.getElementById("branchModal");
-    if (modal) {
-      modal.style.display = "none";
-      document.getElementById("branchForm").reset();
-      document.getElementById("branchModalTitle").textContent = "Add New Branch";
-      document.getElementById("saveBranchBtn").textContent = "Save Branch";
-      document.getElementById("selectedManagersList").innerHTML = "";
-      currentEditingBranchId = null;
-    }
+  const modal = document.getElementById("branchModal");
+  if (modal) {
+    modal.style.display = "none";
+    document.getElementById("branchForm").reset();
+    document.getElementById("branchModalTitle").textContent = "Add New Branch";
+    document.getElementById("saveBranchBtn").textContent = "Save Branch";
+    document.getElementById("selectedManagersList").innerHTML = "";
+    currentEditingBranchId = null;
   }
+}
 /**
  * Handles branch form submission (both add and edit)
  * @param {Event} e - The form submission event
  */
 async function handleBranchSubmit(e) {
-    e.preventDefault();
-  
-    const name = document.getElementById("branchName").value.trim();
-    const location = document.getElementById("branchLocation").value.trim();
-    const managersSelect = document.getElementById("branchManagers");
-  
-    if (!name || !location) {
-      alert("Please fill in all required fields.");
-      return;
-    }
-  
-    // Get selected managers as an object {managerId: managerEmail}
-    const managers = {};
-    const selectedOptions = Array.from(managersSelect.selectedOptions);
-    
-    // We need to get the email for each selected manager
-    const managerPromises = selectedOptions
-      .filter(option => option.value)
-      .map(option => {
-        return db.ref(`users/${option.value}`).once("value").then(snapshot => {
+  e.preventDefault();
+
+  const name = document.getElementById("branchName").value.trim();
+  const location = document.getElementById("branchLocation").value.trim();
+  const managersSelect = document.getElementById("branchManagers");
+
+  if (!name || !location) {
+    alert("Please fill in all required fields.");
+    return;
+  }
+
+  // Get selected managers as an object {managerId: managerEmail}
+  const managers = {};
+  const selectedOptions = Array.from(managersSelect.selectedOptions);
+
+  // We need to get the email for each selected manager
+  const managerPromises = selectedOptions
+    .filter((option) => option.value)
+    .map((option) => {
+      return db
+        .ref(`users/${option.value}`)
+        .once("value")
+        .then((snapshot) => {
           const user = snapshot.val();
           return {
             id: option.value,
-            email: user.email
+            email: user.email,
           };
         });
-      });
-  
-    try {
-      const managerResults = await Promise.all(managerPromises);
-      managerResults.forEach(manager => {
-        managers[manager.id] = manager.email;
-      });
-  
-      const branchData = {
-        name,
-        location,
-        managers,
-        updatedAt: firebase.database.ServerValue.TIMESTAMP,
-      };
-  
-      const saveBtn = document.getElementById("saveBranchBtn");
-      saveBtn.disabled = true;
-      saveBtn.textContent = "Saving...";
-  
-      if (currentEditingBranchId) {
-        // Update existing branch
-        await db.ref(`branches/${currentEditingBranchId}`).update(branchData);
-        console.log("Branch updated successfully");
-      } else {
-        // Add new branch
-        await db.ref("branches").push(branchData);
-        console.log("Branch added successfully");
-      }
-  
-      closeBranchModal();
-      loadBranchPage(); // Refresh the branch list
-    } catch (error) {
-      console.error("Error saving branch:", error);
-      alert("Error saving branch: " + error.message);
-    } finally {
-      const saveBtn = document.getElementById("saveBranchBtn");
-      if (saveBtn) {
-        saveBtn.disabled = false;
-        saveBtn.textContent = currentEditingBranchId ? "Update Branch" : "Save Branch";
-      }
+    });
+
+  try {
+    const managerResults = await Promise.all(managerPromises);
+    managerResults.forEach((manager) => {
+      managers[manager.id] = manager.email;
+    });
+
+    const branchData = {
+      name,
+      location,
+      managers,
+      updatedAt: firebase.database.ServerValue.TIMESTAMP,
+    };
+
+    const saveBtn = document.getElementById("saveBranchBtn");
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving...";
+
+    if (currentEditingBranchId) {
+      // Update existing branch
+      await db.ref(`branches/${currentEditingBranchId}`).update(branchData);
+      console.log("Branch updated successfully");
+    } else {
+      // Add new branch
+      await db.ref("branches").push(branchData);
+      console.log("Branch added successfully");
+    }
+
+    closeBranchModal();
+    loadBranchPage(); // Refresh the branch list
+  } catch (error) {
+    console.error("Error saving branch:", error);
+    alert("Error saving branch: " + error.message);
+  } finally {
+    const saveBtn = document.getElementById("saveBranchBtn");
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = currentEditingBranchId
+        ? "Update Branch"
+        : "Save Branch";
     }
   }
+}
 
 /**
  * Handles branch form submission (both add and edit)
@@ -3452,74 +3783,81 @@ function cancelEdit() {
  * @param {string} branchId - The branch ID (optional)
  */
 async function loadManagersForBranch(branchId) {
-    const managersSelect = document.getElementById("branchManagers");
-    if (!managersSelect) return;
-  
-    managersSelect.innerHTML = '<option value="">Loading managers...</option>';
-  
-    try {
-      // Load all users with manager role
-      const usersSnapshot = await db.ref("users")
-        .orderByChild("role")
-        .equalTo("manager")
+  const managersSelect = document.getElementById("branchManagers");
+  if (!managersSelect) return;
+
+  managersSelect.innerHTML = '<option value="">Loading managers...</option>';
+
+  try {
+    // Load all users with manager role
+    const usersSnapshot = await db
+      .ref("users")
+      .orderByChild("role")
+      .equalTo("manager")
+      .once("value");
+
+    // Load managers already assigned to this branch (if branchId provided)
+    let assignedManagers = {};
+    if (branchId) {
+      const branchManagersSnapshot = await db
+        .ref(`branches/${branchId}/managers`)
         .once("value");
-  
-      // Load managers already assigned to this branch (if branchId provided)
-      let assignedManagers = {};
-      if (branchId) {
-        const branchManagersSnapshot = await db.ref(`branches/${branchId}/managers`).once("value");
-        assignedManagers = branchManagersSnapshot.val() || {};
-      }
-  
-      // Populate the select element
-      managersSelect.innerHTML = '';
-      
-      if (usersSnapshot.exists()) {
-        usersSnapshot.forEach((child) => {
-          const user = child.val();
-          const option = document.createElement("option");
-          option.value = child.key;
-          option.textContent = `${user.name || 'No name'} (${user.email})`;
-          
-          // Mark as selected if already assigned to branch
-          if (branchId) {
-            option.selected = assignedManagers[child.key] !== undefined;
-          }
-          
-          managersSelect.appendChild(option);
-        });
-      } else {
-        managersSelect.innerHTML = '<option value="">No managers found</option>';
-      }
-    } catch (error) {
-      console.error("Error loading managers:", error);
-      managersSelect.innerHTML = '<option value="">Error loading managers</option>';
+      assignedManagers = branchManagersSnapshot.val() || {};
     }
+
+    // Populate the select element
+    managersSelect.innerHTML = "";
+
+    if (usersSnapshot.exists()) {
+      usersSnapshot.forEach((child) => {
+        const user = child.val();
+        const option = document.createElement("option");
+        option.value = child.key;
+        option.textContent = `${user.name || "No name"} (${user.email})`;
+
+        // Mark as selected if already assigned to branch
+        if (branchId) {
+          option.selected = assignedManagers[child.key] !== undefined;
+        }
+
+        managersSelect.appendChild(option);
+      });
+    } else {
+      managersSelect.innerHTML = '<option value="">No managers found</option>';
+    }
+  } catch (error) {
+    console.error("Error loading managers:", error);
+    managersSelect.innerHTML =
+      '<option value="">Error loading managers</option>';
   }
-  /**
+}
+/**
  * Removes a manager from a branch
  * @param {string} branchId - The branch ID
  * @param {string} managerId - The manager ID to remove
  */
 function removeManagerFromBranch(branchId, managerId) {
-    if (confirm("Are you sure you want to remove this manager from the branch?")) {
-      db.ref(`branches/${branchId}/managers/${managerId}`).remove()
-        .then(() => {
-          // Refresh the details view
-          viewBranchDetails(branchId);
-          // Also refresh the branch list
-          loadBranchPage();
-        })
-        .catch((error) => {
-          console.error("Error removing manager:", error);
-          alert("Failed to remove manager. Please try again.");
-        });
-    }
+  if (
+    confirm("Are you sure you want to remove this manager from the branch?")
+  ) {
+    db.ref(`branches/${branchId}/managers/${managerId}`)
+      .remove()
+      .then(() => {
+        // Refresh the details view
+        viewBranchDetails(branchId);
+        // Also refresh the branch list
+        loadBranchPage();
+      })
+      .catch((error) => {
+        console.error("Error removing manager:", error);
+        alert("Failed to remove manager. Please try again.");
+      });
   }
+}
 
-  window.viewBranchDetails = viewBranchDetails;
-  window.editBranch = editBranch;
-  window.deselectManager = deselectManager;
+window.viewBranchDetails = viewBranchDetails;
+window.editBranch = editBranch;
+window.deselectManager = deselectManager;
 
 /* ============================================= */
 /* ============ USER SECTION =================== */
@@ -3529,119 +3867,146 @@ function removeManagerFromBranch(branchId, managerId) {
  * Loads users - shows all users when no branch is selected, or branch managers when branch is selected
  */
 function loadUserPage() {
-    const userList = document.getElementById("userList");
-    userList.innerHTML = "<p>Loading users...</p>";
+  const userList = document.getElementById("userList");
+  userList.innerHTML = "<p>Loading users...</p>";
 
-    // First load all branches for reference
-    db.ref("branches").once("value").then(branchesSnap => {
-        const allBranches = branchesSnap.val() || {};
-        
-        if (!currentBranch) {
-            // Load ALL users when no branch is selected
-            db.ref("users")
-            .once("value")
-            .then((usersSnap) => {
-                userList.innerHTML = "";
+  // First load all branches for reference
+  db.ref("branches")
+    .once("value")
+    .then((branchesSnap) => {
+      const allBranches = branchesSnap.val() || {};
 
-                if (usersSnap.exists()) {
-                    usersSnap.forEach((userSnap) => {
-                        const user = userSnap.val();
-                        const userId = userSnap.key;
+      if (!currentBranch) {
+        // Load ALL users when no branch is selected
+        db.ref("users")
+          .once("value")
+          .then((usersSnap) => {
+            userList.innerHTML = "";
 
-                        // Get all branches this user manages
-                        const managedBranches = [];
-                        for (const branchId in allBranches) {
-                            if (allBranches[branchId].managers && 
-                                allBranches[branchId].managers[userId]) {
-                                managedBranches.push(allBranches[branchId].name || branchId);
-                            }
-                        }
+            if (usersSnap.exists()) {
+              usersSnap.forEach((userSnap) => {
+                const user = userSnap.val();
+                const userId = userSnap.key;
 
-                        // Create user item display
-                        const div = document.createElement("div");
-                        div.className = "user-item";
-                        div.innerHTML = `
+                // Get all branches this user manages
+                const managedBranches = [];
+                for (const branchId in allBranches) {
+                  if (
+                    allBranches[branchId].managers &&
+                    allBranches[branchId].managers[userId]
+                  ) {
+                    managedBranches.push(
+                      allBranches[branchId].name || branchId
+                    );
+                  }
+                }
+
+                // Create user item display
+                const div = document.createElement("div");
+                div.className = "user-item";
+                div.innerHTML = `
                             <div>
                                 <strong>${user.email}</strong><br>
                                 Name: ${user.name || "N/A"}<br>
                                 Role: ${user.role || "N/A"}<br>
-                                ${managedBranches.length > 0 ? 
-                                    `Branches: ${managedBranches.join(", ")}` : 
-                                    "Not assigned to any branches"}
+                                ${
+                                  managedBranches.length > 0
+                                    ? `Branches: ${managedBranches.join(", ")}`
+                                    : "Not assigned to any branches"
+                                }
                             </div>
                             <div class="actions">
                                 <button onclick="viewUserDetails('${userId}')">View</button>
-                                ${user.role === "manager" ? `
+                                ${
+                                  user.role === "manager"
+                                    ? `
                                     <button onclick="editUser('${userId}')">Edit</button>
                                     <button onclick="deleteUser('${userId}')">Remove</button>
-                                ` : `
+                                `
+                                    : `
                                     <small>Admin users require special permissions</small>
-                                `}
+                                `
+                                }
                             </div>
                         `;
-                        userList.appendChild(div);
-                    });
-                } else {
-                    userList.innerHTML = "<p>No users found in the system</p>";
-                }
-            })
-            .catch((error) => {
-                console.error("Error loading all users:", error);
-                userList.innerHTML = `<p>Error loading users: ${error.message}</p>`;
+                userList.appendChild(div);
+              });
+            } else {
+              userList.innerHTML = "<p>No users found in the system</p>";
+            }
+          })
+          .catch((error) => {
+            console.error("Error loading all users:", error);
+            userList.innerHTML = `<p>Error loading users: ${error.message}</p>`;
+          });
+        return;
+      }
+
+      // Load branch-specific managers when branch is selected
+      userList.innerHTML = "<p>Loading branch managers...</p>";
+
+      // Load the managers for the current branch
+      db.ref(`branches/${currentBranch}/managers`)
+        .once("value")
+        .then((managersSnap) => {
+          userList.innerHTML = "";
+
+          if (managersSnap.exists()) {
+            const managers = managersSnap.val();
+            const userPromises = Object.keys(managers).map((managerId) => {
+              return db
+                .ref(`users/${managerId}`)
+                .once("value")
+                .then((userSnap) => {
+                  return {
+                    id: managerId,
+                    email: managers[managerId],
+                    ...userSnap.val(),
+                  };
+                });
             });
-            return;
-        }
 
-        // Load branch-specific managers when branch is selected
-        userList.innerHTML = "<p>Loading branch managers...</p>";
+            return Promise.all(userPromises);
+          } else {
+            userList.innerHTML = "<p>No managers assigned to this branch</p>";
+            return [];
+          }
+        })
+        .then((managers) => {
+          if (managers.length === 0) return;
 
-        // Load the managers for the current branch
-        db.ref(`branches/${currentBranch}/managers`)
-            .once("value")
-            .then((managersSnap) => {
-                userList.innerHTML = "";
-
-                if (managersSnap.exists()) {
-                    const managers = managersSnap.val();
-                    const userPromises = Object.keys(managers).map(managerId => {
-                        return db.ref(`users/${managerId}`).once("value").then(userSnap => {
-                            return { id: managerId, email: managers[managerId], ...userSnap.val() };
-                        });
-                    });
-
-                    return Promise.all(userPromises);
-                } else {
-                    userList.innerHTML = "<p>No managers assigned to this branch</p>";
-                    return [];
-                }
-            })
-            .then((managers) => {
-                if (managers.length === 0) return;
-
-                managers.forEach((user) => {
-                    // Create user item display
-                    const div = document.createElement("div");
-                    div.className = "user-item";
-                    div.innerHTML = `
+          managers.forEach((user) => {
+            // Create user item display
+            const div = document.createElement("div");
+            div.className = "user-item";
+            div.innerHTML = `
                         <div>
                             <strong>${user.email}</strong><br>
                             Name: ${user.name || "N/A"}<br>
                             Role: ${user.role || "manager"}<br>
-                            Branch: ${allBranches[currentBranch]?.name || currentBranch}
+                            Branch: ${
+                              allBranches[currentBranch]?.name || currentBranch
+                            }
                         </div>
                         <div class="actions">
-                            <button onclick="viewUserDetails('${user.id}')">View</button>
-                            <button onclick="editUser('${user.id}', '${currentBranch}')">Edit</button>
-                            <button onclick="removeManager('${user.id}', '${currentBranch}')">Remove</button>
+                            <button onclick="viewUserDetails('${
+                              user.id
+                            }')">View</button>
+                            <button onclick="editUser('${
+                              user.id
+                            }', '${currentBranch}')">Edit</button>
+                            <button onclick="removeManager('${
+                              user.id
+                            }', '${currentBranch}')">Remove</button>
                         </div>
                     `;
-                    userList.appendChild(div);
-                });
-            })
-            .catch((error) => {
-                console.error("Error loading branch managers:", error);
-                userList.innerHTML = `<p>Error loading managers: ${error.message}</p>`;
-            });
+            userList.appendChild(div);
+          });
+        })
+        .catch((error) => {
+          console.error("Error loading branch managers:", error);
+          userList.innerHTML = `<p>Error loading managers: ${error.message}</p>`;
+        });
     });
 }
 
@@ -3654,56 +4019,61 @@ function addUser() {
 }
 
 function editUser(userId, branchId = null) {
-    currentEditingUserId = userId;
+  currentEditingUserId = userId;
 
-    if (!document.getElementById("userModal")) {
-        createUserModal();
-    }
+  if (!document.getElementById("userModal")) {
+    createUserModal();
+  }
 
-    // Load user data and their branch assignments
-    Promise.all([
-        db.ref(`users/${userId}`).once("value"),
-        db.ref("branches").once("value")
-    ]).then(([userSnap, branchesSnap]) => {
-        const user = userSnap.val();
-        const allBranches = branchesSnap.val() || {};
+  // Load user data and their branch assignments
+  Promise.all([
+    db.ref(`users/${userId}`).once("value"),
+    db.ref("branches").once("value"),
+  ])
+    .then(([userSnap, branchesSnap]) => {
+      const user = userSnap.val();
+      const allBranches = branchesSnap.val() || {};
 
-        document.getElementById("userEmail").value = user?.email || "";
-        document.getElementById("userName").value = user?.name || "";
-        document.getElementById("userRole").value = user?.role || "manager";
-        
-        // For password field - show placeholder but don't pre-fill
-        document.getElementById("userPassword").value = "";
-        document.getElementById("userPassword").placeholder = "New password (leave blank to keep current)";
-        
-        // Load branch assignments if no specific branch is selected
-        if (!currentBranch) {
-            const branchCheckboxes = document.getElementById("branchCheckboxes");
-            branchCheckboxes.innerHTML = "";
-            
-            for (const branchId in allBranches) {
-                const branch = allBranches[branchId];
-                const isAssigned = branch.managers && branch.managers[userId];
-                
-                const checkboxDiv = document.createElement("div");
-                checkboxDiv.className = "checkbox-item";
-                checkboxDiv.innerHTML = `
+      document.getElementById("userEmail").value = user?.email || "";
+      document.getElementById("userName").value = user?.name || "";
+      document.getElementById("userRole").value = user?.role || "manager";
+
+      // For password field - show placeholder but don't pre-fill
+      document.getElementById("userPassword").value = "";
+      document.getElementById("userPassword").placeholder =
+        "New password (leave blank to keep current)";
+
+      // Load branch assignments if no specific branch is selected
+      if (!currentBranch) {
+        const branchCheckboxes = document.getElementById("branchCheckboxes");
+        branchCheckboxes.innerHTML = "";
+
+        for (const branchId in allBranches) {
+          const branch = allBranches[branchId];
+          const isAssigned = branch.managers && branch.managers[userId];
+
+          const checkboxDiv = document.createElement("div");
+          checkboxDiv.className = "checkbox-item";
+          checkboxDiv.innerHTML = `
                     <input type="checkbox" id="branch_${branchId}" 
                            ${isAssigned ? "checked" : ""} value="${branchId}">
-                    <label for="branch_${branchId}">${branch.name || branchId}</label>
+                    <label for="branch_${branchId}">${
+            branch.name || branchId
+          }</label>
                 `;
-                branchCheckboxes.appendChild(checkboxDiv);
-            }
+          branchCheckboxes.appendChild(checkboxDiv);
         }
+      }
 
-        document.getElementById("userModalTitle").textContent = "Edit User";
-        document.getElementById("saveUserBtn").textContent = currentBranch 
-            ? "Update Manager" 
-            : "Update User";
-        showUserModal();
-    }).catch((error) => {
-        console.error("Error loading user for editing:", error);
-        alert("Failed to load user data for editing.");
+      document.getElementById("userModalTitle").textContent = "Edit User";
+      document.getElementById("saveUserBtn").textContent = currentBranch
+        ? "Update Manager"
+        : "Update User";
+      showUserModal();
+    })
+    .catch((error) => {
+      console.error("Error loading user for editing:", error);
+      alert("Failed to load user data for editing.");
     });
 }
 
@@ -3711,20 +4081,22 @@ function editUser(userId, branchId = null) {
  * Updated delete function to handle both scenarios
  */
 function deleteUser(userId, branchId = null) {
-    const message = branchId 
-      ? "Are you sure you want to remove this user from the branch?"
-      : "Are you sure you want to delete this user entirely?";
-  
-    if (confirm(message)) {
-      const updates = {};
-      
-      if (branchId) {
-        // Only remove from branch managers
-        updates[`branches/${branchId}/managers/${userId}`] = null;
-      } else {
-        // Remove from all branches and users collection
-        // First find all branches this user might be assigned to
-        db.ref("branches").once("value").then((branchesSnap) => {
+  const message = branchId
+    ? "Are you sure you want to remove this user from the branch?"
+    : "Are you sure you want to delete this user entirely?";
+
+  if (confirm(message)) {
+    const updates = {};
+
+    if (branchId) {
+      // Only remove from branch managers
+      updates[`branches/${branchId}/managers/${userId}`] = null;
+    } else {
+      // Remove from all branches and users collection
+      // First find all branches this user might be assigned to
+      db.ref("branches")
+        .once("value")
+        .then((branchesSnap) => {
           branchesSnap.forEach((branchSnap) => {
             if (branchSnap.child(`managers/${userId}`).exists()) {
               updates[`branches/${branchSnap.key}/managers/${userId}`] = null;
@@ -3732,35 +4104,38 @@ function deleteUser(userId, branchId = null) {
           });
           // Add user deletion to updates
           updates[`users/${userId}`] = null;
-          
+
           return db.ref().update(updates);
-        }).then(() => {
-          console.log("User deleted successfully");
-          loadUserPage(); // Refresh the list
-        }).catch((error) => {
-          console.error("Error deleting user:", error);
-          alert("Failed to delete user. Please try again.");
-        });
-        return;
-      }
-  
-      db.ref().update(updates)
+        })
         .then(() => {
-          console.log("User removed from branch successfully");
+          console.log("User deleted successfully");
           loadUserPage(); // Refresh the list
         })
         .catch((error) => {
-          console.error("Error removing user:", error);
-          alert("Failed to remove user. Please try again.");
+          console.error("Error deleting user:", error);
+          alert("Failed to delete user. Please try again.");
         });
+      return;
     }
+
+    db.ref()
+      .update(updates)
+      .then(() => {
+        console.log("User removed from branch successfully");
+        loadUserPage(); // Refresh the list
+      })
+      .catch((error) => {
+        console.error("Error removing user:", error);
+        alert("Failed to remove user. Please try again.");
+      });
   }
+}
 
 /**
  * Creates the user edit modal (add or edit existing user)
  */
-  function createUserModal() {
-    const modalHTML = `
+function createUserModal() {
+  const modalHTML = `
         <div id="userModal" class="modal">
             <div class="modal-content">
                 <span class="close-user-modal">&times;</span>
@@ -3784,14 +4159,22 @@ function deleteUser(userId, branchId = null) {
                     <div class="form-group" id="passwordGroup">
                         <label for="userPassword">Password:</label>
                         <input type="password" id="userPassword" placeholder="Enter new password">
-                        <small>${currentEditingUserId ? 'Leave blank to keep current password' : 'Password is required'}</small>
+                        <small>${
+                          currentEditingUserId
+                            ? "Leave blank to keep current password"
+                            : "Password is required"
+                        }</small>
                     </div>
-                    ${!currentBranch ? `
+                    ${
+                      !currentBranch
+                        ? `
                     <div class="form-group" id="branchAssignmentGroup">
                         <label for="userBranches">Assign to Branches:</label>
                         <div id="branchCheckboxes"></div>
                     </div>
-                    ` : ''}
+                    `
+                        : ""
+                    }
                     <div class="form-actions">
                         <button type="submit" id="saveUserBtn">Save User</button>
                         <button type="button" id="cancelUserBtn">Cancel</button>
@@ -3801,19 +4184,25 @@ function deleteUser(userId, branchId = null) {
         </div>
     `;
 
-    document.body.insertAdjacentHTML("beforeend", modalHTML);
+  document.body.insertAdjacentHTML("beforeend", modalHTML);
 
-    // Add event listeners
-    document.querySelector(".close-user-modal").addEventListener("click", closeUserModal);
-    document.getElementById("cancelUserBtn").addEventListener("click", closeUserModal);
-    document.getElementById("userForm").addEventListener("submit", handleUserSubmit);
+  // Add event listeners
+  document
+    .querySelector(".close-user-modal")
+    .addEventListener("click", closeUserModal);
+  document
+    .getElementById("cancelUserBtn")
+    .addEventListener("click", closeUserModal);
+  document
+    .getElementById("userForm")
+    .addEventListener("submit", handleUserSubmit);
 
-    // Close modal when clicking outside
-    document.getElementById("userModal").addEventListener("click", function(e) {
-        if (e.target === this) {
-            closeUserModal();
-        }
-    });
+  // Close modal when clicking outside
+  document.getElementById("userModal").addEventListener("click", function (e) {
+    if (e.target === this) {
+      closeUserModal();
+    }
+  });
 }
 function showUserModal() {
   document.getElementById("userModal").style.display = "block";
@@ -3844,109 +4233,114 @@ function closeUserModal() {
  */
 
 async function handleUserSubmit(e) {
-    e.preventDefault();
+  e.preventDefault();
 
-    const email = document.getElementById("userEmail").value.trim();
-    const name = document.getElementById("userName").value.trim();
-    const role = document.getElementById("userRole").value;
-    const password = document.getElementById("userPassword").value;
+  const email = document.getElementById("userEmail").value.trim();
+  const name = document.getElementById("userName").value.trim();
+  const role = document.getElementById("userRole").value;
+  const password = document.getElementById("userPassword").value;
 
-    if (!email) {
-        alert("Email is required.");
-        return;
-    }
+  if (!email) {
+    alert("Email is required.");
+    return;
+  }
 
-    // Password is required for new users, optional for existing
-    if (!currentEditingUserId && !password) {
-        alert("Password is required for new users.");
-        return;
-    }
+  // Password is required for new users, optional for existing
+  if (!currentEditingUserId && !password) {
+    alert("Password is required for new users.");
+    return;
+  }
 
-    const saveBtn = document.getElementById("saveUserBtn");
-    saveBtn.disabled = true;
-    saveBtn.textContent = "Saving...";
+  const saveBtn = document.getElementById("saveUserBtn");
+  saveBtn.disabled = true;
+  saveBtn.textContent = "Saving...";
 
-    try {
-        if (currentEditingUserId) {
-            // Update existing user
-            const updates = {};
-            updates[`users/${currentEditingUserId}/name`] = name || null;
-            updates[`users/${currentEditingUserId}/role`] = role;
+  try {
+    if (currentEditingUserId) {
+      // Update existing user
+      const updates = {};
+      updates[`users/${currentEditingUserId}/name`] = name || null;
+      updates[`users/${currentEditingUserId}/role`] = role;
 
-            // Handle branch assignments if no specific branch is selected
-            if (!currentBranch) {
-                const branchCheckboxes = document.querySelectorAll("#branchCheckboxes input[type='checkbox']");
-                const allBranchesSnap = await db.ref("branches").once("value");
-                const allBranches = allBranchesSnap.val() || {};
+      // Handle branch assignments if no specific branch is selected
+      if (!currentBranch) {
+        const branchCheckboxes = document.querySelectorAll(
+          "#branchCheckboxes input[type='checkbox']"
+        );
+        const allBranchesSnap = await db.ref("branches").once("value");
+        const allBranches = allBranchesSnap.val() || {};
 
-                for (const checkbox of branchCheckboxes) {
-                    const branchId = checkbox.value;
-                    const path = `branches/${branchId}/managers/${currentEditingUserId}`;
-                    updates[path] = checkbox.checked ? email : null;
-                }
-            }
-
-            // Update password if provided
-            if (password) {
-                try {
-                    // Reauthenticate current user if changing their own password
-                    const currentUser = auth.currentUser;
-                    if (currentUser && currentUser.uid === currentEditingUserId) {
-                        // Need to reauthenticate before changing password
-                        // You might want to add a reauthentication step here
-                    }
-                    
-                    // Update password
-                    await auth.currentUser.updatePassword(password);
-                } catch (error) {
-                    console.error("Error updating password:", error);
-                    throw new Error("Failed to update password. Please reauthenticate.");
-                }
-            }
-
-            await db.ref().update(updates);
-            console.log("User updated successfully");
-        } else {
-            // Create new user
-            if (!currentBranch) {
-                alert("Please select a branch first.");
-                return;
-            }
-
-            const authUser = await auth.createUserWithEmailAndPassword(email, password);
-            const userId = authUser.user.uid;
-
-            const userData = {
-                email,
-                name: name || null,
-                role,
-                createdAt: firebase.database.ServerValue.TIMESTAMP
-            };
-
-            if (currentBranch) {
-                userData.branchId = currentBranch;
-                await db.ref(`branches/${currentBranch}/managers/${userId}`).set(email);
-            }
-
-            await db.ref(`users/${userId}`).set(userData);
-            console.log("User created successfully");
+        for (const checkbox of branchCheckboxes) {
+          const branchId = checkbox.value;
+          const path = `branches/${branchId}/managers/${currentEditingUserId}`;
+          updates[path] = checkbox.checked ? email : null;
         }
+      }
 
-        closeUserModal();
-        loadUserPage(); // Refresh the user list
-    } catch (error) {
-        console.error("Error saving user:", error);
-        alert("Error saving user: " + error.message);
-    } finally {
-        saveBtn.disabled = false;
-        saveBtn.textContent = currentEditingUserId ? "Update User" : "Save User";
+      // Update password if provided
+      if (password) {
+        try {
+          // Reauthenticate current user if changing their own password
+          const currentUser = auth.currentUser;
+          if (currentUser && currentUser.uid === currentEditingUserId) {
+            // Need to reauthenticate before changing password
+            // You might want to add a reauthentication step here
+          }
+
+          // Update password
+          await auth.currentUser.updatePassword(password);
+        } catch (error) {
+          console.error("Error updating password:", error);
+          throw new Error("Failed to update password. Please reauthenticate.");
+        }
+      }
+
+      await db.ref().update(updates);
+      console.log("User updated successfully");
+    } else {
+      // Create new user
+      if (!currentBranch) {
+        alert("Please select a branch first.");
+        return;
+      }
+
+      const authUser = await auth.createUserWithEmailAndPassword(
+        email,
+        password
+      );
+      const userId = authUser.user.uid;
+
+      const userData = {
+        email,
+        name: name || null,
+        role,
+        createdAt: firebase.database.ServerValue.TIMESTAMP,
+      };
+
+      if (currentBranch) {
+        userData.branchId = currentBranch;
+        await db.ref(`branches/${currentBranch}/managers/${userId}`).set(email);
+      }
+
+      await db.ref(`users/${userId}`).set(userData);
+      console.log("User created successfully");
     }
+
+    closeUserModal();
+    loadUserPage(); // Refresh the user list
+  } catch (error) {
+    console.error("Error saving user:", error);
+    alert("Error saving user: " + error.message);
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = currentEditingUserId ? "Update User" : "Save User";
+  }
 }
 
 function viewUserDetails(userId) {
-    // Create modal if it doesn't exist
-    if (!document.getElementById("userDetailsModal")) {
-        const modalHTML = `
+  // Create modal if it doesn't exist
+  if (!document.getElementById("userDetailsModal")) {
+    const modalHTML = `
             <div id="userDetailsModal" class="modal">
                 <div class="modal-content">
                     <span class="close-details-modal">&times;</span>
@@ -3955,52 +4349,66 @@ function viewUserDetails(userId) {
                 </div>
             </div>
         `;
-        document.body.insertAdjacentHTML("beforeend", modalHTML);
-        
-        document.querySelector(".close-details-modal").addEventListener("click", () => {
-            document.getElementById("userDetailsModal").style.display = "none";
-        });
-    }
+    document.body.insertAdjacentHTML("beforeend", modalHTML);
 
-    const modal = document.getElementById("userDetailsModal");
-    const content = document.getElementById("userDetailsContent");
-    
-    modal.style.display = "block";
-    content.innerHTML = "<p>Loading user details...</p>";
+    document
+      .querySelector(".close-details-modal")
+      .addEventListener("click", () => {
+        document.getElementById("userDetailsModal").style.display = "none";
+      });
+  }
 
-    // Load user data and their branch assignments
-    Promise.all([
-        db.ref(`users/${userId}`).once("value"),
-        db.ref("branches").once("value")
-    ]).then(([userSnap, branchesSnap]) => {
-        const user = userSnap.val();
-        const allBranches = branchesSnap.val() || {};
-        
-        if (!user) {
-            content.innerHTML = "<p>User not found</p>";
-            return;
+  const modal = document.getElementById("userDetailsModal");
+  const content = document.getElementById("userDetailsContent");
+
+  modal.style.display = "block";
+  content.innerHTML = "<p>Loading user details...</p>";
+
+  // Load user data and their branch assignments
+  Promise.all([
+    db.ref(`users/${userId}`).once("value"),
+    db.ref("branches").once("value"),
+  ])
+    .then(([userSnap, branchesSnap]) => {
+      const user = userSnap.val();
+      const allBranches = branchesSnap.val() || {};
+
+      if (!user) {
+        content.innerHTML = "<p>User not found</p>";
+        return;
+      }
+
+      // Find all branches this user manages
+      const managedBranches = [];
+      for (const branchId in allBranches) {
+        if (
+          allBranches[branchId].managers &&
+          allBranches[branchId].managers[userId]
+        ) {
+          managedBranches.push(allBranches[branchId].name || branchId);
         }
+      }
 
-        // Find all branches this user manages
-        const managedBranches = [];
-        for (const branchId in allBranches) {
-            if (allBranches[branchId].managers && allBranches[branchId].managers[userId]) {
-                managedBranches.push(allBranches[branchId].name || branchId);
-            }
-        }
-
-        content.innerHTML = `
+      content.innerHTML = `
             <div class="user-details">
                 <h3>${user.name || "Unnamed User"}</h3>
                 <p><strong>Email:</strong> ${user.email}</p>
                 <p><strong>Role:</strong> ${user.role || "N/A"}</p>
-                <p><strong>Account Created:</strong> ${user.createdAt ? new Date(user.createdAt).toLocaleString() : "Unknown"}</p>
+                <p><strong>Account Created:</strong> ${
+                  user.createdAt
+                    ? new Date(user.createdAt).toLocaleString()
+                    : "Unknown"
+                }</p>
                 
                 <div class="branches-section">
                     <h4>Branch Assignments</h4>
-                    ${managedBranches.length > 0 ? 
-                        `<ul>${managedBranches.map(b => `<li>${b}</li>`).join("")}</ul>` : 
-                        "<p>Not assigned to any branches</p>"}
+                    ${
+                      managedBranches.length > 0
+                        ? `<ul>${managedBranches
+                            .map((b) => `<li>${b}</li>`)
+                            .join("")}</ul>`
+                        : "<p>Not assigned to any branches</p>"
+                    }
                 </div>
                 
                 <div class="modal-actions">
@@ -4009,9 +4417,10 @@ function viewUserDetails(userId) {
                 </div>
             </div>
         `;
-    }).catch((error) => {
-        console.error("Error loading user details:", error);
-        content.innerHTML = `<p>Error loading user details: ${error.message}</p>`;
+    })
+    .catch((error) => {
+      console.error("Error loading user details:", error);
+      content.innerHTML = `<p>Error loading user details: ${error.message}</p>`;
     });
 }
 
