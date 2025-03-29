@@ -2897,59 +2897,60 @@ function addExportButtons(reportType, data, container) {
   csvBtn.addEventListener("click", () => exportToCSV(reportType, data));
   buttonsDiv.appendChild(csvBtn);
 
-  // PDF Button
-  const pdfBtn = document.createElement("button");
-  pdfBtn.textContent = "Export to PDF";
-  pdfBtn.addEventListener("click", () => exportToPDF(reportType, data));
-  buttonsDiv.appendChild(pdfBtn);
+//   // PDF Button
+//   const pdfBtn = document.createElement("button");
+//   pdfBtn.textContent = "Export to PDF";
+//   pdfBtn.addEventListener("click", () => exportToPDF(reportType, data));
+//   buttonsDiv.appendChild(pdfBtn);
 }
 
 /* ============ REPORT FORMATTING FUNCTIONS ============ */
 
 function formatInventoryReport(data) {
-  if (!data) return "<p>No inventory data found</p>";
-
-  const items = Object.entries(data).map(([id, item]) => ({
-    id,
-    ...item,
-    status: item.stock <= item.minStock ? "Low Stock" : "OK",
-  }));
-
-  return `
-      <div class="report-summary">
-        <p>Total Items: ${items.length}</p>
-        <p>Low Stock Items: ${
-          items.filter((i) => i.status === "Low Stock").length
-        }</p>
-      </div>
-      <table class="report-table">
-        <thead>
-          <tr>
-            <th>Item</th>
-            <th>Stock</th>
-            <th>Min Stock</th>
-            <th>Status</th>
-            <th>Expiration</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${items
-            .map(
-              (item) => `
-            <tr class="${item.status === "Low Stock" ? "low-stock" : ""}">
-              <td>${item.name}</td>
-              <td>${item.stock}</td>
-              <td>${item.minStock}</td>
-              <td>${item.status}</td>
-              <td>${item.expiration}</td>
+    if (!data) return "<p>No inventory data found</p>";
+  
+    const items = Object.entries(data).map(([id, item]) => ({
+      id,
+      ...item,
+      status: item.stock <= item.minStock ? "Low Stock" : "OK",
+      formattedExpiration: formatDisplayDate(item.expiration) // Use your display formatter
+    }));
+  
+    return `
+        <div class="report-summary">
+          <p>Total Items: ${items.length}</p>
+          <p>Low Stock Items: ${
+            items.filter((i) => i.status === "Low Stock").length
+          }</p>
+        </div>
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Stock</th>
+              <th>Min Stock</th>
+              <th>Status</th>
+              <th>Expiration</th>
             </tr>
-          `
-            )
-            .join("")}
-        </tbody>
-      </table>
-    `;
-}
+          </thead>
+          <tbody>
+            ${items
+              .map(
+                (item) => `
+              <tr class="${item.status === "Low Stock" ? "low-stock" : ""}">
+                <td>${item.name}</td>
+                <td>${item.stock}</td>
+                <td>${item.minStock}</td>
+                <td>${item.status}</td>
+                <td>${item.formattedExpiration}</td>
+              </tr>
+            `
+              )
+              .join("")}
+          </tbody>
+        </table>
+      `;
+  }
 
 function formatSupplierReport(data) {
   if (!data || Object.keys(data).length === 0) {
@@ -2995,43 +2996,43 @@ function formatSupplierReport(data) {
 }
 
 function formatOrderReport(data) {
-  if (!data) return "<p>No order data found</p>";
-
-  const orders = Object.entries(data).map(([id, order]) => ({
-    id,
-    ...order,
-    date: new Date(order.timestamp).toLocaleDateString(),
-  }));
-
-  return `
-      <table class="report-table">
-        <thead>
-          <tr>
-            <th>Order ID</th>
-            <th>Date</th>
-            <th>Supplier</th>
-            <th>Status</th>
-            <th>Payment</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${orders
-            .map(
-              (order) => `
+    if (!data) return "<p>No order data found</p>";
+  
+    const orders = Object.entries(data).map(([id, order]) => ({
+      id,
+      ...order,
+      date: formatDisplayDate(new Date(order.timestamp)) // Use your display formatter
+    }));
+  
+    return `
+        <table class="report-table">
+          <thead>
             <tr>
-              <td>${order.id}</td>
-              <td>${order.date}</td>
-              <td>${order.supplierName}</td>
-              <td>${order.status}</td>
-              <td>${order.paymentStatus}</td>
+              <th>Order ID</th>
+              <th>Date</th>
+              <th>Supplier</th>
+              <th>Status</th>
+              <th>Payment</th>
             </tr>
-          `
-            )
-            .join("")}
-        </tbody>
-      </table>
-    `;
-}
+          </thead>
+          <tbody>
+            ${orders
+              .map(
+                (order) => `
+              <tr>
+                <td>${order.id}</td>
+                <td>${order.date}</td>
+                <td>${order.supplierName}</td>
+                <td>${order.status}</td>
+                <td>${order.paymentStatus}</td>
+              </tr>
+            `
+              )
+              .join("")}
+          </tbody>
+        </table>
+      `;
+  }
 
 /* ============ CHART GENERATION ============ */
 
@@ -3273,9 +3274,10 @@ function exportToCSV(reportType, data) {
   switch (reportType) {
     case "inventory":
       csvContent = "Name,Current Stock,Min Stock,Status,Expiration,Supplier\n";
-      Object.values(data).forEach((item) => {
-        const status = item.stock < item.minStock ? "Low Stock" : "OK";
-        csvContent += `"${item.name}",${item.stock},${item.minStock},${status},"${item.expiration}","${item.supplier}"\n`;
+      Object.values(data).forEach(item => {
+        const status = item.stock < item.minStock ? 'Low Stock' : 'OK';
+        const formattedExpiration = formatDisplayDate(item.expiration); // Use display formatter
+        csvContent += `"${item.name}",${item.stock},${item.minStock},${status},"${formattedExpiration}","${item.supplier}"\n`;
       });
       break;
 
@@ -3286,16 +3288,14 @@ function exportToCSV(reportType, data) {
       });
       break;
 
-    case "order":
-      csvContent = "Order ID,Date,Supplier,Status,Payment,Products\n";
-      Object.entries(data).forEach(([id, order]) => {
-        const date = new Date(order.timestamp).toLocaleDateString();
-        const products = Object.entries(order.products || {})
-          .map(([name, qty]) => `${name} (${qty})`)
-          .join(", ");
-        csvContent += `"${id}","${date}","${order.supplierName}","${order.status}","${order.paymentStatus}","${products}"\n`;
-      });
-      break;
+      case "order":
+        csvContent = "Order ID,Date,Supplier,Status,Payment,Products\n";
+        Object.entries(data).forEach(([id, order]) => {
+          const date = formatDisplayDate(new Date(order.timestamp)); // Use display formatter
+          const products = Object.entries(order.products || {}).map(([name, qty]) => `${name} (${qty})`).join(", ");
+          csvContent += `"${id}","${date}","${order.supplierName}","${order.status}","${order.paymentStatus}","${products}"\n`;
+        });
+        break;
   }
 
   // Create download link
@@ -3309,71 +3309,6 @@ function exportToCSV(reportType, data) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-}
-
-function exportToPDF(reportType, data) {
-  // Using jsPDF (must include the library in your HTML)
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-
-  // Add title
-  doc.setFontSize(18);
-  doc.text(
-    `${
-      reportType.charAt(0).toUpperCase() + reportType.slice(1)
-    } Report - ${currentBranch}`,
-    14,
-    15
-  );
-  doc.setFontSize(12);
-
-  let yPosition = 25;
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 14;
-
-  switch (reportType) {
-    case "inventory":
-      // Table headers
-      doc.text("Item", margin, yPosition);
-      doc.text("Stock", margin + 60, yPosition);
-      doc.text("Min", margin + 90, yPosition);
-      doc.text("Status", margin + 120, yPosition);
-      doc.text("Expires", margin + 150, yPosition);
-      yPosition += 7;
-
-      // Table rows
-      Object.values(data).forEach((item) => {
-        if (yPosition > 280) {
-          // Add new page if needed
-          doc.addPage();
-          yPosition = 20;
-        }
-
-        const status = item.stock < item.minStock ? "Low Stock" : "OK";
-        doc.text(item.name.substring(0, 20), margin, yPosition);
-        doc.text(item.stock.toString(), margin + 60, yPosition);
-        doc.text(item.minStock.toString(), margin + 90, yPosition);
-        doc.text(status, margin + 120, yPosition);
-        doc.text(item.expiration, margin + 150, yPosition);
-        yPosition += 7;
-      });
-      break;
-
-    case "supplier":
-      // Similar implementation for suppliers
-      break;
-
-    case "order":
-      // Similar implementation for orders
-      break;
-  }
-
-  // Save the PDF
-  doc.save(
-    `${reportType}_report_${currentBranch}_${
-      new Date().toISOString().split("T")[0]
-    }.pdf`
-  );
 }
 
 /* ============================================= */
