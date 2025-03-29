@@ -3221,22 +3221,26 @@ function formatInventoryReport(data) {
       `;
   }
 
-function formatSupplierReport(data) {
-  if (!data || Object.keys(data).length === 0) {
+  function formatSupplierReport(data) {
+    if (!data || Object.keys(data).length === 0) {
+      return `
+        <div class="empty-state">
+          <i class="fas fa-box-open"></i>
+          <p>No supplier data found for ${currentBranch}</p>
+        </div>
+      `;
+    }
+  
+    const suppliers = Object.entries(data).map(([id, supplier]) => ({
+      id,
+      ...supplier,
+      // Format products as a string
+      formattedProducts: supplier.products 
+        ? Object.keys(supplier.products).join(", ")
+        : "No products"
+    }));
+  
     return `
-          <div class="empty-state">
-            <i class="fas fa-box-open"></i>
-            <p>No supplier data found for ${currentBranch}</p>
-          </div>
-        `;
-  }
-
-  const suppliers = Object.entries(data).map(([id, supplier]) => ({
-    id,
-    ...supplier,
-  }));
-
-  return `
       <table class="report-table">
         <thead>
           <tr>
@@ -3254,7 +3258,7 @@ function formatSupplierReport(data) {
               <td>${supplier.name}</td>
               <td>${supplier.contact}</td>
               <td>${supplier.gcash}</td>
-              <td>${supplier.products}</td>
+              <td>${supplier.formattedProducts}</td>
             </tr>
           `
             )
@@ -3262,8 +3266,7 @@ function formatSupplierReport(data) {
         </tbody>
       </table>
     `;
-}
-
+  }
 function formatOrderReport(data) {
     if (!data) return "<p>No order data found</p>";
   
@@ -3360,7 +3363,7 @@ function createSupplierChart(data) {
   
     const suppliers = Object.values(data);
     const productCounts = suppliers.map(supplier => 
-      supplier.products ? supplier.products.split(',').length : 0
+      supplier.products ? Object.keys(supplier.products).length : 0
     );
     const supplierNames = suppliers.map(supplier => supplier.name);
   
@@ -3538,47 +3541,50 @@ function createOrderTimelineChart(data) {
 /* ============ EXPORT FUNCTIONS ============ */
 
 function exportToCSV(reportType, data) {
-  let csvContent = "";
-
-  switch (reportType) {
-    case "inventory":
-      csvContent = "Name,Current Stock,Min Stock,Status,Expiration,Supplier\n";
-      Object.values(data).forEach(item => {
-        const status = item.stock < item.minStock ? 'Low Stock' : 'OK';
-        const formattedExpiration = formatDisplayDate(item.expiration); // Use display formatter
-        csvContent += `"${item.name}",${item.stock},${item.minStock},${status},"${formattedExpiration}","${item.supplier}"\n`;
-      });
-      break;
-
-    case "supplier":
-      csvContent = "Name,Contact,GCash,Products\n";
-      Object.values(data).forEach((supplier) => {
-        csvContent += `"${supplier.name}","${supplier.contact}","${supplier.gcash}","${supplier.products}"\n`;
-      });
-      break;
-
+    let csvContent = "";
+  
+    switch (reportType) {
+      case "inventory":
+        csvContent = "Name,Current Stock,Min Stock,Status,Expiration,Supplier\n";
+        Object.values(data).forEach(item => {
+          const status = item.stock < item.minStock ? 'Low Stock' : 'OK';
+          const formattedExpiration = formatDisplayDate(item.expiration);
+          csvContent += `"${item.name}",${item.stock},${item.minStock},${status},"${formattedExpiration}","${item.supplier}"\n`;
+        });
+        break;
+  
+      case "supplier":
+        csvContent = "Name,Contact,GCash,Products\n";
+        Object.values(data).forEach((supplier) => {
+          const products = supplier.products 
+            ? Object.keys(supplier.products).join(", ")
+            : "No products";
+          csvContent += `"${supplier.name}","${supplier.contact}","${supplier.gcash}","${products}"\n`;
+        });
+        break;
+  
       case "order":
         csvContent = "Order ID,Date,Supplier,Status,Payment,Products\n";
         Object.entries(data).forEach(([id, order]) => {
-          const date = formatDisplayDate(new Date(order.timestamp)); // Use display formatter
+          const date = formatDisplayDate(new Date(order.timestamp));
           const products = Object.entries(order.products || {}).map(([name, qty]) => `${name} (${qty})`).join(", ");
           csvContent += `"${id}","${date}","${order.supplierName}","${order.status}","${order.paymentStatus}","${products}"\n`;
         });
         break;
+    }
+  
+    // Create download link
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${reportType}_report_${currentBranch}_${
+      new Date().toISOString().split("T")[0]
+    }.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
-
-  // Create download link
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `${reportType}_report_${currentBranch}_${
-    new Date().toISOString().split("T")[0]
-  }.csv`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
 
 /* ============================================= */
 /* ============ BRANCH SECTION ================= */
