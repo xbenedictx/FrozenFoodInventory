@@ -1186,3 +1186,88 @@ body {
     width: 100% !important;
     height: 100% !important;
   }
+
+
+  .product-entry {
+    margin-bottom: 10px;
+  }
+  
+  .product-inputs {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  
+  .product-inputs input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    height: 36px; /* Fixed height for alignment */
+  }
+  
+  .product-name {
+    flex: 2;
+  }
+  
+  .product-price {
+    flex: 1;
+  }
+  
+  .unit-label {
+    color: #666;
+    white-space: nowrap;
+    margin-right: 10px;
+  }
+  
+  .remove-product {
+    background: #ff6b6b;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .remove-product:hover {
+    background: #ff5252;
+  }
+  
+  #addProductBtn {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  #addProductBtn:hover {
+    background: #45a049;
+  }
+
+
+  .price-input-container {
+    position: relative;
+    flex: 1;
+    margin-right: 10px;
+  }
+  
+  .price-input-container .currency-symbol {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #666;
+    font-weight: bold;
+    pointer-events: none; /* Prevent the symbol from blocking clicks */
+  }
+  
+  .price-input-container input {
+    padding-left: 50px !important; /* Increased padding */
+    width: 100%;
+    box-sizing: border-box;
+  }

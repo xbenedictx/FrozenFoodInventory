@@ -1149,28 +1149,46 @@ async function getNextItemId(branchId) {
  * and displays merged results. Falls back to a default message if no suppliers are found.
  */
 function loadSupplierPage() {
-  const supplierList = document.getElementById("supplierList");
-
-  if (!currentBranch) {
-    supplierList.innerHTML = "<p>Please select a branch first</p>";
-    return;
-  }
-
-  supplierList.innerHTML = "<p>Loading suppliers...</p>";
-
-  db.ref(`branch_suppliers/${currentBranch}`)
-    .once("value")
-    .then((branchSnap) => {
-      supplierList.innerHTML = "";
-
-      if (branchSnap.exists()) {
-        branchSnap.forEach((child) => {
-          const supplier = child.val();
-          supplier.id = child.key;
-
-          const div = document.createElement("div");
-          div.className = "supplier-item";
-          div.innerHTML = `
+    const supplierList = document.getElementById("supplierList");
+  
+    if (!currentBranch) {
+      supplierList.innerHTML = "<p>Please select a branch first</p>";
+      return;
+    }
+  
+    supplierList.innerHTML = "<p>Loading suppliers...</p>";
+  
+    db.ref(`branch_suppliers/${currentBranch}`)
+      .once("value")
+      .then((branchSnap) => {
+        supplierList.innerHTML = "";
+  
+        if (branchSnap.exists()) {
+          branchSnap.forEach((child) => {
+            const supplier = child.val();
+            supplier.id = child.key;
+  
+            const div = document.createElement("div");
+            div.className = "supplier-item";
+            
+            // Create product list HTML
+            let productsHtml = "<strong>Products:</strong><ul>";
+            if (supplier.products) {
+              if (typeof supplier.products === 'string') {
+                // Legacy format (comma-separated string)
+                productsHtml += `<li>${supplier.products.replace(/,/g, '</li><li>')}</li>`;
+              } else {
+                // New format (object with prices)
+                for (const [productName, productData] of Object.entries(supplier.products)) {
+                  productsHtml += `<li>${productName} - ${productData.price.toFixed(2)} PHP per kg</li>`;
+                }
+              }
+            } else {
+              productsHtml += "<li>N/A</li>";
+            }
+            productsHtml += "</ul>";
+  
+            div.innerHTML = `
               <div>
                 <strong>${supplier.name}</strong><br><br>
                 <strong>Contact:</strong> ${supplier.contact || "N/A"}<br>
@@ -1180,26 +1198,24 @@ function loadSupplierPage() {
                     ? `<img src="${supplier.gcashQR}" style="max-width: 100px; display: block; margin: 5px 0;">`
                     : ""
                 }
-                <strong>Products:</strong> ${supplier.products || "N/A"}
+                ${productsHtml}
               </div>
               <div class="actions">
                 <button onclick="editSupplier('${supplier.id}')">Edit</button>
-                <button onclick="deleteSupplier('${
-                  supplier.id
-                }')">Delete</button>
+                <button onclick="deleteSupplier('${supplier.id}')">Delete</button>
               </div>
             `;
-          supplierList.appendChild(div);
-        });
-      } else {
-        supplierList.innerHTML =
-          "<p>No suppliers found for this branch. Add a supplier to start.</p>";
-      }
-    })
-    .catch((error) => {
-      console.error("Error loading suppliers:", error.message);
-      supplierList.innerHTML = `<p>Error loading suppliers: ${error.message}</p>`;
-    });
+            supplierList.appendChild(div);
+          });
+        } else {
+          supplierList.innerHTML =
+            "<p>No suppliers found for this branch. Add a supplier to start.</p>";
+        }
+      })
+      .catch((error) => {
+        console.error("Error loading suppliers:", error.message);
+        supplierList.innerHTML = `<p>Error loading suppliers: ${error.message}</p>`;
+      });
 }
 
 /**
@@ -1229,41 +1245,59 @@ function addSupplier() {
  * @param {string} supplierId - The ID of the supplier to edit
  */
 function editSupplier(supplierId) {
-  currentEditingSupplierId = supplierId;
-
-  if (!document.getElementById("supplierModal")) {
-    createSupplierModal();
-  }
-
-  db.ref(`branch_suppliers/${currentBranch}/${supplierId}`)
-    .once("value")
-    .then((snapshot) => {
-      const supplier = snapshot.val();
-
-      document.getElementById("supplierName").value = supplier.name || "";
-      document.getElementById("supplierContact").value = supplier.contact || "";
-      document.getElementById("supplierGCash").value = supplier.gcash || "";
-      document.getElementById("supplierProducts").value =
-        supplier.products || "";
-
-      // Show existing QR code if available
-      if (supplier.gcashQR) {
-        document.getElementById(
-          "qrCodePreview"
-        ).innerHTML = `<img src="${supplier.gcashQR}" style="max-width: 200px;">`;
-      }
-
-      document.getElementById("supplierModalTitle").textContent =
-        "Edit Supplier";
-      document.getElementById("saveSupplierBtn").textContent =
-        "Update Supplier";
-      document.getElementById("supplierModal").style.display = "block";
-    })
-    .catch((error) => {
-      console.error("Error loading supplier for editing:", error);
-      alert("Failed to load supplier data for editing.");
-    });
+    currentEditingSupplierId = supplierId;
+  
+    if (!document.getElementById("supplierModal")) {
+      createSupplierModal();
+    }
+  
+    db.ref(`branch_suppliers/${currentBranch}/${supplierId}`)
+      .once("value")
+      .then((snapshot) => {
+        const supplier = snapshot.val();
+  
+        document.getElementById("supplierName").value = supplier.name || "";
+        document.getElementById("supplierContact").value = supplier.contact || "";
+        document.getElementById("supplierGCash").value = supplier.gcash || "";
+  
+        // Clear existing product entries
+        document.getElementById("productEntries").innerHTML = "";
+        
+        // Add product entries
+        if (supplier.products) {
+          if (typeof supplier.products === 'string') {
+            // Legacy format (comma-separated string)
+            const productNames = supplier.products.split(',').map(p => p.trim());
+            productNames.forEach(name => {
+              if (name) addProductEntry(name, '');
+            });
+          } else {
+            // New format (object with prices)
+            for (const [productName, productData] of Object.entries(supplier.products)) {
+              addProductEntry(productName, productData.price);
+            }
+          }
+        } else {
+          // Add one empty product entry by default
+          addProductEntry();
+        }
+  
+        // Show existing QR code if available
+        if (supplier.gcashQR) {
+          document.getElementById("qrCodePreview").innerHTML = 
+            `<img src="${supplier.gcashQR}" style="max-width: 200px;">`;
+        }
+  
+        document.getElementById("supplierModalTitle").textContent = "Edit Supplier";
+        document.getElementById("saveSupplierBtn").textContent = "Update Supplier";
+        document.getElementById("supplierModal").style.display = "block";
+      })
+      .catch((error) => {
+        console.error("Error loading supplier for editing:", error);
+        alert("Failed to load supplier data for editing.");
+      });
 }
+
 function deleteSupplier(id) {
   if (confirm("Are you sure you want to delete this supplier?")) {
     db.ref(`branch_suppliers/${currentBranch}/${id}`)
@@ -1278,7 +1312,7 @@ function deleteSupplier(id) {
   }
 }
 function createSupplierModal() {
-  const modalHTML = `
+    const modalHTML = `
       <div id="supplierModal" class="modal">
         <div class="modal-content">
           <span class="close-supplier-modal">&times;</span>
@@ -1297,8 +1331,11 @@ function createSupplierModal() {
               <input type="text" id="supplierGCash" required>
             </div>
             <div class="form-group">
-              <label for="supplierProducts">Products (comma-separated):</label>
-              <textarea id="supplierProducts" required></textarea>
+              <label>Products:</label>
+              <div id="productEntries">
+                <!-- Product entries will be added here -->
+              </div>
+              <button type="button" id="addProductBtn">Add Product</button>
             </div>
             <div class="form-group">
               <label for="supplierQRCode">GCash QR Code:</label>
@@ -1313,34 +1350,66 @@ function createSupplierModal() {
         </div>
       </div>
     `;
+  
+    document.body.insertAdjacentHTML("beforeend", modalHTML);
+  
+    // Add event listener for adding products
+    document.getElementById('addProductBtn').addEventListener('click', addProductEntry);
+  
+  
+      // Add event listener for QR code preview
+  document
+  .getElementById("supplierQRCode")
+  .addEventListener("change", function (e) {
+    previewQRCode(e);
+  });
 
-  document.body.insertAdjacentHTML("beforeend", modalHTML);
+// Add event listeners
+document
+  .querySelector(".close-supplier-modal")
+  .addEventListener("click", closeSupplierModal);
+document
+  .getElementById("cancelSupplier")
+  .addEventListener("click", closeSupplierModal);
+document
+  .getElementById("supplierForm")
+  .addEventListener("submit", handleSupplierSubmit);
 
-  // Add event listener for QR code preview
-  document
-    .getElementById("supplierQRCode")
-    .addEventListener("change", function (e) {
-      previewQRCode(e);
-    });
-
-  // Add event listeners
-  document
-    .querySelector(".close-supplier-modal")
-    .addEventListener("click", closeSupplierModal);
-  document
-    .getElementById("cancelSupplier")
-    .addEventListener("click", closeSupplierModal);
-  document
-    .getElementById("supplierForm")
-    .addEventListener("submit", handleSupplierSubmit);
-
-  // Close modal when clicking outside
-  document
-    .getElementById("supplierModal")
-    .addEventListener("click", function (e) {
-      if (e.target === this) {
-        closeSupplierModal();
-      }
+// Close modal when clicking outside
+document
+  .getElementById("supplierModal")
+  .addEventListener("click", function (e) {
+    if (e.target === this) {
+      closeSupplierModal();
+    }
+  });
+}
+  
+  
+  
+function addProductEntry(productName = '', price = '') {
+    const productEntries = document.getElementById('productEntries');
+    const productId = Date.now(); // Unique ID for each product entry
+    
+    const productEntry = document.createElement('div');
+    productEntry.className = 'product-entry';
+    productEntry.innerHTML = `
+      <div class="product-inputs">
+        <input type="text" placeholder="Product name" value="${productName}" class="product-name" required>
+        <div class="price-input-container">
+          <span class="currency-symbol">PHP</span>
+          <input type="number" placeholder="0.00" value="${price}" class="product-price" min="0" step="0.01" required>
+        </div>
+        <span class="unit-label">per kg</span>
+        <button type="button" class="remove-product" data-id="${productId}">×</button>
+      </div>
+    `;
+    
+    productEntries.appendChild(productEntry);
+    
+    // Add event listener for remove button
+    productEntry.querySelector('.remove-product').addEventListener('click', function() {
+      productEntries.removeChild(productEntry);
     });
 }
 function showSupplierModal() {
@@ -1367,82 +1436,100 @@ function closeSupplierModal() {
  * an alert with the error message.
  */
 async function handleSupplierSubmit(e) {
-  e.preventDefault();
-
-  const name = document.getElementById("supplierName").value.trim();
-  const contact = document.getElementById("supplierContact").value.trim();
-  const gcash = document.getElementById("supplierGCash").value.trim();
-  const products = document.getElementById("supplierProducts").value.trim();
-  const qrCodeFile = document.getElementById("supplierQRCode").files[0];
-
-  if (!name || !contact || !gcash || !products) {
-    alert("Please fill in all required fields.");
-    return;
-  }
-
-  if (!currentBranch) {
-    alert("Please select a branch first.");
-    return;
-  }
-
-  const saveBtn = document.getElementById("saveSupplierBtn");
-  saveBtn.disabled = true;
-  saveBtn.textContent = currentEditingSupplierId ? "Updating..." : "Saving...";
-
-  try {
-    let qrCodeBase64 = null;
-
-    // If a new QR code was uploaded
-    if (qrCodeFile) {
-      qrCodeBase64 = await convertImageToBase64(qrCodeFile);
+    e.preventDefault();
+  
+    const name = document.getElementById("supplierName").value.trim();
+    const contact = document.getElementById("supplierContact").value.trim();
+    const gcash = document.getElementById("supplierGCash").value.trim();
+    const qrCodeFile = document.getElementById("supplierQRCode").files[0];
+  
+    if (!name || !contact || !gcash) {
+      alert("Please fill in all required fields.");
+      return;
     }
-    // If editing but no new QR code was uploaded, keep existing one
-    else if (currentEditingSupplierId) {
-      const snapshot = await db
-        .ref(
-          `branch_suppliers/${currentBranch}/${currentEditingSupplierId}/gcashQR`
-        )
-        .once("value");
-      qrCodeBase64 = snapshot.val();
+  
+    if (!currentBranch) {
+      alert("Please select a branch first.");
+      return;
     }
-
-    const supplierData = {
-      name,
-      contact,
-      gcash,
-      products,
-      updatedAt: firebase.database.ServerValue.TIMESTAMP,
-    };
-
-    // Only add gcashQR if we have one
-    if (qrCodeBase64) {
-      supplierData.gcashQR = qrCodeBase64;
+  
+    // Collect product data
+    const productEntries = document.querySelectorAll('.product-entry');
+    const products = {};
+    
+    let hasEmptyProducts = false;
+    productEntries.forEach(entry => {
+      const name = entry.querySelector('.product-name').value.trim();
+      const price = parseFloat(entry.querySelector('.product-price').value);
+      
+      if (!name || isNaN(price)) {
+        hasEmptyProducts = true;
+        return;
+      }
+      
+      products[name] = {
+        price: price,
+        unit: "kg" // Always use kg as the unit
+      };
+    });
+    
+    if (hasEmptyProducts || productEntries.length === 0) {
+      alert("Please fill in all product fields and add at least one product.");
+      return;
     }
-
-    if (currentEditingSupplierId) {
-      await db
-        .ref(`branch_suppliers/${currentBranch}/${currentEditingSupplierId}`)
-        .update(supplierData);
-      console.log("Supplier updated successfully");
-    } else {
-      const newSupplierId = await getNextSupplierId(currentBranch);
-      await db
-        .ref(`branch_suppliers/${currentBranch}/${newSupplierId}`)
-        .set(supplierData);
-      console.log("Supplier added successfully with ID:", newSupplierId);
+  
+    const saveBtn = document.getElementById("saveSupplierBtn");
+    saveBtn.disabled = true;
+    saveBtn.textContent = currentEditingSupplierId ? "Updating..." : "Saving...";
+  
+    try {
+      let qrCodeBase64 = null;
+  
+      if (qrCodeFile) {
+        qrCodeBase64 = await convertImageToBase64(qrCodeFile);
+      } else if (currentEditingSupplierId) {
+        const snapshot = await db
+          .ref(`branch_suppliers/${currentBranch}/${currentEditingSupplierId}/gcashQR`)
+          .once("value");
+        qrCodeBase64 = snapshot.val();
+      }
+  
+      const supplierData = {
+        name,
+        contact,
+        gcash,
+        products,
+        updatedAt: firebase.database.ServerValue.TIMESTAMP,
+      };
+  
+      if (qrCodeBase64) {
+        supplierData.gcashQR = qrCodeBase64;
+      }
+  
+      if (currentEditingSupplierId) {
+        await db
+          .ref(`branch_suppliers/${currentBranch}/${currentEditingSupplierId}`)
+          .update(supplierData);
+        console.log("Supplier updated successfully");
+      } else {
+        const newSupplierId = await getNextSupplierId(currentBranch);
+        await db
+          .ref(`branch_suppliers/${currentBranch}/${newSupplierId}`)
+          .set(supplierData);
+        console.log("Supplier added successfully with ID:", newSupplierId);
+      }
+  
+      closeSupplierModal();
+      loadSupplierPage();
+    } catch (error) {
+      console.error("Error saving supplier:", error.message);
+      alert("Error saving supplier: " + error.message);
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = currentEditingSupplierId
+        ? "Update Supplier"
+        : "Save Supplier";
     }
-
-    closeSupplierModal();
-    loadSupplierPage();
-  } catch (error) {
-    console.error("Error saving supplier:", error.message);
-    alert("Error saving supplier: " + error.message);
-  } finally {
-    saveBtn.disabled = false;
-    saveBtn.textContent = currentEditingSupplierId
-      ? "Update Supplier"
-      : "Save Supplier";
-  }
 }
 
 async function getNextSupplierId(branchId) {
