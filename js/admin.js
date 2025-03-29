@@ -2801,15 +2801,14 @@ function cleanupOrderListeners() {
  */
 // Replace your fetchFirebaseData function with:
 async function fetchFirebaseData(path) {
-    try {
-      const snapshot = await db.ref(path).once('value');
-      return snapshot.val();
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      throw error;
-    }
+  try {
+    const snapshot = await db.ref(path).once("value");
+    return snapshot.val();
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    throw error;
   }
-
+}
 
 function loadReportPage() {
   const reportOutput = document.getElementById("reportOutput");
@@ -2818,70 +2817,92 @@ function loadReportPage() {
 }
 
 async function generateReport() {
-    const reportType = document.getElementById("reportType").value;
-    const reportOutput = document.getElementById("reportOutput");
-    reportOutput.innerHTML = "<p>Generating report...</p>";
-  
-    try {
-      let snapshot;
-      switch (reportType) {
-        case "inventory":
-          snapshot = await db.ref(`branch_inventory/${currentBranch}`).once('value');
-          const inventoryData = snapshot.val();
-          reportOutput.innerHTML = `
-            <h3>Inventory Report - ${currentBranch}</h3>
-            ${formatInventoryReport(inventoryData)}
-            <div class="export-buttons"></div>
-          `;
-          addExportButtons('inventory', inventoryData, reportOutput);
-          break;
-  
-        case "supplier":
-          snapshot = await db.ref(`branch_suppliers/${currentBranch}`).once('value');
-          const supplierData = snapshot.val();
-          reportOutput.innerHTML = `
-            <h3>Supplier Report - ${currentBranch}</h3>
-            ${formatSupplierReport(supplierData)}
-            <div class="export-buttons"></div>
-          `;
-          addExportButtons('supplier', supplierData, reportOutput);
-          break;
-  
-        case "order":
-          snapshot = await db.ref(`branch_orders/${currentBranch}`).once('value');
-          const orderData = snapshot.val();
-          reportOutput.innerHTML = `
-            <h3>Order Report - ${currentBranch}</h3>
-            ${formatOrderReport(orderData)}
-            <div class="export-buttons"></div>
-          `;
-          addExportButtons('order', orderData, reportOutput);
-          break;
-      }
-    } catch (error) {
-      console.error(`Error generating ${reportType} report:`, error);
-      reportOutput.innerHTML = `
-        <p class="error">Error generating report: ${error.message}</p>
-        ${error.stack ? `<details><summary>Technical details</summary>${error.stack}</details>` : ''}
-      `;
+  const reportType = document.getElementById("reportType").value;
+  const reportOutput = document.getElementById("reportOutput");
+  reportOutput.innerHTML = "<p>Generating report...</p>";
+
+  try {
+    let snapshot;
+    switch (reportType) {
+      case "inventory":
+        snapshot = await db
+          .ref(`branch_inventory/${currentBranch}`)
+          .once("value");
+        const inventoryData = snapshot.val();
+        reportOutput.innerHTML = `
+          <h3>Inventory Report - ${currentBranch}</h3>
+          <div class="chart-container small">
+            <canvas id="inventoryChart"></canvas>
+          </div>
+          ${formatInventoryReport(inventoryData)}
+          <div class="export-buttons"></div>
+        `;
+        createInventoryChart(inventoryData);
+        addExportButtons("inventory", inventoryData, reportOutput);
+        break;
+
+      case "supplier":
+        snapshot = await db
+          .ref(`branch_suppliers/${currentBranch}`)
+          .once("value");
+        const supplierData = snapshot.val();
+        reportOutput.innerHTML = `
+              <h3>Supplier Report - ${currentBranch}</h3>
+              <div class="chart-container bar-chart">
+                <canvas id="supplierChart"></canvas>
+              </div>
+              ${formatSupplierReport(supplierData)}
+              <div class="export-buttons"></div>
+            `;
+        createSupplierChart(supplierData);
+        addExportButtons("supplier", supplierData, reportOutput);
+        break;
+      case "order":
+        snapshot = await db.ref(`branch_orders/${currentBranch}`).once("value");
+        const orderData = snapshot.val();
+        reportOutput.innerHTML = `
+    <h3>Order Report - ${currentBranch}</h3>
+    <div class="chart-container pie-chart">
+      <canvas id="orderChart"></canvas>
+    </div>
+    <div class="chart-container line-chart">
+      <canvas id="orderTimelineChart"></canvas>
+    </div>
+    ${formatOrderReport(orderData)}
+    <div class="export-buttons"></div>
+  `;
+        createOrderChart(orderData);
+        createOrderTimelineChart(orderData);
+        addExportButtons("order", orderData, reportOutput);
+        break;
     }
+  } catch (error) {
+    console.error(`Error generating ${reportType} report:`, error);
+    reportOutput.innerHTML = `
+        <p class="error">Error generating report: ${error.message}</p>
+        ${
+          error.stack
+            ? `<details><summary>Technical details</summary>${error.stack}</details>`
+            : ""
+        }
+      `;
   }
-  function addExportButtons(reportType, data, container) {
-    const buttonsDiv = container.querySelector('.export-buttons');
-    
-    // CSV Button
-    const csvBtn = document.createElement('button');
-    csvBtn.textContent = 'Export to CSV';
-    csvBtn.addEventListener('click', () => exportToCSV(reportType, data));
-    buttonsDiv.appendChild(csvBtn);
-    
-    // PDF Button
-    const pdfBtn = document.createElement('button');
-    pdfBtn.textContent = 'Export to PDF';
-    pdfBtn.addEventListener('click', () => exportToPDF(reportType, data));
-    buttonsDiv.appendChild(pdfBtn);
-  }
-  
+}
+function addExportButtons(reportType, data, container) {
+  const buttonsDiv = container.querySelector(".export-buttons");
+
+  // CSV Button
+  const csvBtn = document.createElement("button");
+  csvBtn.textContent = "Export to CSV";
+  csvBtn.addEventListener("click", () => exportToCSV(reportType, data));
+  buttonsDiv.appendChild(csvBtn);
+
+  // PDF Button
+  const pdfBtn = document.createElement("button");
+  pdfBtn.textContent = "Export to PDF";
+  pdfBtn.addEventListener("click", () => exportToPDF(reportType, data));
+  buttonsDiv.appendChild(pdfBtn);
+}
 
 /* ============ REPORT FORMATTING FUNCTIONS ============ */
 
@@ -2931,14 +2952,14 @@ function formatInventoryReport(data) {
 }
 
 function formatSupplierReport(data) {
-    if (!data || Object.keys(data).length === 0) {
-        return `
+  if (!data || Object.keys(data).length === 0) {
+    return `
           <div class="empty-state">
             <i class="fas fa-box-open"></i>
             <p>No supplier data found for ${currentBranch}</p>
           </div>
         `;
-      }
+  }
 
   const suppliers = Object.entries(data).map(([id, supplier]) => ({
     id,
@@ -3012,101 +3033,348 @@ function formatOrderReport(data) {
     `;
 }
 
+/* ============ CHART GENERATION ============ */
+
+function createInventoryChart(data) {
+  if (!data) return;
+
+  const ctx = document.getElementById("inventoryChart");
+
+  // Destroy previous chart if exists
+  if (ctx.chart) {
+    ctx.chart.destroy();
+  }
+
+  const items = Object.values(data);
+  const lowStockItems = items.filter(
+    (item) => item.stock <= item.minStock
+  ).length;
+  const healthyItems = items.length - lowStockItems;
+
+  ctx.chart = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: ["Low Stock", "Healthy Stock"],
+      datasets: [
+        {
+          data: [lowStockItems, healthyItems],
+          backgroundColor: [
+            "rgba(255, 99, 132, 0.7)",
+            "rgba(54, 162, 235, 0.7)",
+          ],
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false, // Important
+      plugins: {
+        title: {
+          display: true,
+          text: "Inventory Status Overview",
+        },
+      },
+    },
+  });
+}
+function createSupplierChart(data) {
+    if (!data) return;
+  
+    const ctx = document.getElementById('supplierChart');
+    
+    // Destroy previous chart if exists
+    if (ctx.chart) {
+      ctx.chart.destroy();
+    }
+  
+    const suppliers = Object.values(data);
+    const productCounts = suppliers.map(supplier => 
+      supplier.products ? supplier.products.split(',').length : 0
+    );
+    const supplierNames = suppliers.map(supplier => supplier.name);
+  
+    ctx.chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: supplierNames,
+        datasets: [{
+          label: 'Number of Products Supplied',
+          data: productCounts,
+          backgroundColor: 'rgba(75, 192, 192, 0.7)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1,
+              precision: 0
+            }
+          }
+        },
+        plugins: {
+          title: {
+            display: true,
+            text: 'Products per Supplier',
+            padding: {
+              top: 0,
+              bottom: 10
+            }
+          }
+        },
+        layout: {
+          padding: {
+            top: 10,
+            bottom: 10,
+            left: 10,
+            right: 10
+          }
+        }
+      }
+    });
+  }
+  
+  function createOrderChart(data) {
+    if (!data) return;
+  
+    const ctx = document.getElementById('orderChart');
+    
+    // Destroy previous chart if exists
+    if (ctx.chart) {
+      ctx.chart.destroy();
+    }
+  
+    const orders = Object.values(data);
+    const statusCounts = orders.reduce((acc, order) => {
+      acc[order.status] = (acc[order.status] || 0) + 1;
+      return acc;
+    }, {});
+  
+    ctx.chart = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: Object.keys(statusCounts),
+        datasets: [{
+          data: Object.values(statusCounts),
+          backgroundColor: [
+            'rgba(255, 99, 132, 0.7)',
+            'rgba(54, 162, 235, 0.7)',
+            'rgba(255, 206, 86, 0.7)',
+            'rgba(75, 192, 192, 0.7)',
+            'rgba(153, 102, 255, 0.7)'
+          ],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Order Status Distribution',
+            padding: {
+              top: 0,
+              bottom: 10
+            }
+          }
+        },
+        layout: {
+          padding: {
+            top: 10,
+            bottom: 10,
+            left: 10,
+            right: 10
+          }
+        }
+      }
+    });
+  }
+
+function createOrderTimelineChart(data) {
+  if (!data) return;
+
+  const ctx = document.getElementById("orderTimelineChart");
+
+  // Destroy previous chart if exists
+  if (ctx.chart) {
+    ctx.chart.destroy();
+  }
+
+  const orders = Object.values(data);
+  const monthlyData = orders.reduce((acc, order) => {
+    const date = new Date(order.timestamp);
+    const monthYear = `${date.getFullYear()}-${(date.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}`;
+    acc[monthYear] = (acc[monthYear] || 0) + 1;
+    return acc;
+  }, {});
+
+  const sortedMonths = Object.keys(monthlyData).sort();
+  const monthNames = sortedMonths.map((monthStr) => {
+    // Changed parameter name from 'month' to 'monthStr'
+    const [year, month] = monthStr.split("-");
+    return new Date(year, month - 1).toLocaleString("default", {
+      month: "short",
+      year: "numeric",
+    });
+  });
+
+  ctx.chart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: monthNames,
+      datasets: [
+        {
+          label: "Orders per Month",
+          data: sortedMonths.map((month) => monthlyData[month]),
+          backgroundColor: "rgba(54, 162, 235, 0.2)",
+          borderColor: "rgba(54, 162, 235, 1)",
+          borderWidth: 2,
+          tension: 0.1,
+          fill: true,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: {
+          display: true,
+          text: "Order Volume Over Time",
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1,
+            precision: 0,
+          },
+        },
+      },
+    },
+  });
+}
+
 /* ============ EXPORT FUNCTIONS ============ */
 
 function exportToCSV(reportType, data) {
-    let csvContent = "";
-    
-    switch(reportType) {
-      case "inventory":
-        csvContent = "Name,Current Stock,Min Stock,Status,Expiration,Supplier\n";
-        Object.values(data).forEach(item => {
-          const status = item.stock < item.minStock ? 'Low Stock' : 'OK';
-          csvContent += `"${item.name}",${item.stock},${item.minStock},${status},"${item.expiration}","${item.supplier}"\n`;
-        });
-        break;
-        
-      case "supplier":
-        csvContent = "Name,Contact,GCash,Products\n";
-        Object.values(data).forEach(supplier => {
-          csvContent += `"${supplier.name}","${supplier.contact}","${supplier.gcash}","${supplier.products}"\n`;
-        });
-        break;
-        
-      case "order":
-        csvContent = "Order ID,Date,Supplier,Status,Payment,Products\n";
-        Object.entries(data).forEach(([id, order]) => {
-          const date = new Date(order.timestamp).toLocaleDateString();
-          const products = Object.entries(order.products || {}).map(([name, qty]) => `${name} (${qty})`).join(", ");
-          csvContent += `"${id}","${date}","${order.supplierName}","${order.status}","${order.paymentStatus}","${products}"\n`;
-        });
-        break;
-    }
-    
-    // Create download link
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${reportType}_report_${currentBranch}_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  let csvContent = "";
+
+  switch (reportType) {
+    case "inventory":
+      csvContent = "Name,Current Stock,Min Stock,Status,Expiration,Supplier\n";
+      Object.values(data).forEach((item) => {
+        const status = item.stock < item.minStock ? "Low Stock" : "OK";
+        csvContent += `"${item.name}",${item.stock},${item.minStock},${status},"${item.expiration}","${item.supplier}"\n`;
+      });
+      break;
+
+    case "supplier":
+      csvContent = "Name,Contact,GCash,Products\n";
+      Object.values(data).forEach((supplier) => {
+        csvContent += `"${supplier.name}","${supplier.contact}","${supplier.gcash}","${supplier.products}"\n`;
+      });
+      break;
+
+    case "order":
+      csvContent = "Order ID,Date,Supplier,Status,Payment,Products\n";
+      Object.entries(data).forEach(([id, order]) => {
+        const date = new Date(order.timestamp).toLocaleDateString();
+        const products = Object.entries(order.products || {})
+          .map(([name, qty]) => `${name} (${qty})`)
+          .join(", ");
+        csvContent += `"${id}","${date}","${order.supplierName}","${order.status}","${order.paymentStatus}","${products}"\n`;
+      });
+      break;
   }
-  
-  function exportToPDF(reportType, data) {
-    // Using jsPDF (must include the library in your HTML)
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    
-    // Add title
-    doc.setFontSize(18);
-    doc.text(`${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report - ${currentBranch}`, 14, 15);
-    doc.setFontSize(12);
-    
-    let yPosition = 25;
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 14;
-    
-    switch(reportType) {
-      case "inventory":
-        // Table headers
-        doc.text("Item", margin, yPosition);
-        doc.text("Stock", margin + 60, yPosition);
-        doc.text("Min", margin + 90, yPosition);
-        doc.text("Status", margin + 120, yPosition);
-        doc.text("Expires", margin + 150, yPosition);
+
+  // Create download link
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${reportType}_report_${currentBranch}_${
+    new Date().toISOString().split("T")[0]
+  }.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function exportToPDF(reportType, data) {
+  // Using jsPDF (must include the library in your HTML)
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  // Add title
+  doc.setFontSize(18);
+  doc.text(
+    `${
+      reportType.charAt(0).toUpperCase() + reportType.slice(1)
+    } Report - ${currentBranch}`,
+    14,
+    15
+  );
+  doc.setFontSize(12);
+
+  let yPosition = 25;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 14;
+
+  switch (reportType) {
+    case "inventory":
+      // Table headers
+      doc.text("Item", margin, yPosition);
+      doc.text("Stock", margin + 60, yPosition);
+      doc.text("Min", margin + 90, yPosition);
+      doc.text("Status", margin + 120, yPosition);
+      doc.text("Expires", margin + 150, yPosition);
+      yPosition += 7;
+
+      // Table rows
+      Object.values(data).forEach((item) => {
+        if (yPosition > 280) {
+          // Add new page if needed
+          doc.addPage();
+          yPosition = 20;
+        }
+
+        const status = item.stock < item.minStock ? "Low Stock" : "OK";
+        doc.text(item.name.substring(0, 20), margin, yPosition);
+        doc.text(item.stock.toString(), margin + 60, yPosition);
+        doc.text(item.minStock.toString(), margin + 90, yPosition);
+        doc.text(status, margin + 120, yPosition);
+        doc.text(item.expiration, margin + 150, yPosition);
         yPosition += 7;
-        
-        // Table rows
-        Object.values(data).forEach(item => {
-          if (yPosition > 280) { // Add new page if needed
-            doc.addPage();
-            yPosition = 20;
-          }
-          
-          const status = item.stock < item.minStock ? 'Low Stock' : 'OK';
-          doc.text(item.name.substring(0, 20), margin, yPosition);
-          doc.text(item.stock.toString(), margin + 60, yPosition);
-          doc.text(item.minStock.toString(), margin + 90, yPosition);
-          doc.text(status, margin + 120, yPosition);
-          doc.text(item.expiration, margin + 150, yPosition);
-          yPosition += 7;
-        });
-        break;
-        
-      case "supplier":
-        // Similar implementation for suppliers
-        break;
-        
-      case "order":
-        // Similar implementation for orders
-        break;
-    }
-    
-    // Save the PDF
-    doc.save(`${reportType}_report_${currentBranch}_${new Date().toISOString().split('T')[0]}.pdf`);
+      });
+      break;
+
+    case "supplier":
+      // Similar implementation for suppliers
+      break;
+
+    case "order":
+      // Similar implementation for orders
+      break;
   }
+
+  // Save the PDF
+  doc.save(
+    `${reportType}_report_${currentBranch}_${
+      new Date().toISOString().split("T")[0]
+    }.pdf`
+  );
+}
 
 /* ============================================= */
 /* ============ BRANCH SECTION ================= */

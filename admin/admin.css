@@ -987,13 +987,6 @@ body {
   }
 
   /* Add to your admin.css */
-.chart-container {
-    background: white;
-    border-radius: 8px;
-    padding: 15px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    margin-bottom: 25px;
-  }
   
   .report-summary {
     display: flex;
@@ -1056,13 +1049,7 @@ body {
     margin: 1rem 0;
   }
   
-  .chart-container {
-    background: white;
-    border-radius: 8px;
-    padding: 15px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    margin-bottom: 25px;
-  }
+
 
   /* Reports Section */
 #reportOutput {
@@ -1142,4 +1129,60 @@ body {
     text-align: center;
     padding: 20px;
     color: #666;
+  }
+
+/* Chart container styles */
+.chart-container {
+    position: relative;
+    width: 100%;
+    margin: 20px auto 10px;
+    min-height: 300px; /* Ensures consistent minimum height */
+  }
+  /* For supplier chart (bar chart) */
+.chart-container.bar-chart {
+    height: 400px; /* Fixed height for bar charts */
+  }
+  
+  /* For pie/doughnut charts */
+  .chart-container.pie-chart {
+    max-width: 500px;
+    height: 350px; /* Fixed height for pie charts */
+    margin: 0 auto 20px; /* Center the pie charts */
+  }
+  
+  /* For line charts (timeline) */
+  .chart-container.line-chart {
+    height: 400px; /* Fixed height for line charts */
+  }
+  
+  /* Fixed aspect ratio container */
+  .chart-container.aspect-ratio {
+    height: 300px; /* Fixed height instead of padding-bottom */
+    margin-bottom: 20px;
+  }
+  
+  .chart-container.aspect-ratio canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+  }
+  
+  /* For smaller charts (like doughnut/pie) */
+  .chart-container.small {
+    max-width: 500px;
+    height: 300px; /* Fixed height */
+    margin-bottom: 20px; /* Specific margin for small charts */
+  }
+
+  .chart-container canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+  }
+
+  canvas {
+    width: 100% !important;
+    height: 100% !important;
   }
