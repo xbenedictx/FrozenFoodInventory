@@ -883,3 +883,55 @@ body {
 .order-products-list li {
     margin-bottom: 5px;
 }
+
+.low-stock-list {
+    max-height: 150px;
+    overflow-y: auto;
+    margin-top: 10px;
+    padding-left: 20px;
+  }
+  .low-stock-list li {
+    color: #d32f2f;
+    margin: 5px 0;
+  }
+
+
+  /* User Details Modal */
+.user-details {
+    padding: 20px;
+}
+
+.user-details h3 {
+    margin-top: 0;
+    color: #2c3e50;
+}
+
+.user-details p {
+    margin: 10px 0;
+}
+
+.branches-section {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f5f5f5;
+    border-radius: 5px;
+}
+
+/* Checkbox items for branch assignment */
+.checkbox-item {
+    margin: 8px 0;
+}
+
+.checkbox-item input {
+    margin-right: 8px;
+}
+
+/* Modal actions */
+.modal-actions {
+    margin-top: 20px;
+    text-align: right;
+}
+
+.modal-actions button {
+    margin-left: 10px;
+}

@@ -193,89 +193,128 @@ async function showPage(pageId) {
  * Displays low stock alerts, recent orders, and supplier performance.
  */
 function loadDashboardPage() {
-  const metrics = document.getElementById("dashboard-metrics");
-  metrics.innerHTML = "<p>Loading metrics...</p>";
-
-  Promise.all([
-    db.ref("inventory").once("value"),
-    db.ref("orders").once("value"),
-    db.ref("suppliers").once("value"),
-  ])
-    .then(([inventorySnap, ordersSnap, suppliersSnap]) => {
-      const inventoryData = [];
-      inventorySnap.forEach((child) =>
-        inventoryData.push({ id: child.key, ...child.val() })
-      );
-      const lowStock = inventoryData.filter(
-        (item) => item.stock <= (item.minStock || 0)
-      ).length;
-
-      const recentOrders = [];
-      const ordersBySupplier = {};
-      if (ordersSnap.val()) {
-        ordersSnap.forEach((child) => {
-          const order = child.val();
-          order.id = child.key;
-          recentOrders.push(order);
-          const supplierId = order.supplierID;
-          ordersBySupplier[supplierId] =
-            (ordersBySupplier[supplierId] || 0) + 1;
+    const metrics = document.getElementById("dashboard-metrics");
+    metrics.innerHTML = "<p>Loading metrics...</p>";
+  
+    if (!currentBranch) {
+      metrics.innerHTML = "<p>Please select a branch first</p>";
+      return;
+    }
+  
+    Promise.all([
+      db.ref(`branch_inventory/${currentBranch}`).once("value"),
+      db.ref(`branch_orders/${currentBranch}`).once("value"),
+      db.ref(`branch_suppliers/${currentBranch}`).once("value"),
+    ])
+      .then(([inventorySnap, ordersSnap, suppliersSnap]) => {
+        const inventoryData = [];
+        inventorySnap.forEach((child) => {
+          const item = child.val();
+          // Ensure numeric values and handle undefined minStock
+          item.stock = typeof item.stock === 'number' ? item.stock : 0;
+          item.minStock = typeof item.minStock === 'number' ? item.minStock : 0;
+          inventoryData.push({ id: child.key, ...item });
         });
-      }
-      const recentOrdersList = recentOrders.slice(-3);
-
-      const suppliers = suppliersSnap.val()
-        ? Object.entries(suppliersSnap.val()).reduce((acc, [id, supplier]) => {
-            acc[id] = supplier;
-            return acc;
-          }, {})
-        : {};
-
-      const supplierPerformance = suppliersSnap.val()
-        ? Object.entries(suppliersSnap.val()).map(([id, s]) => ({
-            name: s.name,
-            orders: ordersBySupplier[id] || 0,
-          }))
-        : [];
-
-      metrics.innerHTML = `
-        <div class="metric-card">
-          <h3>Low Stock Alerts</h3>
-          <p>${lowStock} items</p>
-        </div>
-        <div class="metric-card">
-          <h3>Recent Orders</h3>
-          <ul>
-            ${recentOrdersList
-              .map(
-                (o) => `
-              <li>
-                <strong>Order #${o.id}</strong><br>
-                Supplier: ${suppliers[o.supplierID]?.name || "Unknown"}<br>
-                Product: ${o.product}<br>
-                Quantity: ${o.quantity}<br>
-                Status: ${o.status}<br>
-                Payment Status: ${o.paymentStatus}<br>
-                Timestamp: ${new Date(o.timestamp).toLocaleString()}
-              </li>
-            `
-              )
-              .join("")}
-          </ul>
-        </div>
-        <div class="metric-card">
-          <h3>Supplier Performance</h3>
-          <ul>${supplierPerformance
-            .map((s) => `<li>${s.name}: ${s.orders} orders</li>`)
-            .join("")}</ul>
-        </div>
-      `;
-    })
-    .catch((error) => {
-      console.error("Error loading dashboard metrics:", error.message);
-      metrics.innerHTML = `<p>Error loading metrics: ${error.message}</p>`;
-    });
-}
+  
+        // Improved low stock calculation (only counts if minStock > 0)
+        const lowStockItems = inventoryData.filter(item => 
+          item.minStock > 0 && item.stock <= item.minStock
+        );
+        const lowStock = lowStockItems.length;
+  
+        const recentOrders = [];
+        const ordersBySupplier = {};
+        if (ordersSnap.val()) {
+          ordersSnap.forEach((child) => {
+            const order = child.val();
+            order.id = child.key;
+            
+            // Process products - this is the key fix
+            let productsInfo = "No products";
+            if (order.products && typeof order.products === 'object') {
+              productsInfo = Object.entries(order.products)
+                .map(([product, quantity]) => `${product} (${quantity})`)
+                .join(", ");
+            }
+            
+            recentOrders.push({
+              ...order,
+              productsInfo // Add the formatted products string
+            });
+            
+            const supplierId = order.supplierID;
+            ordersBySupplier[supplierId] = (ordersBySupplier[supplierId] || 0) + 1;
+          });
+        }
+        
+        // Sort orders by timestamp (newest first) and take the last 3
+        const recentOrdersList = recentOrders
+          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+          .slice(0, 3);
+  
+        const suppliers = suppliersSnap.val()
+          ? Object.entries(suppliersSnap.val()).reduce((acc, [id, supplier]) => {
+              acc[id] = supplier;
+              return acc;
+            }, {})
+          : {};
+  
+        const supplierPerformance = suppliersSnap.val()
+          ? Object.entries(suppliersSnap.val()).map(([id, s]) => ({
+              name: s.name,
+              orders: ordersBySupplier[id] || 0,
+            }))
+          : [];
+  
+        metrics.innerHTML = `
+          <div class="metric-card">
+            <h3>Low Stock Alerts</h3>
+            <p>${lowStock} items</p>
+            ${lowStock > 0 ? `
+              <div class="low-stock-details">
+                <ul>
+                  ${lowStockItems.slice(0, 3).map(item => `
+                    <li>
+                      <strong>${item.name}</strong>: 
+                      ${item.stock} in stock (min: ${item.minStock})
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            ` : ''}
+          </div>
+          <div class="metric-card">
+            <h3>Recent Orders</h3>
+            <ul>
+              ${recentOrdersList
+                .map(
+                  (o) => `
+                <li>
+                  <strong>Order #${o.id}</strong><br>
+                  Supplier: ${suppliers[o.supplierID]?.name || "Unknown"}<br>
+                  Products: ${o.productsInfo}<br>
+                  Status: ${o.status || "N/A"}<br>
+                  Payment Status: ${o.paymentStatus || "N/A"}<br>
+                  Date: ${o.timestamp ? new Date(o.timestamp).toLocaleString() : "N/A"}
+                </li>
+              `
+                )
+                .join("")}
+            </ul>
+          </div>
+          <div class="metric-card">
+            <h3>Supplier Performance</h3>
+            <ul>${supplierPerformance
+              .map((s) => `<li>${s.name}: ${s.orders} orders</li>`)
+              .join("")}</ul>
+          </div>
+        `;
+      })
+      .catch((error) => {
+        console.error("Error loading dashboard metrics:", error.message);
+        metrics.innerHTML = `<p>Error loading metrics: ${error.message}</p>`;
+      });
+  }
 
 /* ============================================= */
 /* ============ INVENTORY SECTION ============== */
@@ -3487,56 +3526,122 @@ function removeManagerFromBranch(branchId, managerId) {
 /* ============================================= */
 
 /**
- * Loads users (managers) for the currently selected branch
+ * Loads users - shows all users when no branch is selected, or branch managers when branch is selected
  */
 function loadUserPage() {
-  if (!currentBranch) {
-    document.getElementById("userList").innerHTML =
-      "<p>Please select a branch first</p>";
-    return;
-  }
+    const userList = document.getElementById("userList");
+    userList.innerHTML = "<p>Loading users...</p>";
 
-  const userList = document.getElementById("userList");
-  userList.innerHTML = "<p>Loading branch managers...</p>";
+    // First load all branches for reference
+    db.ref("branches").once("value").then(branchesSnap => {
+        const allBranches = branchesSnap.val() || {};
+        
+        if (!currentBranch) {
+            // Load ALL users when no branch is selected
+            db.ref("users")
+            .once("value")
+            .then((usersSnap) => {
+                userList.innerHTML = "";
 
-  // Load the managers for the current branch
-  db.ref(`branches/${currentBranch}/managers`)
-    .once("value")
-    .then((managersSnap) => {
-      userList.innerHTML = "";
+                if (usersSnap.exists()) {
+                    usersSnap.forEach((userSnap) => {
+                        const user = userSnap.val();
+                        const userId = userSnap.key;
 
-      if (managersSnap.exists()) {
-        const managers = managersSnap.val();
-        Object.keys(managers).forEach((managerId) => {
-          const email = managers[managerId];
+                        // Get all branches this user manages
+                        const managedBranches = [];
+                        for (const branchId in allBranches) {
+                            if (allBranches[branchId].managers && 
+                                allBranches[branchId].managers[userId]) {
+                                managedBranches.push(allBranches[branchId].name || branchId);
+                            }
+                        }
 
-          // Create user item display
-          const div = document.createElement("div");
-          div.className = "user-item";
-          div.innerHTML = `
+                        // Create user item display
+                        const div = document.createElement("div");
+                        div.className = "user-item";
+                        div.innerHTML = `
+                            <div>
+                                <strong>${user.email}</strong><br>
+                                Name: ${user.name || "N/A"}<br>
+                                Role: ${user.role || "N/A"}<br>
+                                ${managedBranches.length > 0 ? 
+                                    `Branches: ${managedBranches.join(", ")}` : 
+                                    "Not assigned to any branches"}
+                            </div>
+                            <div class="actions">
+                                <button onclick="viewUserDetails('${userId}')">View</button>
+                                ${user.role === "manager" ? `
+                                    <button onclick="editUser('${userId}')">Edit</button>
+                                    <button onclick="deleteUser('${userId}')">Remove</button>
+                                ` : `
+                                    <small>Admin users require special permissions</small>
+                                `}
+                            </div>
+                        `;
+                        userList.appendChild(div);
+                    });
+                } else {
+                    userList.innerHTML = "<p>No users found in the system</p>";
+                }
+            })
+            .catch((error) => {
+                console.error("Error loading all users:", error);
+                userList.innerHTML = `<p>Error loading users: ${error.message}</p>`;
+            });
+            return;
+        }
+
+        // Load branch-specific managers when branch is selected
+        userList.innerHTML = "<p>Loading branch managers...</p>";
+
+        // Load the managers for the current branch
+        db.ref(`branches/${currentBranch}/managers`)
+            .once("value")
+            .then((managersSnap) => {
+                userList.innerHTML = "";
+
+                if (managersSnap.exists()) {
+                    const managers = managersSnap.val();
+                    const userPromises = Object.keys(managers).map(managerId => {
+                        return db.ref(`users/${managerId}`).once("value").then(userSnap => {
+                            return { id: managerId, email: managers[managerId], ...userSnap.val() };
+                        });
+                    });
+
+                    return Promise.all(userPromises);
+                } else {
+                    userList.innerHTML = "<p>No managers assigned to this branch</p>";
+                    return [];
+                }
+            })
+            .then((managers) => {
+                if (managers.length === 0) return;
+
+                managers.forEach((user) => {
+                    // Create user item display
+                    const div = document.createElement("div");
+                    div.className = "user-item";
+                    div.innerHTML = `
                         <div>
-                            <strong>${email}</strong><br>
-                            Manager ID: ${managerId}<br>
-                            Role: Manager
+                            <strong>${user.email}</strong><br>
+                            Name: ${user.name || "N/A"}<br>
+                            Role: ${user.role || "manager"}<br>
+                            Branch: ${allBranches[currentBranch]?.name || currentBranch}
                         </div>
                         <div class="actions">
-                            <button onclick="editUser('${managerId}', '${currentBranch}')">Edit</button>
-                            <button onclick="removeManager('${managerId}', '${currentBranch}')">Remove</button>
+                            <button onclick="viewUserDetails('${user.id}')">View</button>
+                            <button onclick="editUser('${user.id}', '${currentBranch}')">Edit</button>
+                            <button onclick="removeManager('${user.id}', '${currentBranch}')">Remove</button>
                         </div>
                     `;
-          userList.appendChild(div);
-        });
-
-        if (userList.innerHTML === "") {
-          userList.innerHTML = "<p>No managers found for this branch</p>";
-        }
-      } else {
-        userList.innerHTML = "<p>No managers assigned to this branch</p>";
-      }
-    })
-    .catch((error) => {
-      console.error("Error loading branch managers:", error);
-      userList.innerHTML = `<p>Error loading managers: ${error.message}</p>`;
+                    userList.appendChild(div);
+                });
+            })
+            .catch((error) => {
+                console.error("Error loading branch managers:", error);
+                userList.innerHTML = `<p>Error loading managers: ${error.message}</p>`;
+            });
     });
 }
 
@@ -3548,118 +3653,167 @@ function addUser() {
   showUserModal();
 }
 
-function editUser(managerId, branchId) {
-  currentEditingUserId = managerId;
+function editUser(userId, branchId = null) {
+    currentEditingUserId = userId;
 
-  // Create modal if it doesn't exist
-  if (!document.getElementById("userModal")) {
-    createUserModal();
-  }
+    if (!document.getElementById("userModal")) {
+        createUserModal();
+    }
 
-  // Load user data from the users node (if available)
-  db.ref(`users/${managerId}`)
-    .once("value")
-    .then((snapshot) => {
-      const user = snapshot.val();
+    // Load user data and their branch assignments
+    Promise.all([
+        db.ref(`users/${userId}`).once("value"),
+        db.ref("branches").once("value")
+    ]).then(([userSnap, branchesSnap]) => {
+        const user = userSnap.val();
+        const allBranches = branchesSnap.val() || {};
 
-      document.getElementById("userEmail").value = user?.email || "";
-      document.getElementById("userName").value = user?.name || "";
-      document.getElementById("userRole").value = user?.role || "manager";
-      document.getElementById("passwordGroup").style.display = "none";
+        document.getElementById("userEmail").value = user?.email || "";
+        document.getElementById("userName").value = user?.name || "";
+        document.getElementById("userRole").value = user?.role || "manager";
+        
+        // For password field - show placeholder but don't pre-fill
+        document.getElementById("userPassword").value = "";
+        document.getElementById("userPassword").placeholder = "New password (leave blank to keep current)";
+        
+        // Load branch assignments if no specific branch is selected
+        if (!currentBranch) {
+            const branchCheckboxes = document.getElementById("branchCheckboxes");
+            branchCheckboxes.innerHTML = "";
+            
+            for (const branchId in allBranches) {
+                const branch = allBranches[branchId];
+                const isAssigned = branch.managers && branch.managers[userId];
+                
+                const checkboxDiv = document.createElement("div");
+                checkboxDiv.className = "checkbox-item";
+                checkboxDiv.innerHTML = `
+                    <input type="checkbox" id="branch_${branchId}" 
+                           ${isAssigned ? "checked" : ""} value="${branchId}">
+                    <label for="branch_${branchId}">${branch.name || branchId}</label>
+                `;
+                branchCheckboxes.appendChild(checkboxDiv);
+            }
+        }
 
-      document.getElementById("userModalTitle").textContent = "Edit Manager";
-      document.getElementById("saveUserBtn").textContent = "Update Manager";
-      showUserModal();
-    })
-    .catch((error) => {
-      console.error("Error loading manager for editing:", error);
-      alert("Failed to load manager data for editing.");
+        document.getElementById("userModalTitle").textContent = "Edit User";
+        document.getElementById("saveUserBtn").textContent = currentBranch 
+            ? "Update Manager" 
+            : "Update User";
+        showUserModal();
+    }).catch((error) => {
+        console.error("Error loading user for editing:", error);
+        alert("Failed to load user data for editing.");
     });
 }
 
 /**
- * Deletes a user from both the branch and the users collection
+ * Updated delete function to handle both scenarios
  */
-function deleteUser(userId, branchId) {
-  if (confirm("Are you sure you want to remove this user from the branch?")) {
-    // First remove from branch managers
-    const updates = {};
-    updates[`branches/${branchId}/managers/${userId}`] = null;
-
-    // Then delete from users collection if needed
-    // (Note: You might not want to delete the user entirely, just remove from branch)
-
-    db.ref()
-      .update(updates)
-      .then(() => {
-        console.log("User removed from branch successfully");
-        loadUserPage(); // Refresh the list
-      })
-      .catch((error) => {
-        console.error("Error removing user:", error);
-        alert("Failed to remove user. Please try again.");
-      });
+function deleteUser(userId, branchId = null) {
+    const message = branchId 
+      ? "Are you sure you want to remove this user from the branch?"
+      : "Are you sure you want to delete this user entirely?";
+  
+    if (confirm(message)) {
+      const updates = {};
+      
+      if (branchId) {
+        // Only remove from branch managers
+        updates[`branches/${branchId}/managers/${userId}`] = null;
+      } else {
+        // Remove from all branches and users collection
+        // First find all branches this user might be assigned to
+        db.ref("branches").once("value").then((branchesSnap) => {
+          branchesSnap.forEach((branchSnap) => {
+            if (branchSnap.child(`managers/${userId}`).exists()) {
+              updates[`branches/${branchSnap.key}/managers/${userId}`] = null;
+            }
+          });
+          // Add user deletion to updates
+          updates[`users/${userId}`] = null;
+          
+          return db.ref().update(updates);
+        }).then(() => {
+          console.log("User deleted successfully");
+          loadUserPage(); // Refresh the list
+        }).catch((error) => {
+          console.error("Error deleting user:", error);
+          alert("Failed to delete user. Please try again.");
+        });
+        return;
+      }
+  
+      db.ref().update(updates)
+        .then(() => {
+          console.log("User removed from branch successfully");
+          loadUserPage(); // Refresh the list
+        })
+        .catch((error) => {
+          console.error("Error removing user:", error);
+          alert("Failed to remove user. Please try again.");
+        });
+    }
   }
-}
 
 /**
- * Creates a modal for adding/editing users
+ * Creates the user edit modal (add or edit existing user)
  */
-function createUserModal() {
-  const modalHTML = `
+  function createUserModal() {
+    const modalHTML = `
         <div id="userModal" class="modal">
-          <div class="modal-content">
-            <span class="close-user-modal">&times;</span>
-            <h2 id="userModalTitle">Add New User</h2>
-            <form id="userForm">
-              <div class="form-group">
-                <label for="userEmail">Email:</label>
-                <input type="email" id="userEmail" required>
-              </div>
-              <div class="form-group">
-                <label for="userName">Name:</label>
-                <input type="text" id="userName">
-              </div>
-              <div class="form-group">
-                <label for="userRole">Role:</label>
-                <select id="userRole" required>
-                  <option value="admin">Admin</option>
-                  <option value="manager">Manager</option>
-                </select>
-              </div>
-              <div class="form-group" id="passwordGroup">
-                <label for="userPassword">Password:</label>
-                <input type="password" id="userPassword">
-                <small>Leave blank to keep existing password</small>
-              </div>
-              <div class="form-actions">
-                <button type="submit" id="saveUserBtn">Save User</button>
-                <button type="button" id="cancelUserBtn">Cancel</button>
-              </div>
-            </form>
-          </div>
+            <div class="modal-content">
+                <span class="close-user-modal">&times;</span>
+                <h2 id="userModalTitle">Add New User</h2>
+                <form id="userForm">
+                    <div class="form-group">
+                        <label for="userEmail">Email:</label>
+                        <input type="email" id="userEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="userName">Name:</label>
+                        <input type="text" id="userName">
+                    </div>
+                    <div class="form-group">
+                        <label for="userRole">Role:</label>
+                        <select id="userRole" required>
+                            <option value="admin">Admin</option>
+                            <option value="manager">Manager</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="passwordGroup">
+                        <label for="userPassword">Password:</label>
+                        <input type="password" id="userPassword" placeholder="Enter new password">
+                        <small>${currentEditingUserId ? 'Leave blank to keep current password' : 'Password is required'}</small>
+                    </div>
+                    ${!currentBranch ? `
+                    <div class="form-group" id="branchAssignmentGroup">
+                        <label for="userBranches">Assign to Branches:</label>
+                        <div id="branchCheckboxes"></div>
+                    </div>
+                    ` : ''}
+                    <div class="form-actions">
+                        <button type="submit" id="saveUserBtn">Save User</button>
+                        <button type="button" id="cancelUserBtn">Cancel</button>
+                    </div>
+                </form>
+            </div>
         </div>
-      `;
+    `;
 
-  document.body.insertAdjacentHTML("beforeend", modalHTML);
+    document.body.insertAdjacentHTML("beforeend", modalHTML);
 
-  // Add event listeners
-  document
-    .querySelector(".close-user-modal")
-    .addEventListener("click", closeUserModal);
-  document
-    .getElementById("cancelUserBtn")
-    .addEventListener("click", closeUserModal);
-  document
-    .getElementById("userForm")
-    .addEventListener("submit", handleUserSubmit);
+    // Add event listeners
+    document.querySelector(".close-user-modal").addEventListener("click", closeUserModal);
+    document.getElementById("cancelUserBtn").addEventListener("click", closeUserModal);
+    document.getElementById("userForm").addEventListener("submit", handleUserSubmit);
 
-  // Close modal when clicking outside
-  document.getElementById("userModal").addEventListener("click", function (e) {
-    if (e.target === this) {
-      closeUserModal();
-    }
-  });
+    // Close modal when clicking outside
+    document.getElementById("userModal").addEventListener("click", function(e) {
+        if (e.target === this) {
+            closeUserModal();
+        }
+    });
 }
 function showUserModal() {
   document.getElementById("userModal").style.display = "block";
@@ -3690,53 +3844,175 @@ function closeUserModal() {
  */
 
 async function handleUserSubmit(e) {
-  e.preventDefault();
+    e.preventDefault();
 
-  const email = document.getElementById("userEmail").value.trim();
-  const name = document.getElementById("userName").value.trim();
-  const password = document.getElementById("userPassword").value;
+    const email = document.getElementById("userEmail").value.trim();
+    const name = document.getElementById("userName").value.trim();
+    const role = document.getElementById("userRole").value;
+    const password = document.getElementById("userPassword").value;
 
-  if (!email || !password) {
-    alert("Please fill in all required fields.");
-    return;
-  }
+    if (!email) {
+        alert("Email is required.");
+        return;
+    }
 
-  if (!currentBranch) {
-    alert("Please select a branch first.");
-    return;
-  }
+    // Password is required for new users, optional for existing
+    if (!currentEditingUserId && !password) {
+        alert("Password is required for new users.");
+        return;
+    }
 
-  const saveBtn = document.getElementById("saveUserBtn");
-  saveBtn.disabled = true;
-  saveBtn.textContent = "Saving...";
+    const saveBtn = document.getElementById("saveUserBtn");
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving...";
 
-  try {
-    // Create auth user
-    const authUser = await auth.createUserWithEmailAndPassword(email, password);
-    const userId = authUser.user.uid;
+    try {
+        if (currentEditingUserId) {
+            // Update existing user
+            const updates = {};
+            updates[`users/${currentEditingUserId}/name`] = name || null;
+            updates[`users/${currentEditingUserId}/role`] = role;
 
-    // Add to branch managers
-    await db.ref(`branches/${currentBranch}/managers/${userId}`).set(email);
+            // Handle branch assignments if no specific branch is selected
+            if (!currentBranch) {
+                const branchCheckboxes = document.querySelectorAll("#branchCheckboxes input[type='checkbox']");
+                const allBranchesSnap = await db.ref("branches").once("value");
+                const allBranches = allBranchesSnap.val() || {};
 
-    // Optionally store additional user info in a separate users node
-    await db.ref(`users/${userId}`).set({
-      email,
-      name: name || null,
-      role: "manager",
-      branchId: currentBranch,
-      createdAt: firebase.database.ServerValue.TIMESTAMP,
+                for (const checkbox of branchCheckboxes) {
+                    const branchId = checkbox.value;
+                    const path = `branches/${branchId}/managers/${currentEditingUserId}`;
+                    updates[path] = checkbox.checked ? email : null;
+                }
+            }
+
+            // Update password if provided
+            if (password) {
+                try {
+                    // Reauthenticate current user if changing their own password
+                    const currentUser = auth.currentUser;
+                    if (currentUser && currentUser.uid === currentEditingUserId) {
+                        // Need to reauthenticate before changing password
+                        // You might want to add a reauthentication step here
+                    }
+                    
+                    // Update password
+                    await auth.currentUser.updatePassword(password);
+                } catch (error) {
+                    console.error("Error updating password:", error);
+                    throw new Error("Failed to update password. Please reauthenticate.");
+                }
+            }
+
+            await db.ref().update(updates);
+            console.log("User updated successfully");
+        } else {
+            // Create new user
+            if (!currentBranch) {
+                alert("Please select a branch first.");
+                return;
+            }
+
+            const authUser = await auth.createUserWithEmailAndPassword(email, password);
+            const userId = authUser.user.uid;
+
+            const userData = {
+                email,
+                name: name || null,
+                role,
+                createdAt: firebase.database.ServerValue.TIMESTAMP
+            };
+
+            if (currentBranch) {
+                userData.branchId = currentBranch;
+                await db.ref(`branches/${currentBranch}/managers/${userId}`).set(email);
+            }
+
+            await db.ref(`users/${userId}`).set(userData);
+            console.log("User created successfully");
+        }
+
+        closeUserModal();
+        loadUserPage(); // Refresh the user list
+    } catch (error) {
+        console.error("Error saving user:", error);
+        alert("Error saving user: " + error.message);
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = currentEditingUserId ? "Update User" : "Save User";
+    }
+}
+
+function viewUserDetails(userId) {
+    // Create modal if it doesn't exist
+    if (!document.getElementById("userDetailsModal")) {
+        const modalHTML = `
+            <div id="userDetailsModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-details-modal">&times;</span>
+                    <h2>User Details</h2>
+                    <div id="userDetailsContent"></div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML("beforeend", modalHTML);
+        
+        document.querySelector(".close-details-modal").addEventListener("click", () => {
+            document.getElementById("userDetailsModal").style.display = "none";
+        });
+    }
+
+    const modal = document.getElementById("userDetailsModal");
+    const content = document.getElementById("userDetailsContent");
+    
+    modal.style.display = "block";
+    content.innerHTML = "<p>Loading user details...</p>";
+
+    // Load user data and their branch assignments
+    Promise.all([
+        db.ref(`users/${userId}`).once("value"),
+        db.ref("branches").once("value")
+    ]).then(([userSnap, branchesSnap]) => {
+        const user = userSnap.val();
+        const allBranches = branchesSnap.val() || {};
+        
+        if (!user) {
+            content.innerHTML = "<p>User not found</p>";
+            return;
+        }
+
+        // Find all branches this user manages
+        const managedBranches = [];
+        for (const branchId in allBranches) {
+            if (allBranches[branchId].managers && allBranches[branchId].managers[userId]) {
+                managedBranches.push(allBranches[branchId].name || branchId);
+            }
+        }
+
+        content.innerHTML = `
+            <div class="user-details">
+                <h3>${user.name || "Unnamed User"}</h3>
+                <p><strong>Email:</strong> ${user.email}</p>
+                <p><strong>Role:</strong> ${user.role || "N/A"}</p>
+                <p><strong>Account Created:</strong> ${user.createdAt ? new Date(user.createdAt).toLocaleString() : "Unknown"}</p>
+                
+                <div class="branches-section">
+                    <h4>Branch Assignments</h4>
+                    ${managedBranches.length > 0 ? 
+                        `<ul>${managedBranches.map(b => `<li>${b}</li>`).join("")}</ul>` : 
+                        "<p>Not assigned to any branches</p>"}
+                </div>
+                
+                <div class="modal-actions">
+                    <button onclick="editUser('${userId}')">Edit User</button>
+                    <button onclick="document.getElementById('userDetailsModal').style.display='none'">Close</button>
+                </div>
+            </div>
+        `;
+    }).catch((error) => {
+        console.error("Error loading user details:", error);
+        content.innerHTML = `<p>Error loading user details: ${error.message}</p>`;
     });
-
-    console.log("Manager added successfully to branch");
-    closeUserModal();
-    loadUserPage(); // Refresh the user list
-  } catch (error) {
-    console.error("Error adding manager:", error);
-    alert("Error adding manager: " + error.message);
-  } finally {
-    saveBtn.disabled = false;
-    saveBtn.textContent = "Save Manager";
-  }
 }
 
 /**
