@@ -11,10 +11,9 @@ This code is divided into sections:
 9. REPORTS SECTION
 10. BRANCH SECTION
 11. USER SECTION
-12. SYSTEM SETTINGS
+12. SETTINGS MANAGEMENT
 13. DATE UTILITIES
 14. EVENT LISTENERS
-
 */
 
 /* ============================================= */
@@ -1731,32 +1730,46 @@ function viewOrderDetails(orderId) {
 /* ============ ORDER CRUD OPERATIONS ========== */
 /* ============================================= */
 
-/**
- * Opens modal to create a new order
- */
 function addOrder() {
-  if (!currentBranch) {
-    alert("Please select a branch first");
-    return;
+    // 1. Check if currentBranch is set
+    if (!currentBranch) {
+      alert("Please select a branch first");
+      return;
+    }
+  
+    // 2. Safely clear order items
+    currentOrderItems = [];
+    
+    // 3. Check if modal exists or create it
+    let orderModal = document.getElementById("orderModal");
+    if (!orderModal) {
+      createOrderModal();
+      orderModal = document.getElementById("orderModal");
+      
+      // Double-check creation was successful
+      if (!orderModal) {
+        console.error("Failed to create order modal");
+        return;
+      }
+    }
+  
+    // 4. Safely reset form elements
+    const orderForm = document.getElementById("orderForm");
+    if (orderForm) {
+      orderForm.reset();
+      orderForm.removeAttribute("data-edit-id");
+      orderForm.removeAttribute("data-original-supplier");
+    }
+  
+    // 5. Safely update UI
+    try {
+      updateOrderItemsDisplay();
+      document.querySelector("#orderModal h2").textContent = "Add New Order";
+      showOrderModal();
+    } catch (error) {
+      console.error("Error in addOrder:", error);
+    }
   }
-
-  // Clear any existing order items
-  currentOrderItems = [];
-  updateOrderItemsDisplay();
-
-  // Reset supplier selection
-  currentSupplierId = null;
-  document.getElementById("orderSupplier").value = "";
-
-  if (!document.getElementById("orderModal")) {
-    createOrderModal();
-  }
-
-  // Set the title to "Add New Order"
-  document.querySelector("#orderModal h2").textContent = "Add New Order";
-
-  showOrderModal();
-}
 
 /**
  * Edits an existing order in the database
@@ -1854,68 +1867,73 @@ function populateOrderForm(orderId, order) {
 /**
  * Creates and initializes the order modal
  */
+/**
+ * Creates and initializes the order modal
+ */
 function createOrderModal() {
-  const modalHTML = `
-    <div id="orderModal" class="modal">
-      <div class="modal-content">
-        <span class="close-order-modal">&times;</span>
-        <h2>Add New Order</h2>
-        <form id="orderForm">
-          <div class="form-group">
-            <label for="orderSupplier">Supplier:</label>
-            <select id="orderSupplier" required>
-              <option value="">-- Select Supplier --</option>
-            </select>
-          </div>
-          
-          <div class="form-group" id="productSelectionGroup" style="display:none;">
-            <label for="orderProduct">Product:</label>
-            <select id="orderProduct" disabled>
-              <option value="">-- Select Product --</option>
-            </select>
-          </div>
-          
-          <div class="form-group" id="quantityGroup" style="display:none;">
-            <label for="orderQuantity">Quantity:</label>
-            <input type="number" id="orderQuantity" min="1" disabled>
-            <button type="button" id="addProductBtn">Add Product</button>
-          </div>
-          
-          <div class="form-group">
-            <label>Order Items:</label>
+    // Check if modal already exists
+    if (document.getElementById("orderModal")) return;
+  
+    const modalHTML = `
+      <div id="orderModal" class="modal">
+        <div class="modal-content">
+          <span class="close-order-modal">&times;</span>
+          <h2>Add New Order</h2>
+          <form id="orderForm">
+            <div class="form-group">
+              <label for="orderSupplier">Supplier:</label>
+              <select id="orderSupplier" required>
+                <option value="">Loading suppliers...</option>
+              </select>
+            </div>
+            
+            <div id="productSelectionGroup" class="form-group" style="display: none;">
+              <label for="orderProduct">Product:</label>
+              <select id="orderProduct" disabled>
+                <option value="">-- Select Product --</option>
+              </select>
+            </div>
+            
+            <div id="quantityGroup" class="form-group" style="display: none;">
+              <label for="orderQuantity">Quantity:</label>
+              <input type="number" id="orderQuantity" min="1" value="1" disabled>
+            </div>
+            
+            <div class="form-group">
+              <button type="button" id="addProductBtn">Add Product</button>
+            </div>
+            
             <div id="orderItemsContainer"></div>
-          </div>
-          
-          <div class="form-group">
-            <label for="orderStatus">Status:</label>
-            <select id="orderStatus" required>
-              <option value="Pending">Pending</option>
-              <option value="Processing">Processing</option>
-              <option value="Completed">Completed</option>
-              <option value="Cancelled">Cancelled</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label for="orderPaymentStatus">Payment Status:</label>
-            <select id="orderPaymentStatus" required>
-              <option value="Pending">Pending</option>
-              <option value="Paid">Paid</option>
-              <option value="To Pay">To Pay</option>
-            </select>
-          </div>
-          
-          <div class="form-actions">
-            <button type="submit" id="saveOrderBtn">Save Order</button>
-            <button type="button" id="cancelOrder">Cancel</button>
-          </div>
-        </form>
-      </div>
-    </div>`;
-
-  document.body.insertAdjacentHTML("beforeend", modalHTML);
-  initializeOrderModal();
-}
+            
+            <div class="form-group">
+              <label for="orderStatus">Status:</label>
+              <select id="orderStatus">
+                <option value="Pending">Pending</option>
+                <option value="Processing">Processing</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="orderPaymentStatus">Payment Status:</label>
+              <select id="orderPaymentStatus">
+                <option value="Pending">Pending</option>
+                <option value="Paid">Paid</option>
+              </select>
+            </div>
+            
+            <div class="form-actions">
+              <button type="submit" id="saveOrderBtn">Save Order</button>
+              <button type="button" id="cancelOrder">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>`;
+  
+    document.body.insertAdjacentHTML("beforeend", modalHTML);
+    initializeOrderModal();
+  }
 
 /**
  * Initializes order modal event listeners
@@ -1992,40 +2010,64 @@ function initializeOrderModal() {
  * Shows the order modal
  */
 function showOrderModal() {
-  document.getElementById("orderModal").style.display = "block";
-  document.getElementById("orderSupplier").focus();
-
-  if (currentOrderItems.length > 0) {
-    document.getElementById("productSelectionGroup").style.display = "block";
-    document.getElementById("quantityGroup").style.display = "block";
+    const orderModal = document.getElementById("orderModal");
+    if (!orderModal) {
+      console.error("Order modal not found");
+      return;
+    }
+    
+    orderModal.style.display = "block";
+    
+    // Focus on supplier dropdown if it exists
+    const supplierSelect = document.getElementById("orderSupplier");
+    if (supplierSelect) {
+      supplierSelect.focus();
+    }
+  
+    // Show product selection if items exist
+    const productGroup = document.getElementById("productSelectionGroup");
+    const quantityGroup = document.getElementById("quantityGroup");
+    
+    if (productGroup && quantityGroup) {
+      productGroup.style.display = currentOrderItems.length > 0 ? "block" : "none";
+      quantityGroup.style.display = currentOrderItems.length > 0 ? "block" : "none";
+    }
   }
-}
 
 /**
  * Closes the order modal and resets form
  */
 function closeOrderModal() {
-  document.getElementById("orderModal").style.display = "none";
-  document.getElementById("orderForm").reset();
-
-  // Reset UI elements
-  document.getElementById("productSelectionGroup").style.display = "none";
-  document.getElementById("quantityGroup").style.display = "none";
-  document.getElementById("orderProduct").disabled = true;
-
-  // Clear temporary data
-  selectedSupplierProducts = [];
-  currentOrderItems = [];
-  currentSupplierId = null;
-  updateOrderItemsDisplay();
-
-  // Reset form title and edit state
-  document.querySelector("#orderModal h2").textContent = "Add New Order";
-  document.getElementById("orderForm").removeAttribute("data-edit-id");
-  document
-    .getElementById("orderForm")
-    .removeAttribute("data-original-supplier");
-}
+    const orderModal = document.getElementById("orderModal");
+    if (orderModal) {
+      orderModal.style.display = "none";
+    }
+  
+    const orderForm = document.getElementById("orderForm");
+    if (orderForm) {
+      orderForm.reset();
+      orderForm.removeAttribute("data-edit-id");
+      orderForm.removeAttribute("data-original-supplier");
+    }
+  
+    // Reset UI elements if they exist
+    const productSelectionGroup = document.getElementById("productSelectionGroup");
+    const quantityGroup = document.getElementById("quantityGroup");
+    if (productSelectionGroup) productSelectionGroup.style.display = "none";
+    if (quantityGroup) quantityGroup.style.display = "none";
+  
+    // Clear temporary data
+    selectedSupplierProducts = [];
+    currentOrderItems = [];
+    currentSupplierId = null;
+    updateOrderItemsDisplay();
+  
+    // Reset form title if it exists
+    const modalTitle = document.querySelector("#orderModal h2");
+    if (modalTitle) {
+      modalTitle.textContent = "Add New Order";
+    }
+  }
 
 function validateOrderForm(supplierId, status, paymentStatus) {
   // Only check for supplier, status, and payment status
@@ -4663,65 +4705,202 @@ function loadSettingsPage() {
 }
 
 /**
- * Creates a backup of the current state of the Firebase Realtime Database
- * by downloading the data as a JSON file. The file is named "backup.json"
- * and is created in the user's Downloads folder.
- * @returns {undefined}
+ * Creates a comprehensive backup of current branch's data (orders, inventory, suppliers)
  */
-function backupData() {
-  db.ref()
-    .once("value")
-    .then((snapshot) => {
-      const data = snapshot.val();
-      const blob = new Blob([JSON.stringify(data, null, 2)], {
+async function backupData() {
+    if (!currentBranch) {
+      alert("Please select a branch first");
+      return;
+    }
+  
+    // Use your existing showLoading function
+    showLoading(true);
+  
+    try {
+      // Get all relevant data for the branch
+      const [ordersSnapshot, inventorySnapshot, suppliersSnapshot] = await Promise.all([
+        db.ref(`branch_orders/${currentBranch}`).once("value"),
+        db.ref(`branch_inventory/${currentBranch}`).once("value"),
+        db.ref(`branch_suppliers/${currentBranch}`).once("value")
+      ]);
+  
+      const backupData = {
+        metadata: {
+          branch: currentBranch,
+          timestamp: new Date().toISOString(),
+          version: 1.0
+        },
+        orders: ordersSnapshot.val() || {},
+        inventory: inventorySnapshot.val() || {},
+        suppliers: suppliersSnapshot.val() || {}
+      };
+  
+      // Create and download the backup file
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], {
         type: "application/json",
       });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "backup.json";
+      a.download = `branch_backup_${currentBranch}_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      console.log("Backup created successfully!");
-      alert("Backup created successfully!");
-    })
-    .catch((error) => {
-      console.error("Error creating backup:", error.message);
+  
+      // Use your existing showSuccessMessage function
+      showSuccessMessage(`Backup created successfully for ${currentBranch}!`);
+    } catch (error) {
+      console.error("Error creating backup:", error);
       alert("Error creating backup: " + error.message);
-    });
-}
+    } finally {
+      showLoading(false);
+    }
+  }
 /**
- * Creates a file input element and prompts the user to select a JSON file.
- * If the user selects a file, reads the file and attempts to restore the
- * Firebase Realtime Database with the data from the file. If the operation
- * is successful, alerts the user with a success message. If there is an
- * error, alerts the user with an error message.
- * @returns {undefined}
+ * Restores all branch data (orders, inventory, suppliers) from a JSON backup file
  */
 function restoreData() {
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = ".json";
-  input.onchange = (e) => {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const data = JSON.parse(event.target.result);
-      db.ref()
-        .set(data)
-        .then(() => {
-          console.log("Data restored successfully!");
-          alert("Data restored successfully!");
-        })
-        .catch((error) => {
-          console.error("Error restoring data:", error.message);
-          alert("Error restoring data: " + error.message);
-        });
+    if (!currentBranch) {
+      alert("Please select a branch first");
+      return;
+    }
+  
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+  
+      showLoading(true, "Validating backup file...");
+  
+      try {
+        const fileContents = await readFileAsText(file);
+        const backupData = JSON.parse(fileContents);
+  
+        // Validate backup file structure
+        if (!backupData.metadata || !backupData.metadata.branch) {
+          throw new Error("Invalid backup file format (missing metadata)");
+        }
+  
+        if (backupData.metadata.branch !== currentBranch) {
+          if (!confirm(`This backup is for branch "${backupData.metadata.branch}". Restore to current branch "${currentBranch}" anyway?`)) {
+            return;
+          }
+        }
+  
+        // Show restoration summary
+        const summary = [
+          `Orders: ${Object.keys(backupData.orders || {}).length} records`,
+          `Inventory Items: ${Object.keys(backupData.inventory || {}).length} records`,
+          `Suppliers: ${Object.keys(backupData.suppliers || {}).length} records`
+        ].join('\n');
+  
+        if (!confirm(`This will overwrite current data for ${currentBranch}.\n\n${summary}\n\nContinue?`)) {
+          return;
+        }
+  
+        showLoading(true, "Restoring data...");
+  
+        // Restore all data in parallel
+        await Promise.all([
+          db.ref(`branch_orders/${currentBranch}`).set(backupData.orders || {}),
+          db.ref(`branch_inventory/${currentBranch}`).set(backupData.inventory || {}),
+          db.ref(`branch_suppliers/${currentBranch}`).set(backupData.suppliers || {})
+        ]);
+  
+        showSuccessMessage(`All data restored successfully for ${currentBranch}!`);
+        
+        // Refresh all relevant pages
+        loadOrderPage();
+        loadInventoryPage();
+        loadSuppliersPage();
+      } catch (error) {
+        console.error("Restoration failed:", error);
+        alert(`Restoration failed: ${error.message}`);
+      } finally {
+        showLoading(false);
+      }
     };
-    reader.readAsText(file);
-  };
-  input.click();
-}
+    
+    input.click();
+  }
+  
+/**
+ * Restores all branch data from a JSON backup file
+ */
+async function restoreData() {
+    if (!currentBranch) {
+      alert("Please select a branch first");
+      return;
+    }
+  
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+  
+      // Use your existing showLoading function
+      showLoading(true);
+  
+      try {
+        const fileContents = await readFileAsText(file);
+        const backupData = JSON.parse(fileContents);
+  
+        // Validate backup file structure
+        if (!backupData.metadata || !backupData.metadata.branch) {
+          throw new Error("Invalid backup file format (missing metadata)");
+        }
+  
+        if (backupData.metadata.branch !== currentBranch) {
+          if (!confirm(`This backup is for branch "${backupData.metadata.branch}". Restore to current branch "${currentBranch}" anyway?`)) {
+            return;
+          }
+        }
+  
+        if (!confirm(`This will overwrite ALL current data for ${currentBranch}. Continue?`)) {
+          return;
+        }
+  
+        // Restore all data
+        await Promise.all([
+          db.ref(`branch_orders/${currentBranch}`).set(backupData.orders || {}),
+          db.ref(`branch_inventory/${currentBranch}`).set(backupData.inventory || {}),
+          db.ref(`branch_suppliers/${currentBranch}`).set(backupData.suppliers || {})
+        ]);
+  
+        // Use your existing showSuccessMessage function
+        showSuccessMessage(`Data restored successfully for ${currentBranch}!`);
+        
+        // Refresh data if these functions exist
+        if (typeof loadOrderPage === 'function') loadOrderPage();
+        if (typeof loadInventoryPage === 'function') loadInventoryPage();
+        if (typeof loadSuppliersPage === 'function') loadSuppliersPage();
+      } catch (error) {
+        console.error("Restoration failed:", error);
+        alert(`Restoration failed: ${error.message}`);
+      } finally {
+        showLoading(false);
+      }
+    };
+    
+    input.click();
+  }
+  
+  // New helper function to complement your existing ones
+  function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => resolve(event.target.result);
+      reader.onerror = (error) => reject(error);
+      reader.readAsText(file);
+    });
+  }
 
 /* ============================================= */
 /* ============ DATE UTILITIES ================= */
