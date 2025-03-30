@@ -238,24 +238,12 @@ body {
   cursor: pointer;
   font-weight: 500;
   transition: background-color 0.2s;
-}
-
-.inventory-item-actions button.view {
-  background-color: #1976d2;
+  background-color: #ff4d4f;
   color: white;
 }
 
-.inventory-item-actions button.view:hover {
-  background-color: #1565c0;
-}
-
-.inventory-item-actions button.delete {
-  background-color: #f0f0f0;
-  color: #d32f2f;
-}
-
-.inventory-item-actions button.delete:hover {
-  background-color: #e0e0e0;
+.inventory-item-actions button:hover {
+  background-color: #e63946;
 }
 
 /* Filter/Search Styles */
@@ -302,87 +290,65 @@ body {
   color: #388e3c;
 }
 
-
-
 /* ====================== */
 /* Order Styles */
 /* ====================== */
-
 #orderItemsContainer {
-    margin-top: 10px;
-    border: 1px solid #ddd;
-    padding: 10px;
-    border-radius: 4px;
+  margin-top: 10px;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 4px;
 }
 
 #orderItemsContainer ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .order-item-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px;
-    border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  padding: 8px;
+  border-bottom: 1px solid #eee;
 }
 
 .order-item-row:last-child {
-    border-bottom: none;
+  border-bottom: none;
 }
 
 .remove-item-btn {
-    background: #ff4444;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    cursor: pointer;
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
 }
 
 .remove-item-btn:hover {
-    background: #cc0000;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+  background: #cc0000;
 }
 
 /* ====================== */
-/*  Order Payment Styles  */
+/* Order Payment Styles */
 /* ====================== */
 #paymentModal .modal-content {
-    max-width: 500px;
-  }
-  
-  #gcashImageContainer {
-    margin: 10px 0;
-    padding: 10px;
-    border: 1px solid #ddd;
-    text-align: center;
-  }
-  
-  #gcashImageContainer img {
-    max-width: 100%;
-    height: auto;
-  }
-  
-  .form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-  }
-  
-  .form-group p {
-    margin: 0;
-    padding: 5px;
-    background: #f5f5f5;
-    border-radius: 4px;
-  }
+  max-width: 500px;
+}
 
+#gcashImageContainer {
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+
+#gcashImageContainer img {
+  max-width: 100%;
+  height: auto;
+}
 
 /* ====================== */
 /* Alert Styles */
@@ -390,22 +356,6 @@ body {
 .alert-section {
   width: 100%;
   margin-bottom: 30px;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.alert-section h3 {
-  color: #ffa000;
-  margin: 0 0 15px 0;
 }
 
 .alert-items-grid {
@@ -470,24 +420,12 @@ body {
   border: none;
   border-radius: 3px;
   cursor: pointer;
-}
-
-.alert-item-actions button.view {
-  background-color: #1976d2;
+  background-color: #ff4d4f;
   color: white;
 }
 
-.alert-item-actions button.view:hover {
-  background-color: #1565c0;
-}
-
-.alert-item-actions button.order {
-  background-color: #388e3c;
-  color: white;
-}
-
-.alert-item-actions button.order:hover {
-  background-color: #2e7d32;
+.alert-item-actions button:hover {
+  background-color: #e63946;
 }
 
 /* ====================== */
@@ -591,16 +529,12 @@ body {
   border-radius: 4px;
   cursor: pointer;
   font-weight: 500;
-}
-
-.item-actions button:first-child {
   background-color: #ff4d4f;
   color: white;
 }
 
-.item-actions button:last-child {
-  background-color: #f0f0f0;
-  color: #333;
+.item-actions button:hover {
+  background-color: #e63946;
 }
 
 /* Edit Mode Styling */
@@ -648,19 +582,14 @@ body {
   border-radius: 4px;
   cursor: pointer;
   font-weight: 500;
-}
-
-.form-actions button[type="submit"] {
   background-color: #ff4d4f;
   color: white;
 }
 
-.form-actions button[type="button"] {
-  background-color: #f0f0f0;
-  color: #333;
+.form-actions button:hover {
+  background-color: #e63946;
 }
 
-/* Loading state */
 .form-actions button[disabled] {
   opacity: 0.7;
   cursor: not-allowed;
@@ -716,29 +645,29 @@ body {
 }
 
 .supplier-item {
-    border: 1px solid #ddd;
-    padding: 15px;
-    margin-bottom: 10px;
-    border-radius: 5px;
-    display: flex;
-    justify-content: space-between;
-  }
-  
-  .supplier-item img {
-    max-width: 100px;
-    height: auto;
-    border: 1px solid #eee;
-  }
-  
-  .actions {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-  
-  .actions button {
-    margin: 5px 0;
-  }
+  border: 1px solid #ddd;
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.supplier-item img {
+  max-width: 100px;
+  height: auto;
+  border: 1px solid #eee;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.actions button {
+  margin: 5px 0;
+}
 
 /* ====================== */
 /* Dashboard Metrics */
@@ -770,32 +699,8 @@ body {
   border: 1px solid #eee;
 }
 
-.branch-form-container h3 {
-  margin-top: 0;
-  color: #ff4d4f;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #eee;
-}
-
-#branchForm {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-#branchManagers {
-  min-height: 100px;
-  padding: 8px;
-}
-
 .branch-list {
   margin-top: 30px;
-}
-
-.branch-list h3 {
-  color: #ff4d4f;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #eee;
 }
 
 .branch-item {
@@ -807,15 +712,20 @@ body {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+.branch-info {
+  margin-bottom: 15px;
+}
+
 .branch-info h4 {
   margin: 0 0 5px 0;
   color: #333;
+  font-size: 1.1rem;
 }
 
 .branch-info p {
   margin: 5px 0;
   color: #666;
-  font-size: 14px;
+  font-size: 0.9rem;
 }
 
 /* ====================== */
@@ -849,7 +759,12 @@ body {
   }
 
   .branch-actions {
-    flex-direction: column;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+    margin-top: 15px;
   }
 
   .branch-actions button {
@@ -857,366 +772,788 @@ body {
   }
 }
 
-
 /* Order Details Modal Styles */
 #orderDetailsModal .modal-content {
-    padding: 20px;
-    background: white;
-    border-radius: 5px;
+  padding: 20px;
+  background: white;
+  border-radius: 5px;
 }
 
 .order-detail {
-    margin-bottom: 15px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #eee;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
 }
 
 .order-detail:last-child {
-    border-bottom: none;
+  border-bottom: none;
 }
 
 .order-products-list {
-    margin-top: 5px;
-    padding-left: 20px;
+  margin-top: 5px;
+  padding-left: 20px;
 }
 
 .order-products-list li {
-    margin-bottom: 5px;
+  margin-bottom: 5px;
 }
 
 .low-stock-list {
-    max-height: 150px;
-    overflow-y: auto;
-    margin-top: 10px;
-    padding-left: 20px;
-  }
-  .low-stock-list li {
-    color: #d32f2f;
-    margin: 5px 0;
-  }
+  max-height: 150px;
+  overflow-y: auto;
+  margin-top: 10px;
+  padding-left: 20px;
+}
 
+.low-stock-list li {
+  color: #d32f2f;
+  margin: 5px 0;
+}
 
-  /* User Details Modal */
+/* User Details Modal */
 .user-details {
-    padding: 20px;
+  padding: 20px;
 }
 
-.user-details h3 {
-    margin-top: 0;
-    color: #2c3e50;
-}
+/* Add these styles to your admin.css file */
+.user-item {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .user-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .user-item > div:first-child {
+    margin-bottom: 15px;
+  }
+  
+  .user-item strong {
+    color: #333;
+    font-size: 1.1rem;
+  }
+  
+  .user-item p {
+    margin: 5px 0;
+    color: #666;
+    font-size: 0.9rem;
+  }
+  
+  .user-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center; /* Changed from flex-end to center */
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+    margin-top: 15px;
+  }
+  
+  .user-actions button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    background-color: #ff4d4f;
+    color: white;
+  }
+  
+  .user-actions button:hover {
+    background-color: #e63946;
+  }
+  
+  .user-actions small {
+    color: #666;
+    font-size: 0.8rem;
+    align-self: center;
+  }
 
-.user-details p {
-    margin: 10px 0;
-}
 
 .branches-section {
-    margin-top: 20px;
-    padding: 15px;
-    background: #f5f5f5;
-    border-radius: 5px;
+  margin-top: 20px;
+  padding: 15px;
+  background: #f5f5f5;
+  border-radius: 5px;
 }
 
 /* Checkbox items for branch assignment */
 .checkbox-item {
-    margin: 8px 0;
+  margin: 8px 0;
 }
 
 .checkbox-item input {
-    margin-right: 8px;
+  margin-right: 8px;
 }
 
 /* Modal actions */
 .modal-actions {
     margin-top: 20px;
-    text-align: right;
-}
+    display: flex;
+    gap: 10px;
+    justify-content: center; /* Changed from text-align: right */
+  }
 
 .modal-actions button {
-    margin-left: 10px;
+  margin-left: 10px;
 }
 
 .report-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-  }
-  
-  .report-table th, .report-table td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
-  }
-  
-  .report-table th {
-    background-color: #f2f2f2;
-  }
-  
-  .report-table tr.low-stock {
-    background-color: #ffdddd;
-  }
-  
-  .report-summary {
-    margin-bottom: 20px;
-    padding: 10px;
-    background: #f8f8f8;
-    border-radius: 4px;
-  }
-  
-  .error {
-    color: red;
-  }
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
 
-  .export-buttons {
-    margin: 20px 0;
-    display: flex;
-    gap: 10px;
-  }
-  
-  .export-buttons button {
-    padding: 8px 16px;
-    background: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  
-  .export-buttons button:hover {
-    background: #45a049;
-  }
+.report-table th,
+.report-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
 
-  /* Add to your admin.css */
-  
-  .report-summary {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 15px;
-    padding: 10px;
-    background: #f8f9fa;
-    border-radius: 4px;
-  }
-  
-  /* Make tables scrollable on mobile */
-  .report-table {
-    width: 100%;
-    overflow-x: auto;
-    display: block;
-  }
+.report-table th {
+  background-color: #f2f2f2;
+}
 
+.report-table tr.low-stock {
+  background-color: #ffdddd;
+}
 
-  .loading-state, .error-state, .empty-state {
-    text-align: center;
-    padding: 2rem;
-    margin: 1rem 0;
-    border-radius: 8px;
-  }
-  
-  .loading-state {
-    color: #666;
-  }
-  
-  .error-state {
-    background-color: #ffebee;
-    color: #c62828;
-  }
-  
-  .empty-state {
-    background-color: #f5f5f5;
-    color: #666;
-  }
-  
-  .loading-state i {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-  }
-  
-  .error-state i {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-    color: #c62828;
-  }
-  
-  .empty-state i {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    color: #bdbdbd;
-  }
-  
-  .error-message {
-    font-family: monospace;
-    font-size: 0.9rem;
-    margin: 1rem 0;
-  }
-  
+.report-summary {
+  margin-bottom: 20px;
+  padding: 10px;
+  background: #f8f8f8;
+  border-radius: 4px;
+}
 
+.error {
+  color: red;
+}
 
-  /* Reports Section */
+.export-buttons {
+  margin: 20px 0;
+  display: flex;
+  gap: 10px;
+}
+
+.export-buttons button {
+  padding: 8px 16px;
+  background: #ff4d4f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.export-buttons button:hover {
+  background: #e63946;
+}
+
+/* Loading states */
+.loading-state,
+.error-state,
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  margin: 1rem 0;
+  border-radius: 8px;
+}
+
+.loading-state {
+  color: #666;
+}
+
+.error-state {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.empty-state {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+/* Reports Section */
 #reportOutput {
-    padding: 20px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    margin-top: 15px;
-    min-height: 200px;
-  }
-  
-  .loading {
-    text-align: center;
-    padding: 40px;
-    color: #666;
-  }
-  
-  .error {
-    text-align: center;
-    padding: 20px;
-    color: #d32f2f;
-    background: #ffebee;
-    border-radius: 4px;
-  }
-  
-  .error-detail {
-    font-family: monospace;
-    font-size: 0.9em;
-    margin: 10px 0;
-  }
-  
-  .retry-btn {
-    background: #d32f2f;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-top: 10px;
-  }
-  
-  .data-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-  }
-  
-  .data-table th, .data-table td {
-    padding: 10px;
-    text-align: left;
-    border-bottom: 1px solid #eee;
-  }
-  
-  .data-table th {
-    background: #f5f5f5;
-  }
-  
-  .export-buttons {
-    margin-top: 20px;
-    display: flex;
-    gap: 10px;
-  }
-  
-  .export-btn {
-    padding: 8px 12px;
-    background: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-  
-  .no-data {
-    text-align: center;
-    padding: 20px;
-    color: #666;
-  }
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-top: 15px;
+  min-height: 200px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.data-table th,
+.data-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.data-table th {
+  background: #f5f5f5;
+}
 
 /* Chart container styles */
 .chart-container {
-    position: relative;
-    width: 100%;
-    margin: 20px auto 10px;
-    min-height: 300px; /* Ensures consistent minimum height */
-  }
-  /* For supplier chart (bar chart) */
+  position: relative;
+  width: 100%;
+  margin: 20px auto 10px;
+  min-height: 300px;
+}
+
 .chart-container.bar-chart {
-    height: 400px; /* Fixed height for bar charts */
+  height: 400px;
+}
+
+.chart-container.pie-chart {
+  max-width: 500px;
+  height: 350px;
+  margin: 0 auto 20px;
+}
+
+.chart-container.line-chart {
+  height: 400px;
+}
+
+.chart-container.aspect-ratio {
+  height: 300px;
+  margin-bottom: 20px;
+}
+
+.chart-container.aspect-ratio canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.chart-container.small {
+  max-width: 500px;
+  height: 300px;
+  margin-bottom: 20px;
+}
+
+/* Product entry styles */
+.product-entry {
+  margin-bottom: 10px;
+}
+
+.product-inputs {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.product-inputs input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  height: 36px;
+}
+
+.product-name {
+  flex: 2;
+}
+
+.product-price {
+  flex: 1;
+}
+
+.unit-label {
+  color: #666;
+  white-space: nowrap;
+  margin-right: 10px;
+}
+
+.remove-product {
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 25px;
+  height: 25px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-product:hover {
+  background: #ff5252;
+}
+
+#addProductBtn {
+  background: #ff4d4f;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+#addProductBtn:hover {
+  background: #e63946;
+}
+
+.price-input-container {
+  position: relative;
+  flex: 1;
+  margin-right: 10px;
+}
+
+.price-input-container .currency-symbol {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+.price-input-container input {
+  padding-left: 50px !important;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Order summary styles */
+.order-summary {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+.summary-row:last-child {
+  font-weight: bold;
+  font-size: 18px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #ddd;
+}
+
+/* Order history styles */
+.order-history-section {
+  margin-top: 20px;
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+}
+
+.order-history-summary {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.order-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.order-history-table th,
+.order-history-table td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.order-history-table th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+/* Status colors */
+.status-pending {
+    color: #ff9800;
   }
   
-  /* For pie/doughnut charts */
-  .chart-container.pie-chart {
-    max-width: 500px;
-    height: 350px; /* Fixed height for pie charts */
-    margin: 0 auto 20px; /* Center the pie charts */
+  .status-processing {
+    color: #2196f3;
   }
   
-  /* For line charts (timeline) */
-  .chart-container.line-chart {
-    height: 400px; /* Fixed height for line charts */
+  .status-completed {
+    color: #4caf50;
   }
   
-  /* Fixed aspect ratio container */
-  .chart-container.aspect-ratio {
-    height: 300px; /* Fixed height instead of padding-bottom */
-    margin-bottom: 20px;
+  .status-cancelled {
+    color: #f44336;
   }
   
-  .chart-container.aspect-ratio canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100% !important;
-    height: 100% !important;
+  .status-paid {
+    color: #4caf50;
   }
   
-  /* For smaller charts (like doughnut/pie) */
-  .chart-container.small {
-    max-width: 500px;
-    height: 300px; /* Fixed height */
-    margin-bottom: 20px; /* Specific margin for small charts */
+  .status-failed {
+    color: #f44336;
   }
 
-  .chart-container canvas {
-    width: 100% !important;
-    height: 100% !important;
-    display: block;
-  }
+/* Select element styling */
+select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: white;
+  font-size: 14px;
+}
 
-  canvas {
-    width: 100% !important;
-    height: 100% !important;
-  }
+select:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
 
+.form-group select {
+  margin-top: 5px;
+}
 
-  .product-entry {
-    margin-bottom: 10px;
-  }
-  
-  .product-inputs {
+/* Add this to your admin.css file */
+.branch-item {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.branch-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.branch-info h4 {
+  margin: 0 0 5px 0;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.branch-info p {
+  margin: 5px 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.branch-actions {
     display: flex;
     gap: 10px;
-    align-items: center;
+    justify-content: center; /* Changed from flex-end to center */
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+    margin-top: 15px;
   }
-  
-  .product-inputs input {
+
+.branch-actions button {
     padding: 8px 12px;
-    border: 1px solid #ddd;
+    border: none;
     border-radius: 4px;
-    height: 36px; /* Fixed height for alignment */
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    background-color: #ff4d4f;
+    color: white;
+  }
+
+.branch-actions button:hover {
+  background-color: #e63946;
+}
+
+/* For the view/edit/delete buttons in the list */
+.actions button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  background-color: #ff4d4f;
+  color: white;
+}
+
+.actions button:hover {
+  background-color: #e63946;
+}
+
+/* For modal action buttons */
+.modal-actions button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  background-color: #ff4d4f;
+  color: white;
+}
+
+.modal-actions button:hover {
+  background-color: #e63946;
+}
+
+.modal-actions button:last-child {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.modal-actions button:last-child:hover {
+  background-color: #e0e0e0;
+}
+
+
+/* Order Styles */
+
+/* Add these styles to your admin.css file */
+.order-item {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
   }
   
-  .product-name {
-    flex: 2;
+  .order-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
   
-  .product-price {
-    flex: 1;
+  .order-item > div:first-child {
+    margin-bottom: 15px;
   }
   
-  .unit-label {
+  .order-item strong {
+    color: #333;
+    font-size: 1.1rem;
+  }
+  
+  .order-item p {
+    margin: 5px 0;
     color: #666;
-    white-space: nowrap;
-    margin-right: 10px;
+    font-size: 0.9rem;
+  }
+  
+  .order-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+    margin-top: 15px;
+  }
+  
+  .order-actions button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    background-color: #ff4d4f;
+    color: white;
+  }
+  
+  .order-actions button:hover {
+    background-color: #e63946;
+  }
+  
+  /* For small screens where buttons stack vertically */
+  @media (max-width: 768px) {
+    .order-actions {
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .order-actions button {
+      width: 100%;
+      max-width: 200px;
+    }
+  }
+
+/* ====================== */
+/* Supplier Item Styles */
+/* ====================== */
+.supplier-item {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    height: 400px; /* Fixed height for consistency */
+  }
+
+  .products-container {
+    margin-top: 10px;
+  }
+
+  .products-container strong {
+    display: block;
+    margin-bottom: 5px;
+  }
+  
+  
+  .products-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    padding: 5px;
+  }
+  
+  .products-list li {
+    padding: 5px;
+    border-bottom: 1px solid #f5f5f5;
+  }
+  
+  .products-list li:last-child {
+    border-bottom: none;
+  }
+  
+  .supplier-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .supplier-details {
+    flex: 1;
+    overflow: hidden; /* Ensures content doesn't overflow the fixed height */
+  }
+  
+  .supplier-details strong {
+    color: #333;
+    font-size: 1.1rem;
+  }
+  
+  .supplier-details p {
+    margin: 5px 0;
+    color: #666;
+    font-size: 0.9rem;
+  }
+  
+  
+  .supplier-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+    margin-top: 15px;
+  }
+  
+  .supplier-actions button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    background-color: #ff4d4f;
+    color: white;
+  }
+  
+  .supplier-actions button:hover {
+    background-color: #e63946;
+  }
+  
+  /* For small screens where buttons stack vertically */
+  @media (max-width: 768px) {
+    /* Remove this as it's not needed since we're not using flex on the parent */
+    /* .supplier-item {
+      flex-direction: column;
+      align-items: center;
+    } */
+    
+    .supplier-actions {
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .supplier-actions button {
+      width: 100%;
+      max-width: 200px;
+    }
+  }
+
+  /* Supplier Modal Actions */
+#supplierForm .form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  
+  #supplierForm .form-actions button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+  }
+  
+  #saveSupplierBtn {
+    background-color: #ff4d4f;
+    color: white;
+  }
+  
+  #saveSupplierBtn:hover {
+    background-color: #e63946;
+  }
+  
+  #cancelSupplier {
+    background-color: #f5f5f5;
+    color: #333;
+  }
+  
+  #cancelSupplier:hover {
+    background-color: #e0e0e0;
+  }
+
+  /* Product Entry Styles */
+#addProductBtn {
+    padding: 8px 16px;
+    background: #ff4d4f;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+  }
+  
+  #addProductBtn:hover {
+    background-color: #e63946;
   }
   
   .remove-product {
@@ -1230,345 +1567,9 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: background-color 0.2s;
   }
   
   .remove-product:hover {
     background: #ff5252;
   }
-  
-  #addProductBtn {
-    background: #4CAF50;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-top: 10px;
-  }
-  #addProductBtn:hover {
-    background: #45a049;
-  }
-
-
-  .price-input-container {
-    position: relative;
-    flex: 1;
-    margin-right: 10px;
-  }
-  
-  .price-input-container .currency-symbol {
-    position: absolute;
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #666;
-    font-weight: bold;
-    pointer-events: none; /* Prevent the symbol from blocking clicks */
-  }
-  
-  .price-input-container input {
-    padding-left: 50px !important; /* Increased padding */
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-
-  .order-summary {
-    margin-top: 20px;
-    padding: 15px;
-    background: #f5f5f5;
-    border-radius: 4px;
-  }
-  
-  .summary-row {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
-    font-size: 16px;
-  }
-  
-  .summary-row:last-child {
-    font-weight: bold;
-    font-size: 18px;
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid #ddd;
-  }
-
-
-  .order-items-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  
-  .order-item-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-  }
-  
-  .item-details {
-    flex: 2;
-  }
-  
-  .item-price {
-    flex: 1;
-    text-align: right;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-  }
-  
-  .item-price span {
-    margin-left: 10px;
-  }
-  
-  .item-total {
-    font-weight: bold;
-    min-width: 80px;
-    display: inline-block;
-  }
-  
-  .remove-item-btn {
-    background: #ff6b6b;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 25px;
-    height: 25px;
-    cursor: pointer;
-    margin-left: 10px;
-  }
-  
-  .remove-item-btn:hover {
-    background: #ff5252;
-  }
-
-  /* Add to your stylesheet */
-.order-history-section {
-    margin-top: 20px;
-    border-top: 1px solid #eee;
-    padding-top: 20px;
-  }
-  
-  .order-history-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-  }
-  
-  .order-history-table th, 
-  .order-history-table td {
-    padding: 8px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-  }
-  
-  .order-history-table th {
-    background-color: #f2f2f2;
-  }
-  
-  .item-details-container {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  
-  .item-main-details {
-    display: flex;
-    gap: 20px;
-  }
-  
-  .item-image {
-    flex: 0 0 200px;
-  }
-  
-  .item-image img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 4px;
-  }
-  
-  .item-info {
-    flex: 1;
-  }
-
-  /* Add to your existing CSS */
-.order-history-section {
-    margin-top: 20px;
-    padding: 15px;
-    background: #f9f9f9;
-    border-radius: 5px;
-}
-
-.order-history-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-
-.order-history-table th, 
-.order-history-table td {
-    padding: 8px 12px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-}
-
-.order-history-table th {
-    background-color: #f2f2f2;
-    font-weight: 600;
-}
-
-.order-summary {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 15px;
-    padding: 10px;
-    background: #eef7ff;
-    border-radius: 4px;
-}
-
-.order-summary p {
-    margin: 0;
-}
-
-.status-completed {
-    color: #2e7d32;
-    font-weight: 500;
-}
-
-.status-processing {
-    color: #ed6c02;
-    font-weight: 500;
-}
-
-.status-pending {
-    color: #d32f2f;
-    font-weight: 500;
-}
-
-/* Order History Styles */
-.order-history-section {
-    margin-top: 20px;
-    padding: 15px;
-    background: #f9f9f9;
-    border-radius: 5px;
-}
-
-.order-history-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-
-.order-history-table th, 
-.order-history-table td {
-    padding: 8px 12px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-}
-
-.order-history-table th {
-    background-color: #f2f2f2;
-    font-weight: 600;
-}
-
-.order-summary {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 15px;
-    padding: 10px;
-    background: #eef7ff;
-    border-radius: 4px;
-}
-
-.order-summary p {
-    margin: 0;
-}
-
-.status-completed {
-    color: #2e7d32;
-    font-weight: 500;
-}
-
-.status-processing {
-    color: #ed6c02;
-    font-weight: 500;
-}
-
-.status-pending {
-    color: #d32f2f;
-    font-weight: 500;
-}
-
-/* Add to your CSS */
-select {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background-color: white;
-    font-size: 14px;
-}
-
-select:focus {
-    outline: none;
-    border-color: #4a90e2;
-    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
-}
-
-.form-group select {
-    margin-top: 5px;
-}
-
-.order-history-section {
-    margin-top: 20px;
-    border-top: 1px solid #eee;
-    padding-top: 20px;
-}
-
-.order-history-summary {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 15px;
-    padding: 10px;
-    background-color: #f5f5f5;
-    border-radius: 4px;
-}
-
-.order-history-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-
-.order-history-table th, 
-.order-history-table td {
-    padding: 8px 12px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-}
-
-.order-history-table th {
-    background-color: #f2f2f2;
-    font-weight: bold;
-}
-
-.status-pending {
-    color: #ff9800;
-}
-
-.status-completed {
-    color: #4caf50;
-}
-
-.status-cancelled {
-    color: #f44336;
-}
-
-.status-processing {
-    color: #2196f3;
-}
