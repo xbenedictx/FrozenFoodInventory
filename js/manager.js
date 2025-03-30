@@ -19,6 +19,32 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
 
+// At the top of admin.js or manager.js
+firebase.auth().onAuthStateChanged((user) => {
+    if (!user) {
+        window.location.href = "../login/login.html";
+    } else {
+        firebase.database().ref('users/' + user.uid).once('value')
+            .then((snapshot) => {
+                const userData = snapshot.val();
+                
+                // For admin page:
+                if (window.location.pathname.includes("admin.html") && userData.role !== "admin") {
+                    alert("Admin access required");
+                    firebase.auth().signOut();
+                    window.location.href = "../login/login.html";
+                }
+                
+                // For manager page:
+                if (window.location.pathname.includes("manager.html") && userData.role !== "manager") {
+                    alert("Manager access required");
+                    firebase.auth().signOut();
+                    window.location.href = "../login/login.html";
+                }
+            });
+    }
+});
+
 let currentBranch = null;
 let currentUser = null;
 let authChecked = false;

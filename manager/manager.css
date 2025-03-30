@@ -1322,11 +1322,11 @@ body {
 .orders-grid-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 20px;
+    gap: 20px; /* This sets both row and column gaps */
     width: 100%;
     margin-top: 20px;
-  }
-  
+    margin-bottom: 20px; /* Optional: Adds space below the grid */
+}
   /* Individual order card styling */
   .order-item-card {
     background: white;
@@ -1336,8 +1336,9 @@ body {
     transition: transform 0.2s, box-shadow 0.2s;
     display: flex;
     flex-direction: column;
-    height: 100%; /* Ensure all cards have equal height */
-  }
+    margin-bottom: 20px;
+    height: 100%;
+}
   
   .order-item-card:hover {
     transform: translateY(-3px);
@@ -1439,7 +1440,7 @@ body {
   
   /* Responsive adjustments */
   @media (max-width: 768px) {
-    .orders-grid-container {
+     .orders-grid-container {
       grid-template-columns: 1fr;
     }
     

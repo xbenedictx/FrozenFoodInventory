@@ -8,34 +8,34 @@ const firebaseConfig = {
     messagingSenderId: "755457069655",
     appId: "1:755457069655:web:bccc922d8633e028a00912",
     measurementId: "G-PRQ73N6GGF"
-  };
-  
+};
 
 // Initialize Firebase
 try {
     firebase.initializeApp(firebaseConfig);
     console.log("Firebase initialized successfully!");
-  } catch (error) {
+} catch (error) {
     console.error("Firebase initialization error:", error.message);
     alert("Firebase initialization failed: " + error.message);
-  }
-  
-  const auth = firebase.auth();
-  const db = firebase.database();
+}
 
+const auth = firebase.auth();
+const db = firebase.database();
+
+  
 //  credentials for validation 
-const validCredentials = {
-  admin: {
-    email: "elevazobenedict@gmail.com", 
-    password: "Benedict_123$$", 
-    redirect: "../admin/admin.html"
-  },
-  user: { 
-    email: "beme.mendavia.up@phinmaed.com",
-    password: "Mendavia_123%%",
-    redirect: "../manager/manager.html"
-  }
-};
+// const validCredentials = {
+//   admin: {
+//     email: "elevazobenedict@gmail.com", 
+//     password: "Benedict_123$$", 
+//     redirect: "../admin/admin.html"
+//   },
+//   user: { 
+//     email: "beme.mendavia.up@phinmaed.com",
+//     password: "Mendavia_123%%",
+//     redirect: "../manager/manager.html"
+//   }
+// };
 
 
 // Initialize on Load
@@ -50,42 +50,38 @@ document.addEventListener("DOMContentLoaded", () => {
             signIn();
         });
     }
-  
+
     // Check auth state
     auth.onAuthStateChanged((user) => {
         if (user) {
-          // Directly access using auth UID
-          db.ref('users/' + user.uid).once('value')
-            .then((snapshot) => {
-              if (!snapshot.exists()) {
-                console.error("No user data found for UID:", user.uid);
-                return auth.signOut();
-              }
-      
-              const userData = snapshot.val();
-              if (userData.role === "manager") {
-                window.location.href = "../manager/manager.html";
-              } else if (userData.role === "admin") {
-                window.location.href = "../admin/admin.html";
-              }
-            })
-            .catch((error) => {
-              console.error("Database error:", error);
-              auth.signOut();
-            });
+            db.ref('users/' + user.uid).once('value')
+                .then((snapshot) => {
+                    if (!snapshot.exists()) {
+                        console.error("No user data found");
+                        return auth.signOut();
+                    }
+                    
+                    // Just verify user exists, but don't redirect automatically
+                    console.log("User is authenticated, but waiting for role verification");
+                })
+                .catch((error) => {
+                    console.error("Database error:", error);
+                    auth.signOut();
+                });
         }
-      });
+    });
+
 
     // Check if user is already logged in
-    const role = localStorage.getItem("userRole");
-    if (role) {
-        console.log("Role found:", role);
-        if (role === "manager") {
-            window.location.href = "../manager/manager.html";
-        } else if (role === "admin") {
-            window.location.href = "../admin/admin.html";
-        }
-    }
+    // const role = localStorage.getItem("userRole");
+    // if (role) {
+    //     console.log("Role found:", role);
+    //     if (role === "manager") {
+    //         window.location.href = "../manager/manager.html";
+    //     } else if (role === "admin") {
+    //         window.location.href = "../admin/admin.html";
+    //     }
+    // }
 
 
   // Attach forgotPassword to the Forgot Password link
@@ -328,72 +324,68 @@ function registerUser(email, password, name, role = "manager") {
 function signIn() {
     const email = document.getElementById("email").value.trim().toLowerCase();
     const password = document.getElementById("password").value.trim();
-    let uid; // Create a variable to store the UID
-  
+    const selectedRole = document.getElementById("role").value;
+    const errorElement = document.getElementById("error-message");
+    
+    // Clear previous errors
+    if (errorElement) {
+        errorElement.style.display = "none";
+        errorElement.textContent = "";
+    }
+
+    if (!selectedRole) {
+        showLoginError("Please select your role");
+        return;
+    }
+
     auth.signInWithEmailAndPassword(email, password)
-      .then((userCredential) => {
-        uid = userCredential.user.uid; // Store the UID here
-        console.log("Attempting login with UID:", uid);
-  
-        // Try direct UID lookup first
-        return db.ref(`users/${uid}`).once('value')
-          .then((snapshot) => {
-            if (snapshot.exists()) {
-              console.log("User found by UID");
-              return snapshot.val();
+        .then((userCredential) => {
+            const uid = userCredential.user.uid;
+            // Store the UID immediately while we have access to userCredential
+            localStorage.setItem("userId", uid);
+            
+            return db.ref(`users/${uid}`).once('value');
+        })
+        .then((snapshot) => {
+            if (!snapshot.exists()) {
+                auth.signOut();
+                throw new Error("User account not properly configured");
             }
-  
-            // Fallback: Search by email if UID lookup fails
-            console.log("Falling back to email search");
-            return db.ref('users').orderByChild('email').equalTo(email).once('value')
-              .then((emailSnapshot) => {
-                if (!emailSnapshot.exists()) {
-                  throw new Error("User data not found by UID or email");
-                }
-  
-                let userData = null;
-                emailSnapshot.forEach((child) => {
-                  userData = child.val();
-                  return true; // Exit after first match
-                });
-                return userData;
-              });
-          });
-      })
-      .then((userData) => {
-        if (!userData) throw new Error("User data exists but is empty");
-  
-        // Store user info
-        localStorage.setItem("userRole", userData.role || "");
-        localStorage.setItem("userId", uid); // Use the stored UID
-        localStorage.setItem("userEmail", userData.email || "");
-  
-        // Debug output
-        console.log("Login successful, user data:", {
-          role: userData.role,
-          branchId: userData.branchId,
-          name: userData.name
+
+            const userData = snapshot.val();
+            
+            // Verify role BEFORE any redirection
+            if (selectedRole !== userData.role) {
+                auth.signOut();
+                throw new Error(`Your account is registered as ${userData.role}. Please select the correct role.`);
+            }
+
+            // Store role
+            localStorage.setItem("userRole", userData.role);
+
+            // Redirect based on verified role
+            window.location.href = userData.role === "admin" 
+                ? "../admin/admin.html" 
+                : "../manager/manager.html";
+        })
+        .catch((error) => {
+            console.error("Login error:", error);
+            showLoginError(error.message);
+            auth.signOut();
         });
-  
-        // Redirect
-        if (userData.role === "manager") {
-          window.location.href = "../manager/manager.html";
-        } else if (userData.role === "admin") {
-          window.location.href = "../admin/admin.html";
-        } else {
-          throw new Error("Unauthorized role: " + userData.role);
-        }
-      })
-      .catch((error) => {
-        console.error("Login error details:", {
-          code: error.code,
-          message: error.message,
-          email: email
-        });
-        alert(`Login failed: ${error.message}`);
-        auth.signOut();
-      });
-  }
+}
+
+function showLoginError(message) {
+    const errorElement = document.getElementById("error-message");
+    if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.style.display = "block";
+        errorElement.style.color = "#ff4d4f";
+    } else {
+        alert(message); // Fallback
+    }
+}
+
 // Forgot Password
 function forgotPassword() {
   console.log("Forgot Password function called...");

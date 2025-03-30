@@ -53,6 +53,32 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
 
+// At the top of admin.js or manager.js
+firebase.auth().onAuthStateChanged((user) => {
+    if (!user) {
+        window.location.href = "../login/login.html";
+    } else {
+        firebase.database().ref('users/' + user.uid).once('value')
+            .then((snapshot) => {
+                const userData = snapshot.val();
+                
+                // For admin page:
+                if (window.location.pathname.includes("admin.html") && userData.role !== "admin") {
+                    alert("Admin access required");
+                    firebase.auth().signOut();
+                    window.location.href = "../login/login.html";
+                }
+                
+                // For manager page:
+                if (window.location.pathname.includes("manager.html") && userData.role !== "manager") {
+                    alert("Manager access required");
+                    firebase.auth().signOut();
+                    window.location.href = "../login/login.html";
+                }
+            });
+    }
+});
+
 console.log("Firebase initialized with config:", firebaseConfig);
 
 /* ============================================= */
@@ -5652,12 +5678,29 @@ function formatDateForDisplay(dateString) {
 /* ============================================= */
 
 document.addEventListener("DOMContentLoaded", () => {
-  const role = localStorage.getItem("userRole");
-  console.log("DOM loaded, userRole:", role);
-  if (role !== "admin") {
-    console.log("Redirecting to login because role is not admin.");
-    window.location.href = "../login/login.html";
-  } else {
-    showPage("dashboard");
-  }
-});
+    // First check Firebase auth state
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        // User is authenticated, now check role
+        firebase.database().ref('users/' + user.uid).once('value')
+          .then((snapshot) => {
+            const userData = snapshot.val();
+            if (userData && userData.role === "admin") {
+              console.log("Admin authenticated, showing dashboard");
+              showPage("dashboard");
+            } else {
+              console.log("User is not admin, redirecting to login");
+              window.location.href = "../login/login.html";
+            }
+          })
+          .catch((error) => {
+            console.error("Role check failed:", error);
+            window.location.href = "../login/login.html";
+          });
+      } else {
+        // No authenticated user
+        console.log("No authenticated user, redirecting to login");
+        window.location.href = "../login/login.html";
+      }
+    });
+  });
