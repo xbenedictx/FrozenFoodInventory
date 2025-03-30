@@ -268,6 +268,7 @@ function showPage(pageId) {
   if (pageId === "dashboard") loadDashboardPage();
   if (pageId === "supplier") loadSupplierPage();
   if (pageId === "orders") loadOrderPage(); 
+  if (pageId === "reports") loadReportPage();
 }
 
 function loadDashboardPage() {
@@ -2853,3 +2854,536 @@ function cleanupOrderListeners() {
     orderListListener = null;
   }
 }
+
+/* ============================================= */
+/* ============ REPORTS SECTION ================ */
+/* ============================================= */
+
+/**
+ * Shows the reports page and initializes the UI
+ */
+function loadReportPage() {
+    const page = document.getElementById("page-reports");
+    
+    // Set up the page structure
+    page.innerHTML = `
+      <div class="reports-header">
+        <h2>Branch Reports</h2>
+      </div>
+      <div class="report-controls">
+        <div class="form-group">
+          <label for="reportType">Report Type:</label>
+          <select id="reportType">
+            <option value="inventory">Inventory Report</option>
+            <option value="supplier">Supplier Report</option>
+            <option value="order">Order Report</option>
+          </select>
+        </div>
+        <button class="generate-btn" onclick="generateReport()">
+          <i class="fas fa-chart-bar"></i> Generate Report
+        </button>
+      </div>
+      <div id="reportOutput"></div>
+    `;
+  
+    // Initialize with empty output
+    document.getElementById("reportOutput").innerHTML = 
+      "<p>Select a report type and click 'Generate Report' to view data.</p>";
+  }
+  
+  /**
+   * Generates the selected report for the manager's branch
+   */
+  async function generateReport() {
+    const reportType = document.getElementById("reportType").value;
+    const reportOutput = document.getElementById("reportOutput");
+    
+    // Show loading state
+    reportOutput.innerHTML = "<div class='loading-spinner'><i class='fas fa-spinner fa-spin'></i> Generating report...</div>";
+  
+    try {
+      let snapshot;
+      switch (reportType) {
+        case "inventory":
+          snapshot = await db.ref(`branch_inventory/${currentBranch}`).once("value");
+          const inventoryData = snapshot.val();
+          reportOutput.innerHTML = `
+            <h3>Inventory Report - ${currentBranch}</h3>
+            <div class="chart-container small">
+              <canvas id="inventoryChart"></canvas>
+            </div>
+            ${formatInventoryReport(inventoryData)}
+            <div class="export-buttons"></div>
+          `;
+          createInventoryChart(inventoryData);
+          addExportButtons("inventory", inventoryData);
+          break;
+  
+        case "supplier":
+          snapshot = await db.ref(`branch_suppliers/${currentBranch}`).once("value");
+          const supplierData = snapshot.val();
+          reportOutput.innerHTML = `
+            <h3>Supplier Report - ${currentBranch}</h3>
+            <div class="chart-container bar-chart">
+              <canvas id="supplierChart"></canvas>
+            </div>
+            ${formatSupplierReport(supplierData)}
+            <div class="export-buttons"></div>
+          `;
+          createSupplierChart(supplierData);
+          addExportButtons("supplier", supplierData);
+          break;
+  
+        case "order":
+          snapshot = await db.ref(`branch_orders/${currentBranch}`).once("value");
+          const orderData = snapshot.val();
+          reportOutput.innerHTML = `
+            <h3>Order Report - ${currentBranch}</h3>
+            <div class="chart-container pie-chart">
+              <canvas id="orderChart"></canvas>
+            </div>
+            <div class="chart-container line-chart">
+              <canvas id="orderTimelineChart"></canvas>
+            </div>
+            ${formatOrderReport(orderData)}
+            <div class="export-buttons"></div>
+          `;
+          createOrderChart(orderData);
+          createOrderTimelineChart(orderData);
+          addExportButtons("order", orderData);
+          break;
+      }
+    } catch (error) {
+      console.error(`Error generating ${reportType} report:`, error);
+      reportOutput.innerHTML = `
+        <p class="error">Error generating report: ${error.message}</p>
+        ${error.stack ? `<details><summary>Technical details</summary>${error.stack}</details>` : ""}
+      `;
+    }
+  }
+  
+  /* ============ REPORT FORMATTING FUNCTIONS ============ */
+  
+  function formatInventoryReport(data) {
+    if (!data) return "<p>No inventory data found</p>";
+  
+    const items = Object.entries(data).map(([id, item]) => ({
+      id,
+      ...item,
+      status: item.stock <= item.minStock ? "Low Stock" : "OK",
+      formattedExpiration: formatDisplayDate(item.expiration),
+    }));
+  
+    return `
+      <div class="report-summary">
+        <p>Total Items: ${items.length}</p>
+        <p>Low Stock Items: ${items.filter((i) => i.status === "Low Stock").length}</p>
+      </div>
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Stock</th>
+            <th>Min Stock</th>
+            <th>Status</th>
+            <th>Expiration</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map((item) => `
+            <tr class="${item.status === "Low Stock" ? "low-stock" : ""}">
+              <td>${item.name}</td>
+              <td>${item.stock}</td>
+              <td>${item.minStock}</td>
+              <td>${item.status}</td>
+              <td>${item.formattedExpiration}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+  }
+  
+  function formatSupplierReport(data) {
+    if (!data || Object.keys(data).length === 0) {
+      return `
+        <div class="empty-state">
+          <i class="fas fa-box-open"></i>
+          <p>No supplier data found for ${currentBranch}</p>
+        </div>
+      `;
+    }
+  
+    const suppliers = Object.entries(data).map(([id, supplier]) => ({
+      id,
+      ...supplier,
+      formattedProducts: supplier.products
+        ? Object.keys(supplier.products).join(", ")
+        : "No products",
+    }));
+  
+    return `
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th>Supplier</th>
+            <th>Contact</th>
+            <th>GCash</th>
+            <th>Products</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${suppliers.map((supplier) => `
+            <tr>
+              <td>${supplier.name}</td>
+              <td>${supplier.contact}</td>
+              <td>${supplier.gcash}</td>
+              <td>${supplier.formattedProducts}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+  }
+  
+  function formatOrderReport(data) {
+    if (!data) return "<p>No order data found</p>";
+  
+    const orders = Object.entries(data).map(([id, order]) => ({
+      id,
+      ...order,
+      date: formatDisplayDate(new Date(order.timestamp)),
+    }));
+  
+    // Calculate summary statistics
+    const totalOrders = orders.length;
+    const completedOrders = orders.filter(o => o.status === "Completed").length;
+    const pendingOrders = orders.filter(o => o.status === "Pending").length;
+    const totalSpent = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+  
+    return `
+      <div class="report-summary">
+        <p>Total Orders: ${totalOrders}</p>
+        <p>Completed Orders: ${completedOrders}</p>
+        <p>Pending Orders: ${pendingOrders}</p>
+        <p>Total Spent: ${totalSpent.toFixed(2)} PHP</p>
+      </div>
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Date</th>
+            <th>Supplier</th>
+            <th>Status</th>
+            <th>Payment</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${orders.map((order) => `
+            <tr>
+              <td>${order.id}</td>
+              <td>${order.date}</td>
+              <td>${order.supplierName || order.supplierID}</td>
+              <td>${order.status}</td>
+              <td>${order.paymentStatus}</td>
+              <td>${order.total ? order.total.toFixed(2) + " PHP" : "N/A"}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+  }
+  
+  /* ============ CHART GENERATION ============ */
+  
+  function createInventoryChart(data) {
+    if (!data) return;
+  
+    const ctx = document.getElementById("inventoryChart");
+  
+    // Destroy previous chart if exists
+    if (ctx.chart) {
+      ctx.chart.destroy();
+    }
+  
+    const items = Object.values(data);
+    const lowStockItems = items.filter((item) => item.stock <= item.minStock).length;
+    const healthyItems = items.length - lowStockItems;
+  
+    ctx.chart = new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: ["Low Stock", "Healthy Stock"],
+        datasets: [{
+          data: [lowStockItems, healthyItems],
+          backgroundColor: ["rgba(255, 99, 132, 0.7)", "rgba(54, 162, 235, 0.7)"],
+          borderWidth: 1,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: "Inventory Status Overview",
+          },
+        },
+      },
+    });
+  }
+  
+  function createSupplierChart(data) {
+    if (!data) return;
+  
+    const ctx = document.getElementById("supplierChart");
+  
+    // Destroy previous chart if exists
+    if (ctx.chart) {
+      ctx.chart.destroy();
+    }
+  
+    const suppliers = Object.values(data);
+    const productCounts = suppliers.map((supplier) =>
+      supplier.products ? Object.keys(supplier.products).length : 0
+    );
+    const supplierNames = suppliers.map((supplier) => supplier.name);
+  
+    ctx.chart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: supplierNames,
+        datasets: [{
+          label: "Number of Products Supplied",
+          data: productCounts,
+          backgroundColor: "rgba(75, 192, 192, 0.7)",
+          borderColor: "rgba(75, 192, 192, 1)",
+          borderWidth: 1,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1,
+              precision: 0,
+            },
+          },
+        },
+        plugins: {
+          title: {
+            display: true,
+            text: "Products per Supplier",
+            padding: {
+              top: 0,
+              bottom: 10,
+            },
+          },
+        },
+        layout: {
+          padding: {
+            top: 10,
+            bottom: 10,
+            left: 10,
+            right: 10,
+          },
+        },
+      },
+    });
+  }
+  
+  function createOrderChart(data) {
+    if (!data) return;
+  
+    const ctx = document.getElementById("orderChart");
+  
+    // Destroy previous chart if exists
+    if (ctx.chart) {
+      ctx.chart.destroy();
+    }
+  
+    const orders = Object.values(data);
+    const statusCounts = orders.reduce((acc, order) => {
+      acc[order.status] = (acc[order.status] || 0) + 1;
+      return acc;
+    }, {});
+  
+    ctx.chart = new Chart(ctx, {
+      type: "pie",
+      data: {
+        labels: Object.keys(statusCounts),
+        datasets: [{
+          data: Object.values(statusCounts),
+          backgroundColor: [
+            "rgba(255, 99, 132, 0.7)",
+            "rgba(54, 162, 235, 0.7)",
+            "rgba(255, 206, 86, 0.7)",
+            "rgba(75, 192, 192, 0.7)",
+            "rgba(153, 102, 255, 0.7)",
+          ],
+          borderWidth: 1,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: "Order Status Distribution",
+            padding: {
+              top: 0,
+              bottom: 10,
+            },
+          },
+        },
+        layout: {
+          padding: {
+            top: 10,
+            bottom: 10,
+            left: 10,
+            right: 10,
+          },
+        },
+      },
+    });
+  }
+  
+  function createOrderTimelineChart(data) {
+    if (!data) return;
+  
+    const ctx = document.getElementById("orderTimelineChart");
+  
+    // Destroy previous chart if exists
+    if (ctx.chart) {
+      ctx.chart.destroy();
+    }
+  
+    const orders = Object.values(data);
+    const monthlyData = orders.reduce((acc, order) => {
+      const date = new Date(order.timestamp);
+      const monthYear = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, "0")}`;
+      acc[monthYear] = (acc[monthYear] || 0) + 1;
+      return acc;
+    }, {});
+  
+    const sortedMonths = Object.keys(monthlyData).sort();
+    const monthNames = sortedMonths.map((monthStr) => {
+      const [year, month] = monthStr.split("-");
+      return new Date(year, month - 1).toLocaleString("default", {
+        month: "short",
+        year: "numeric",
+      });
+    });
+  
+    ctx.chart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: monthNames,
+        datasets: [{
+          label: "Orders per Month",
+          data: sortedMonths.map((month) => monthlyData[month]),
+          backgroundColor: "rgba(54, 162, 235, 0.2)",
+          borderColor: "rgba(54, 162, 235, 1)",
+          borderWidth: 2,
+          tension: 0.1,
+          fill: true,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: "Order Volume Over Time",
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1,
+              precision: 0,
+            },
+          },
+        },
+      },
+    });
+  }
+  
+  /* ============ EXPORT FUNCTIONS ============ */
+  
+  function addExportButtons(reportType, data) {
+    const buttonsDiv = document.querySelector(".export-buttons");
+    buttonsDiv.innerHTML = "";
+  
+    // CSV Button
+    const csvBtn = document.createElement("button");
+    csvBtn.className = "export-btn";
+    csvBtn.innerHTML = '<i class="fas fa-file-csv"></i> Export to CSV';
+    csvBtn.addEventListener("click", () => exportToCSV(reportType, data));
+    buttonsDiv.appendChild(csvBtn);
+  
+    // PDF Button (commented out as in original)
+    // const pdfBtn = document.createElement("button");
+    // pdfBtn.className = "export-btn";
+    // pdfBtn.innerHTML = '<i class="fas fa-file-pdf"></i> Export to PDF';
+    // pdfBtn.addEventListener("click", () => exportToPDF(reportType, data));
+    // buttonsDiv.appendChild(pdfBtn);
+  }
+  
+  function exportToCSV(reportType, data) {
+    let csvContent = "";
+  
+    switch (reportType) {
+      case "inventory":
+        csvContent = "Name,Current Stock,Min Stock,Status,Expiration,Supplier\n";
+        Object.values(data).forEach((item) => {
+          const status = item.stock < item.minStock ? "Low Stock" : "OK";
+          const formattedExpiration = formatDisplayDate(item.expiration);
+          csvContent += `"${item.name}",${item.stock},${item.minStock},${status},"${formattedExpiration}","${item.supplier}"\n`;
+        });
+        break;
+  
+      case "supplier":
+        csvContent = "Name,Contact,GCash,Products\n";
+        Object.values(data).forEach((supplier) => {
+          const products = supplier.products
+            ? Object.keys(supplier.products).join(", ")
+            : "No products";
+          csvContent += `"${supplier.name}","${supplier.contact}","${supplier.gcash}","${products}"\n`;
+        });
+        break;
+  
+      case "order":
+        csvContent = "Order ID,Date,Supplier,Status,Payment,Total,Products\n";
+        Object.entries(data).forEach(([id, order]) => {
+          const date = formatDisplayDate(new Date(order.timestamp));
+          const products = order.products 
+            ? Object.entries(order.products)
+                .map(([name, details]) => {
+                  const qty = typeof details === "object" ? details.quantity : details;
+                  return `${name} (${qty})`;
+                })
+                .join(", ")
+            : "No products";
+          csvContent += `"${id}","${date}","${order.supplierName || order.supplierID}","${order.status}","${order.paymentStatus}","${order.total ? order.total.toFixed(2) : "0"}","${products}"\n`;
+        });
+        break;
+    }
+  
+    // Create download link
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${reportType}_report_${currentBranch}_${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }

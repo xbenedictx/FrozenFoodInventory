@@ -18,7 +18,7 @@
         <li><a href="#" id="nav-inventory" onclick="showPage('inventory')"><i class="fas fa-box"></i> Inventory Management</a></li>
         <li><a href="#" id="nav-supplier" onclick="showPage('supplier')"><i class="fas fa-truck"></i> Supplier Management</a></li>
         <li><a href="#" id="nav-orders" onclick="showPage('orders')"><i class="fas fa-shopping-cart"></i> Order Management</a></li>
-        <li><a href="#" id="nav-report" onclick="showPage('report')"><i class="fas fa-chart-bar"></i> Reports</a></li>
+        <li><a href="#" id="nav-reports" onclick="showPage('reports')"><i class="fas fa-chart-bar"></i> Reports</a></li>
       </ul>
     </div>
     <div class="main-content">
@@ -49,6 +49,10 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="../js/manager.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+      <!-- For Excel export -->
+      <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>
     function toggleDropdown() {
       const dropdown = document.querySelector('.dropdown');
