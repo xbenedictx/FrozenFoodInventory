@@ -431,35 +431,84 @@ function getFallbackInventoryData() {
 }
 
 /**
- * Creates HTML for viewing item details
+ * Creates HTML for viewing item details including order history
+ * @param {Object} item - The item object
+ * @param {Array} orders - Array of order history for this item
+ * @param {number} totalOrdered - Total quantity ordered
+ * @param {number} totalSpent - Total amount spent on this item
  * @returns {string} HTML string for view mode
  */
-function createViewMode(item) {
-  return `
-            <h3>${item.name}</h3>
-            <div class="item-image">
-                <img src="${item.image || "../images/default.png"}" alt="${
-    item.name
-  }">
+function createViewMode(item, orders = [], totalOrdered = 0, totalSpent = 0) {
+    const formattedExpiration = formatDisplayDate(item.expiration);
+    
+    let sourceOrderInfo = '';
+    if (item.sourceOrderId) {
+        sourceOrderInfo = `<p><strong>Source Order:</strong> ${item.sourceOrderId}</p>`;
+    }
+    
+    let orderHistoryHTML = `
+        <div class="order-history-section">
+            <h4>Order History</h4>
+            <div class="order-history-summary">
+                <p><strong>Total Ordered:</strong> ${totalOrdered} kg</p>
+                <p><strong>Total Spent:</strong> ${totalSpent.toFixed(2)} PHP</p>
             </div>
-            <div class="item-info">
-                <p><strong>Description:</strong> ${
-                  item.description || "N/A"
-                }</p>
-                <p><strong>Current Stock:</strong> ${item.stock} kg</p>
-                <p><strong>Minimum Stock:</strong> ${
-                  item.minStock || "N/A"
-                } kg</p>
-                <p><strong>Supplier:</strong> ${item.supplier || "Unknown"}</p>
-                <p><strong>Expiration Date:</strong> ${formatDisplayDate(
-                  item.expiration
-                )}</p>
+            <table class="order-history-table">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Date</th>
+                        <th>Quantity</th>
+                        <th>Unit Price</th>
+                        <th>Total</th>
+                        <th>Supplier</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+    
+    // Add each order to the table
+    orders.forEach(order => {
+        orderHistoryHTML += `
+            <tr>
+                <td>${order.orderId}</td>
+                <td>${formatDisplayDate(order.date)}</td>
+                <td>${order.quantity} kg</td>
+                <td>${order.unitPrice ? order.unitPrice.toFixed(2) + ' PHP' : 'N/A'}</td>
+                <td>${order.total ? order.total.toFixed(2) + ' PHP' : 'N/A'}</td>
+                <td>${order.supplier}</td>
+                <td class="status-${order.status.toLowerCase()}">${order.status}</td>
+            </tr>`;
+    });
+    
+    orderHistoryHTML += `
+                </tbody>
+            </table>
+        </div>`;
+
+    return `
+        <div class="item-details-container">
+            <div class="item-main-details">
+                <h3>${item.name}</h3>
+                <div class="item-image">
+                    <img src="${item.image || "../images/default.png"}" alt="${item.name}">
+                </div>
+                <div class="item-info">
+                    <p><strong>Description:</strong> ${item.description || "N/A"}</p>
+                    ${sourceOrderInfo}
+                    <p><strong>Current Stock:</strong> ${item.stock} kg</p>
+                    <p><strong>Minimum Stock:</strong> ${item.minStock || "N/A"} kg</p>
+                    <p><strong>Supplier:</strong> ${item.supplier || "Unknown"}</p>
+                    <p><strong>Expiration Date:</strong> ${formattedExpiration}</p>
+                </div>
             </div>
+            ${orderHistoryHTML}
             <div class="item-actions">
                 <button onclick="switchToEditMode('${item.id}')">Edit</button>
                 <button onclick="document.getElementById('itemDetailsModal').style.display='none'">Close</button>
             </div>
-        `;
+        </div>
+    `;
 }
 
 /**
@@ -550,82 +599,118 @@ function createEditMode(item) {
 }
 
 /**
- * Shows detailed information about a specific inventory item.
- *
+ * Shows detailed information about a specific inventory item including order history
  * @param {string} itemId - The unique identifier of the inventory item
  */
 function showItemDetails(itemId) {
-  db.ref(`branch_inventory/${currentBranch}/${itemId}`)
-    .once("value")
-    .then((branchSnap) => {
-      const branchItem = branchSnap.val() || {};
-      const item = { ...branchItem, id: itemId };
+    // Get item details
+    db.ref(`branch_inventory/${currentBranch}/${itemId}`)
+        .once("value")
+        .then((itemSnap) => {
+            const item = itemSnap.val() || {};
+            item.id = itemId;
 
-      // Get or create the modal elements
-      let detailsModal = document.getElementById("itemDetailsModal");
-      let detailsContent = document.getElementById("itemDetailsContent");
+            // Get all orders for this branch
+            db.ref(`branch_orders/${currentBranch}`)
+                .once("value")
+                .then((ordersSnap) => {
+                    const orders = ordersSnap.val() || {};
+                    const itemOrders = [];
 
-      if (!detailsModal) {
-        const modalHTML = `
-                    <div id="itemDetailsModal" class="modal">
-                      <div class="modal-content">
-                        <span class="close-button">&times;</span>
-                        <div id="itemDetailsContent"></div>
-                      </div>
-                    </div>
-                  `;
-        document.body.insertAdjacentHTML("beforeend", modalHTML);
-        detailsModal = document.getElementById("itemDetailsModal");
-        detailsContent = document.getElementById("itemDetailsContent");
-      }
+                    // Find all orders containing this specific item
+                    Object.entries(orders).forEach(([orderId, order]) => {
+                        if (order.products) {
+                            // Check if this order contains our item (by name)
+                            const productEntry = Object.entries(order.products).find(
+                                ([productName]) => productName === item.name
+                            );
+                            
+                            if (productEntry) {
+                                const [productName, productData] = productEntry;
+                                const quantity = typeof productData === 'object' 
+                                    ? productData.quantity 
+                                    : productData;
+                                const unitPrice = typeof productData === 'object'
+                                    ? productData.price || productData.unitPrice
+                                    : null;
+                                const total = typeof productData === 'object'
+                                    ? productData.total || (unitPrice * quantity)
+                                    : null;
+                                
+                                itemOrders.push({
+                                    orderId: orderId,
+                                    date: order.timestamp,
+                                    quantity: quantity,
+                                    supplier: order.supplierName || order.supplierID,
+                                    status: order.status || 'Completed',
+                                    paymentStatus: order.paymentStatus || 'Paid',
+                                    unitPrice: unitPrice,
+                                    total: total
+                                });
+                            }
+                        }
+                    });
 
-      // Always set up the close button listener (in case modal was recreated)
-      const closeButton = detailsModal.querySelector(".close-button");
-      closeButton.onclick = function () {
-        detailsModal.style.display = "none";
-      };
+                    // Sort orders by date (newest first)
+                    itemOrders.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-      // Set up the outside click handler
-      detailsModal.onclick = function (event) {
-        if (event.target === detailsModal) {
-          detailsModal.style.display = "none";
-        }
-      };
+                    // Calculate total quantity ordered
+                    const totalOrdered = itemOrders.reduce((sum, order) => sum + order.quantity, 0);
 
-      // Prevent clicks inside modal content from closing the modal
-      const modalContent = detailsModal.querySelector(".modal-content");
-      modalContent.onclick = function (event) {
-        event.stopPropagation();
-      };
+                    // Calculate total spent on this item
+                    const totalSpent = itemOrders.reduce((sum, order) => sum + (order.total || 0), 0);
 
-      if (item) {
-        // Define the switching functions in the global scope
-        window.switchToEditMode = function () {
-          detailsContent.innerHTML = createEditMode(item);
-        };
+                    // Create or update the modal
+                    let detailsModal = document.getElementById("itemDetailsModal");
+                    let detailsContent = document.getElementById("itemDetailsContent");
 
-        window.switchToViewMode = function () {
-          // Refresh the item data before showing view mode
-          db.ref(`branch_inventory/${currentBranch}/${itemId}`)
-            .once("value")
-            .then((snap) => {
-              const updatedItem = { ...snap.val(), id: itemId };
-              detailsContent.innerHTML = createViewMode(updatedItem);
-            });
-        };
+                    if (!detailsModal) {
+                        const modalHTML = `
+                            <div id="itemDetailsModal" class="modal">
+                                <div class="modal-content">
+                                    <span class="close-button">&times;</span>
+                                    <div id="itemDetailsContent"></div>
+                                </div>
+                            </div>
+                        `;
+                        document.body.insertAdjacentHTML("beforeend", modalHTML);
+                        detailsModal = document.getElementById("itemDetailsModal");
+                        detailsContent = document.getElementById("itemDetailsContent");
+                    }
 
-        // Render view mode by default
-        detailsContent.innerHTML = createViewMode(item);
+                    // Set up modal closing behavior
+                    const closeButton = detailsModal.querySelector(".close-button");
+                    closeButton.onclick = () => detailsModal.style.display = "none";
+                    detailsModal.onclick = (event) => {
+                        if (event.target === detailsModal) {
+                            detailsModal.style.display = "none";
+                        }
+                    };
+                    detailsModal.querySelector(".modal-content").onclick = (event) => {
+                        event.stopPropagation();
+                    };
 
-        // Show the modal
-        detailsModal.style.display = "block";
-      }
-    })
-    .catch((error) => {
-      console.error("Error loading item details:", error);
-      alert("Error loading item details. Please try again.");
-    });
+                    // Define switching functions
+                    window.switchToEditMode = function() {
+                        detailsContent.innerHTML = createEditMode(item);
+                    };
+
+                    window.switchToViewMode = function() {
+                        // Refresh the data before showing view mode
+                        showItemDetails(itemId);
+                    };
+
+                    // Render view mode with enhanced order history
+                    detailsContent.innerHTML = createViewMode(item, itemOrders, totalOrdered, totalSpent);
+                    detailsModal.style.display = "block";
+                });
+        })
+        .catch((error) => {
+            console.error("Error loading item details:", error);
+            alert("Error loading item details. Please try again.");
+        });
 }
+
 
 /**
  * Saves the updated item details to the database, using the given item ID.
@@ -722,138 +807,149 @@ async function uploadImageToStorage(file, path) {
 
 /**
  * Renders inventory items to the UI based on the provided data.
- * Implements search filtering and highlights low stock or expired items.
- *
  * @param {Array} data - Array of inventory items to render
  * @param {HTMLElement} inventoryList - DOM element to render inventory items into
- * @param {HTMLElement} alerts - DOM element to display alerts
  * @param {string} searchTerm - Optional search term to filter items
  */
 function renderInventory(data, inventoryList, searchTerm = "") {
-  console.log("Rendering inventory with data:", data);
+    console.log("Rendering inventory with data:", data);
+    
+    // Filter data based on search term
+    let filteredData = data.filter(
+        (item) =>
+            item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (item.description || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (item.supplier || "").toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
-  // Filter data based on search term
-  let filteredData = data.filter(
-    (item) =>
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.description || "").toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    const currentDate = new Date();
+    inventoryList.innerHTML = "";
 
-  const currentDate = new Date();
-  inventoryList.innerHTML = "";
+    if (filteredData.length === 0) {
+        inventoryList.innerHTML = "<p>No items match the search criteria.</p>";
+        return;
+    }
 
-  if (filteredData.length === 0) {
-    inventoryList.innerHTML = "<p>No items match the search criteria.</p>";
-    return;
-  }
+    // Create a composite key using both name and supplier to ensure uniqueness
+    const groupedItems = {};
+    filteredData.forEach(item => {
+        const compositeKey = `${item.name}-${item.supplier || 'Unknown'}`;
+        if (!groupedItems[compositeKey]) {
+            groupedItems[compositeKey] = item;
+        }
+    });
 
-  // Separate items into categories
-  const lowStockItems = filteredData.filter(
-    (item) => item.stock <= (item.minStock || 0)
-  );
-  const expiredItems = filteredData.filter((item) => {
-    const expDate = new Date(item.expiration);
-    return !isNaN(expDate) && expDate < currentDate;
-  });
-  const normalItems = filteredData.filter(
-    (item) =>
-      item.stock > (item.minStock || 0) &&
-      (!item.expiration || new Date(item.expiration) >= currentDate)
-  );
+    // Convert back to array of unique items
+    const uniqueItems = Object.values(groupedItems);
 
-  // Create main inventory container with grid layout
-  const inventoryContainer = document.createElement("div");
-  inventoryContainer.className = "inventory-grid-container";
-  inventoryList.appendChild(inventoryContainer);
+    // Separate items into categories (preserving your low stock and expired alerts)
+    const lowStockItems = uniqueItems.filter(
+        (item) => item.stock <= (item.minStock || 0)
+    );
+    const expiredItems = uniqueItems.filter((item) => {
+        const expDate = new Date(item.expiration);
+        return !isNaN(expDate) && expDate < currentDate;
+    });
+    const normalItems = uniqueItems.filter(
+        (item) =>
+            item.stock > (item.minStock || 0) &&
+            (!item.expiration || new Date(item.expiration) >= currentDate)
+    );
 
-  // Render Low Stock Alerts (First Row)
-  if (lowStockItems.length > 0) {
-    const lowStockSection = document.createElement("div");
-    lowStockSection.className = "inventory-section low-stock-section";
+    // Create main inventory container with grid layout
+    const inventoryContainer = document.createElement("div");
+    inventoryContainer.className = "inventory-grid-container";
+    inventoryList.appendChild(inventoryContainer);
 
-    const lowStockHeader = document.createElement("h4");
-    lowStockHeader.className = "sub-header low-stock";
-    lowStockHeader.textContent = "Low Stock Alerts";
-    lowStockSection.appendChild(lowStockHeader);
+    // Render Low Stock Alerts (First Row)
+    if (lowStockItems.length > 0) {
+        const lowStockSection = document.createElement("div");
+        lowStockSection.className = "inventory-section low-stock-section";
 
-    renderItemList(lowStockItems, lowStockSection, true, false); // Use renderItemList instead of createInventoryItemCard
+        const lowStockHeader = document.createElement("h4");
+        lowStockHeader.className = "sub-header low-stock";
+        lowStockHeader.textContent = "Low Stock Alerts";
+        lowStockSection.appendChild(lowStockHeader);
 
-    inventoryContainer.appendChild(lowStockSection);
-  }
+        renderItemList(lowStockItems, lowStockSection, true, false);
 
-  // Render Expired Items (Second Row)
-  if (expiredItems.length > 0) {
-    const expiredSection = document.createElement("div");
-    expiredSection.className = "inventory-section expired-section";
+        inventoryContainer.appendChild(lowStockSection);
+    }
 
-    const expiredHeader = document.createElement("h4");
-    expiredHeader.className = "sub-header expired";
-    expiredHeader.textContent = "Expired Items";
-    expiredSection.appendChild(expiredHeader);
+    // Render Expired Items (Second Row)
+    if (expiredItems.length > 0) {
+        const expiredSection = document.createElement("div");
+        expiredSection.className = "inventory-section expired-section";
 
-    renderItemList(expiredItems, expiredSection, false, true); // Use renderItemList instead of createInventoryItemCard
+        const expiredHeader = document.createElement("h4");
+        expiredHeader.className = "sub-header expired";
+        expiredHeader.textContent = "Expired Items";
+        expiredSection.appendChild(expiredHeader);
 
-    inventoryContainer.appendChild(expiredSection);
-  }
+        renderItemList(expiredItems, expiredSection, false, true);
 
-  // Render Normal Stock Items (Third Row)
-  if (normalItems.length > 0) {
-    const normalSection = document.createElement("div");
-    normalSection.className = "inventory-section normal-section";
+        inventoryContainer.appendChild(expiredSection);
+    }
 
-    const normalHeader = document.createElement("h4");
-    normalHeader.className = "sub-header normal";
-    normalHeader.textContent = "All Stock Items";
-    normalSection.appendChild(normalHeader);
+    // Render Normal Stock Items (Third Row)
+    if (normalItems.length > 0) {
+        const normalSection = document.createElement("div");
+        normalSection.className = "inventory-section normal-section";
 
-    renderItemList(normalItems, normalSection, false, false); // Use renderItemList instead of createInventoryItemCard
+        const normalHeader = document.createElement("h4");
+        normalHeader.className = "sub-header normal";
+        normalHeader.textContent = "All Stock Items";
+        normalSection.appendChild(normalHeader);
 
-    inventoryContainer.appendChild(normalSection);
-  }
+        renderItemList(normalItems, normalSection, false, false);
+
+        inventoryContainer.appendChild(normalSection);
+    }
 }
 // Helper function to create inventory item cards
+// Helper function to create inventory item cards
 function createInventoryItemCard(item, isLowStock, isExpired) {
-  const formattedExpiration = formatDisplayDate(item.expiration);
-  const imageSrc = item.image || "../images/default.png";
-
-  const itemElement = document.createElement("div");
-  itemElement.className = `inventory-item-card ${
-    isLowStock ? "low-stock" : ""
-  } ${isExpired ? "expired" : ""}`;
-  itemElement.innerHTML = `
-            <img src="${imageSrc}" alt="${
-    item.name
-  }" class="inventory-item-image"
-                 onerror="this.src='../images/default.png'">
-            <div class="inventory-item-details">
-                <div class="inventory-item-name">${item.name} ${
-    isExpired ? "(Expired)" : ""
-  }</div>
-                <div class="inventory-item-description">${
-                  item.description || "No description"
-                }</div>
-                <div class="inventory-item-stock">
-                    <span>Supplier: ${item.supplier || "Unknown"}</span>
-                    <span>Quantity: ${item.stock} kg</span>
-                    ${
-                      item.minStock
-                        ? `<span>Min Stock: ${item.minStock} kg</span>`
-                        : ""
-                    }
-                    <span>Expiration: ${formattedExpiration}</span>
-                </div>
-            </div>
-            <div class="inventory-item-actions">
-                <button class="view" onclick="showItemDetails('${
-                  item.id
-                }')">View</button>
-                <button class="delete" onclick="deleteItem('${
-                  item.id
-                }')">Delete</button>
-            </div>
-        `;
-  return itemElement;
-}
+    const formattedExpiration = formatDisplayDate(item.expiration);
+    const imageSrc = item.image || "../images/default.png";
+  
+    const itemElement = document.createElement("div");
+    itemElement.className = `inventory-item-card ${
+      isLowStock ? "low-stock" : ""
+    } ${isExpired ? "expired" : ""}`;
+    itemElement.innerHTML = `
+              <img src="${imageSrc}" alt="${
+      item.name
+    }" class="inventory-item-image"
+                   onerror="this.src='../images/default.png'">
+              <div class="inventory-item-details">
+                  <div class="inventory-item-name">${item.name} ${
+      isExpired ? "(Expired)" : ""
+    }</div>
+                  <div class="inventory-item-description">${
+                    item.description || "No description"
+                  }</div>
+                  <div class="inventory-item-stock">
+                      <span>Supplier: ${item.supplier || "Unknown"}</span>
+                      <span>Quantity: ${item.stock} kg</span>
+                      ${
+                        item.minStock
+                          ? `<span>Min Stock: ${item.minStock} kg</span>`
+                          : ""
+                      }
+                      <span>Expiration: ${formattedExpiration}</span>
+                  </div>
+              </div>
+              <div class="inventory-item-actions">
+                  <button class="view" onclick="showItemDetails('${
+                    item.id
+                  }')">View</button>
+                  <button class="delete" onclick="if(confirm('Are you sure you want to delete this item?')) { deleteItem('${
+                    item.id
+                  }') }">Delete</button>
+              </div>
+          `;
+    return itemElement;
+  }
 
 // TODO: Helper function to create order for low stock item
 function createOrderForItem(itemId) {
@@ -863,157 +959,164 @@ function createOrderForItem(itemId) {
   alert(`Dapat mapupunta sa order page`);
 }
 
+
 // Helper function to render item lists
 function renderItemList(items, container, isLowStock, isExpired) {
-  const gridContainer = document.createElement("div");
-  gridContainer.className = "inventory-row inventory-normal-grid"; // Use the same grid class as in renderInventory
-  container.appendChild(gridContainer);
-
-  items.forEach((item) => {
-    const formattedExpiration = formatDisplayDate(item.expiration);
-    const imageSrc = item.image || "../images/default.png";
-
-    const itemElement = document.createElement("div");
-    itemElement.className = `inventory-item-card ${
-      isLowStock ? "low-stock" : ""
-    } ${isExpired ? "expired" : ""}`; // Use the same card class as in createInventoryItemCard
-    itemElement.innerHTML = `
-            <img src="${imageSrc}" alt="${
-      item.name
-    }" class="inventory-item-image"
-                 onerror="this.src='../images/default.png'">
-            <div class="inventory-item-details">
-                <div class="inventory-item-name">${item.name} ${
-      isExpired ? "(Expired)" : ""
-    }</div>
-                <div class="inventory-item-description">${
-                  item.description || "No description"
-                }</div>
-                <div class="inventory-item-stock">
-                    <span>Supplier: ${item.supplier || "Unknown"}</span>
-                    <span>Quantity: ${item.stock} kg</span>
-                    ${
-                      item.minStock
-                        ? `<span>Min Stock: ${item.minStock} kg</span>`
-                        : ""
-                    }
-                    <span>Expiration: ${formattedExpiration}</span>
-                </div>
-            </div>
-            <div class="inventory-item-actions">
-                <button class="view" onclick="showItemDetails('${
-                  item.id
-                }')">View</button>
-                <button class="delete" onclick="deleteItem('${
-                  item.id
-                }')">Delete</button>
-            </div>
-          `;
-    gridContainer.appendChild(itemElement);
-  });
-}
+    const gridContainer = document.createElement("div");
+    gridContainer.className = "inventory-row inventory-normal-grid";
+    container.appendChild(gridContainer);
+  
+    items.forEach((item) => {
+      const formattedExpiration = formatDisplayDate(item.expiration);
+      const imageSrc = item.image || "../images/default.png";
+  
+      const itemElement = document.createElement("div");
+      itemElement.className = `inventory-item-card ${
+        isLowStock ? "low-stock" : ""
+      } ${isExpired ? "expired" : ""}`;
+      itemElement.innerHTML = `
+              <img src="${imageSrc}" alt="${
+        item.name
+      }" class="inventory-item-image"
+                   onerror="this.src='../images/default.png'">
+              <div class="inventory-item-details">
+                  <div class="inventory-item-name">${item.name} ${
+        isExpired ? "(Expired)" : ""
+      }</div>
+                  <div class="inventory-item-description">${
+                    item.description || "No description"
+                  }</div>
+                  <div class="inventory-item-stock">
+                      <span>Supplier: ${item.supplier || "Unknown"}</span>
+                      <span>Quantity: ${item.stock} kg</span>
+                      ${
+                        item.minStock
+                          ? `<span>Min Stock: ${item.minStock} kg</span>`
+                          : ""
+                      }
+                      <span>Expiration: ${formattedExpiration}</span>
+                  </div>
+              </div>
+              <div class="inventory-item-actions">
+                  <button class="view" onclick="showItemDetails('${
+                    item.id
+                  }')">View</button>
+                  <button class="delete" onclick="if(confirm('Are you sure you want to delete this item?')) { deleteItem('${
+                    item.id
+                  }') }">Delete</button>
+              </div>
+            `;
+      gridContainer.appendChild(itemElement);
+    });
+  }
 
 /**
  * Creates the modal for adding new inventory items dynamically and adds it to the DOM
  * @returns {void}
  */
 function createItemModal() {
-  const modalHTML = `
-            <div id="itemModal" class="modal">
-              <div class="modal-content">
-                <span class="close-item-modal">&times;</span>
-                <h2>Add New Inventory Item</h2>
-                <form id="itemForm">
-                  <div class="form-group">
-                    <label for="itemName">Product Name:</label>
-                    <input type="text" id="itemName" required>
-                  </div>
-                  <div class="form-group">
-                    <label for="itemDescription">Description:</label>
-                    <textarea id="itemDescription"></textarea>
-                  </div>
-                  <div class="form-group">
-                    <label for="itemStock">Initial Stock (kg):</label>
-                    <input type="number" id="itemStock" min="0" required>
-                  </div>
-                  <div class="form-group">
-                    <label for="itemMinStock">Minimum Stock (kg):</label>
-                    <input type="number" id="itemMinStock" min="0" required>
-                  </div>
-                  <div class="form-group">
-                    <label for="itemSupplier">Supplier:</label>
-                    <input type="text" id="itemSupplier">
-                  </div>
-                  <div class="form-group">
-                    <label for="itemExpiration">Expiration Date:</label>
-                    <input type="date" id="itemExpiration" required>
-                  </div>
-                  <div class="form-group">
-                    <label for="itemImage">Product Image:</label>
-                    <input type="file" id="itemImage" accept="image/*">
-                    <small>Recommended size: 500x500 pixels (max 1MB)</small>
-                    <div id="imagePreview" style="margin-top: 10px;"></div>
-                  </div>
-                  <div class="form-actions">
-                    <button type="submit">Save Item</button>
-                    <button type="button" id="cancelItem">Cancel</button>
-                  </div>
-                </form>
-              </div>
+    const modalHTML = `
+      <div id="itemModal" class="modal">
+        <div class="modal-content">
+          <span class="close-item-modal">&times;</span>
+          <h2>Add New Inventory Item</h2>
+          <form id="itemForm">
+            <div class="form-group">
+              <label for="itemName">Product Name:</label>
+              <input type="text" id="itemName" required>
             </div>
-          `;
-
-  document.body.insertAdjacentHTML("beforeend", modalHTML);
-
-  // Add event listeners for closing the modal
-  const modal = document.getElementById("itemModal");
-  const closeButton = modal.querySelector(".close-item-modal");
-  const cancelButton = modal.querySelector("#cancelItem");
-
-  // Close modal when clicking X button
-  closeButton.addEventListener("click", closeItemModal);
-
-  // Close modal when clicking Cancel button
-  cancelButton.addEventListener("click", closeItemModal);
-
-  // Close modal when clicking outside the modal content
-  modal.addEventListener("click", function (event) {
-    if (event.target === modal) {
-      closeItemModal();
-    }
-  });
-
-  // Prevent clicks inside modal content from closing the modal
-  const modalContent = modal.querySelector(".modal-content");
-  modalContent.addEventListener("click", function (event) {
-    event.stopPropagation();
-  });
-
-  // Add form submission handler
-  document
-    .getElementById("itemForm")
-    .addEventListener("submit", handleItemSubmit);
-
-  // Add image preview and size validation
-  document.getElementById("itemImage").addEventListener("change", function (e) {
-    const file = e.target.files[0];
-    if (file) {
-      // Validate file size (max 1MB)
-      if (file.size > 1024 * 1024) {
-        alert("Image size should be less than 1MB");
-        this.value = ""; // Clear the file input
-        return;
+            <div class="form-group">
+              <label for="itemDescription">Description:</label>
+              <textarea id="itemDescription"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="itemStock">Initial Stock (kg):</label>
+              <input type="number" id="itemStock" min="0" required>
+            </div>
+            <div class="form-group">
+              <label for="itemMinStock">Minimum Stock (kg):</label>
+              <input type="number" id="itemMinStock" min="0" required>
+            </div>
+            <div class="form-group">
+              <label for="itemSupplier">Supplier:</label>
+              <select id="itemSupplier" required>
+                <option value="">Select a supplier</option>
+                <!-- Options will be populated dynamically -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="itemOrderId">Source Order ID (optional):</label>
+              <select id="itemOrderId">
+                <option value="">Select an order (optional)</option>
+                <!-- Options will be populated dynamically -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="itemExpiration">Expiration Date:</label>
+              <input type="date" id="itemExpiration" required>
+            </div>
+            <div class="form-group">
+              <label for="itemImage">Product Image:</label>
+              <input type="file" id="itemImage" accept="image/*">
+              <small>Recommended size: 500x500 pixels (max 1MB)</small>
+              <div id="imagePreview" style="margin-top: 10px;"></div>
+            </div>
+            <div class="form-actions">
+              <button type="submit">Save Item</button>
+              <button type="button" id="cancelItem">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+  
+    document.body.insertAdjacentHTML("beforeend", modalHTML);
+  
+    // Populate suppliers dropdown
+    populateSuppliersDropdown();
+    
+    // Populate orders dropdown
+    populateOrdersDropdown();
+  
+    // Rest of your existing modal setup code...
+    const modal = document.getElementById("itemModal");
+    const closeButton = modal.querySelector(".close-item-modal");
+    const cancelButton = modal.querySelector("#cancelItem");
+  
+    closeButton.addEventListener("click", closeItemModal);
+    cancelButton.addEventListener("click", closeItemModal);
+  
+    modal.addEventListener("click", function (event) {
+      if (event.target === modal) {
+        closeItemModal();
       }
-
-      const reader = new FileReader();
-      reader.onload = function (event) {
-        const preview = document.getElementById("imagePreview");
-        preview.innerHTML = `<img src="${event.target.result}" style="max-width: 200px; max-height: 200px;">`;
-      };
-      reader.readAsDataURL(file);
-    }
-  });
-}
+    });
+  
+    const modalContent = modal.querySelector(".modal-content");
+    modalContent.addEventListener("click", function (event) {
+      event.stopPropagation();
+    });
+  
+    document.getElementById("itemForm").addEventListener("submit", handleItemSubmit);
+  
+    document.getElementById("itemImage").addEventListener("change", function (e) {
+      const file = e.target.files[0];
+      if (file) {
+        if (file.size > 1024 * 1024) {
+          alert("Image size should be less than 1MB");
+          this.value = "";
+          return;
+        }
+  
+        const reader = new FileReader();
+        reader.onload = function (event) {
+          const preview = document.getElementById("imagePreview");
+          preview.innerHTML = `<img src="${event.target.result}" style="max-width: 200px; max-height: 200px;">`;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
 
 function closeItemModal() {
   document.getElementById("itemModal").style.display = "none";
@@ -1035,6 +1138,62 @@ function showItemModal() {
 }
 
 /**
+ * Populates the suppliers dropdown from Firebase
+ */
+async function populateSuppliersDropdown() {
+    const supplierSelect = document.getElementById("itemSupplier");
+    if (!supplierSelect) return;
+  
+    try {
+      const snapshot = await db.ref(`branch_suppliers/${currentBranch}`).once("value");
+      const suppliers = snapshot.val() || {};
+      
+      // Clear existing options except the first one
+      while (supplierSelect.options.length > 1) {
+        supplierSelect.remove(1);
+      }
+  
+      // Add supplier options
+      Object.entries(suppliers).forEach(([supplierId, supplier]) => {
+        const option = document.createElement("option");
+        option.value = supplier.name;
+        option.textContent = supplier.name;
+        supplierSelect.appendChild(option);
+      });
+    } catch (error) {
+      console.error("Error loading suppliers:", error);
+    }
+  }
+  
+  /**
+   * Populates the orders dropdown from Firebase
+   */
+  async function populateOrdersDropdown() {
+    const orderSelect = document.getElementById("itemOrderId");
+    if (!orderSelect) return;
+  
+    try {
+      const snapshot = await db.ref(`branch_orders/${currentBranch}`).once("value");
+      const orders = snapshot.val() || {};
+      
+      // Clear existing options except the first one
+      while (orderSelect.options.length > 1) {
+        orderSelect.remove(1);
+      }
+  
+      // Add order options
+      Object.entries(orders).forEach(([orderId, order]) => {
+        const option = document.createElement("option");
+        option.value = orderId;
+        option.textContent = `${orderId} - ${order.supplierName} (${formatDisplayDate(order.timestamp)})`;
+        orderSelect.appendChild(option);
+      });
+    } catch (error) {
+      console.error("Error loading orders:", error);
+    }
+  }
+
+/**
  * Adds a new inventory item to the database.
  * Prompts user for item details and saves to Firebase. (This uses dialog boxes)
  */
@@ -1048,68 +1207,105 @@ function addItem() {
 }
 
 /**
+ * Deletes an inventory item after confirmation
+ * @param {string} itemId - The ID of the item to delete
+ */
+function deleteItem(itemId) {
+    if (!confirm("Are you sure you want to delete this item? This action cannot be undone.")) {
+        return;
+    }
+
+    // Show loading indicator
+    const deleteButton = document.querySelector(`button.delete[onclick="deleteItem('${itemId}')"]`);
+    if (deleteButton) {
+        deleteButton.disabled = true;
+        deleteButton.textContent = "Deleting...";
+    }
+
+    db.ref(`branch_inventory/${currentBranch}/${itemId}`)
+        .remove()
+        .then(() => {
+            console.log("Item deleted successfully");
+            // Refresh the inventory view
+            loadInventoryPage();
+        })
+        .catch((error) => {
+            console.error("Error deleting item:", error);
+            alert("Error deleting item: " + error.message);
+            if (deleteButton) {
+                deleteButton.disabled = false;
+                deleteButton.textContent = "Delete";
+            }
+        });
+}
+
+/**
  * Handles the submission of the item form, adds the new item to the database and refreshes the inventory page
  * @param {Event} e The submit event
  * @returns {Promise<void>}
  */
 async function handleItemSubmit(e) {
-  e.preventDefault();
-
-  const name = document.getElementById("itemName").value.trim();
-  const description = document.getElementById("itemDescription").value.trim();
-  const stock = parseInt(document.getElementById("itemStock").value);
-  const minStock = parseInt(document.getElementById("itemMinStock").value);
-  const supplier = document.getElementById("itemSupplier").value.trim();
-  const expiration = document.getElementById("itemExpiration").value;
-  const imageFile = document.getElementById("itemImage").files[0];
-
-  if (!name || isNaN(stock) || isNaN(minStock) || !expiration) {
-    alert("Please fill in all required fields with valid data.");
-    return;
-  }
-
-  const saveBtn = e.target.querySelector('button[type="submit"]');
-  saveBtn.disabled = true;
-  saveBtn.textContent = "Saving...";
-
-  try {
-    // Get the next sequential ID
-    const newItemId = await getNextItemId(currentBranch);
-
-    // Default to the mapped image or default image if no file is uploaded
-    let imageData = imageMap[name] || "../images/default.png";
-
-    // If an image file was uploaded, convert to Base64
-    if (imageFile) {
-      imageData = await convertImageToBase64(imageFile);
+    e.preventDefault();
+  
+    const name = document.getElementById("itemName").value.trim();
+    const description = document.getElementById("itemDescription").value.trim();
+    const stock = parseInt(document.getElementById("itemStock").value);
+    const minStock = parseInt(document.getElementById("itemMinStock").value);
+    const supplier = document.getElementById("itemSupplier").value;
+    const orderId = document.getElementById("itemOrderId").value;
+    const expiration = document.getElementById("itemExpiration").value;
+    const imageFile = document.getElementById("itemImage").files[0];
+  
+    if (!name || isNaN(stock) || isNaN(minStock) || !supplier || !expiration) {
+      alert("Please fill in all required fields with valid data.");
+      return;
     }
-
-    const itemData = {
-      name,
-      description: description || "",
-      stock,
-      minStock,
-      supplier: supplier || "Unknown",
-      expiration,
-      image: imageData,
-      timestamp: firebase.database.ServerValue.TIMESTAMP,
-    };
-
-    await db
-      .ref(`branch_inventory/${currentBranch}/${newItemId}`)
-      .set(itemData);
-
-    console.log("Item added successfully with ID:", newItemId);
-    closeItemModal();
-    loadInventoryPage();
-  } catch (error) {
-    console.error("Error adding item:", error.message);
-    alert("Error adding item: " + error.message);
-  } finally {
-    saveBtn.disabled = false;
-    saveBtn.textContent = "Save Item";
+  
+    const saveBtn = e.target.querySelector('button[type="submit"]');
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving...";
+  
+    try {
+      // Get the next sequential ID
+      const newItemId = await getNextItemId(currentBranch);
+  
+      // Default to the mapped image or default image if no file is uploaded
+      let imageData = imageMap[name] || "../images/default.png";
+  
+      // If an image file was uploaded, convert to Base64
+      if (imageFile) {
+        imageData = await convertImageToBase64(imageFile);
+      }
+  
+      const itemData = {
+        name,
+        description: description || "",
+        stock,
+        minStock,
+        supplier: supplier || "Unknown",
+        expiration,
+        image: imageData,
+        timestamp: firebase.database.ServerValue.TIMESTAMP,
+      };
+  
+      // If an order ID was selected, add it to the item data
+      if (orderId) {
+        itemData.sourceOrderId = orderId;
+      }
+  
+      await db.ref(`branch_inventory/${currentBranch}/${newItemId}`).set(itemData);
+  
+      console.log("Item added successfully with ID:", newItemId);
+      closeItemModal();
+      loadInventoryPage();
+    } catch (error) {
+      console.error("Error adding item:", error.message);
+      alert("Error adding item: " + error.message);
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Save Item";
+    }
   }
-}
 
 function convertImageToBase64(file) {
   return new Promise((resolve, reject) => {
@@ -1662,11 +1858,13 @@ function createOrderListItem(id, order) {
     const div = document.createElement("div");
     div.className = "order-item";
     
-    // Calculate total if not already in order data (for backward compatibility)
+    // Calculate total if not already in order data
     const orderTotal = order.total || (order.products ? 
       Object.values(order.products).reduce((sum, product) => {
         if (typeof product === 'object') {
-          return sum + (product.total || product.price * product.quantity || 0);
+          // Use unitPrice if available, otherwise fall back to price
+          const price = product.unitPrice || product.price || 0;
+          return sum + (product.total || price * (product.quantity || 0));
         }
         return sum;
       }, 0) : 0);
@@ -1695,28 +1893,55 @@ function createOrderListItem(id, order) {
       </div>
     `;
     return div;
-  }
+}
 
 
 /**
- * Formats order products for display
+ * Formats order products for display with robust error handling
+ * Supports both old (string) and new (object) product formats
+ * Handles both 'price' and 'unitPrice' field names
  */
 function formatOrderProducts(products) {
-  if (!products) return "N/A";
-  
-  if (typeof products === 'string') {
-    return products; // For backward compatibility
+    if (!products) return "N/A";
+    
+    // Handle string case (backward compatibility)
+    if (typeof products === 'string') {
+      return products;
+    }
+    
+    try {
+      return Object.entries(products)
+        .map(([product, details]) => {
+          // Handle case where details isn't an object
+          if (typeof details !== 'object' || details === null) {
+            return `${product} (${String(details)})`;
+          }
+          
+          // Safely extract values with defaults
+          const quantity = typeof details.quantity === 'number' ? 
+            details.quantity : 
+            (typeof details.quantity === 'string' ? parseFloat(details.quantity) || 0 : 0);
+            
+          // Handle both 'price' and 'unitPrice' field names
+          const price = typeof details.price === 'number' ? 
+            details.price : 
+            (typeof details.unitPrice === 'number' ? details.unitPrice :
+             (typeof details.price === 'string' ? parseFloat(details.price) || 0 :
+              (typeof details.unitPrice === 'string' ? parseFloat(details.unitPrice) || 0 : 0)));
+          
+          // Calculate total if not provided
+          const total = typeof details.total === 'number' ? 
+            details.total : 
+            (price * quantity);
+          
+          return `${product} (${quantity} kg × ${price.toFixed(2)} PHP = ${total.toFixed(2)} PHP)`;
+        })
+        .join(", ");
+    } catch (error) {
+      console.error('Error formatting products:', error);
+      return "Invalid product data";
+    }
   }
-  
-  return Object.entries(products)
-    .map(([product, details]) => {
-      if (typeof details === 'object') {
-        return `${product} (${details.quantity} kg × ${details.price.toFixed(2)} PHP)`;
-      }
-      return `${product} (${details})`; // For backward compatibility
-    })
-    .join(", ");
-}
 
 /**
  * Shows detailed view of an order
@@ -1797,30 +2022,32 @@ function viewOrderDetails(orderId) {
                     <strong>Products:</strong>
                     <ul class="order-products-list">`;
 
-      // Add each product to the list
-      if (order.products) {
-        Object.entries(order.products).forEach(([product, details]) => {
-          if (typeof details === 'object') {
-            const quantity = details.quantity;
-            const price = details.price || 0;
-            const total = details.total || (price * quantity);
-            detailsHTML += `
-              <li>
-                ${product} - ${quantity} kg × ${price.toFixed(2)} PHP = ${total.toFixed(2)} PHP
-              </li>`;
-          } else {
-            detailsHTML += `<li>${product} - ${details}</li>`;
-          }
-        });
+  // Add each product to the list
+  if (order.products) {
+    Object.entries(order.products).forEach(([product, details]) => {
+      if (typeof details === 'object') {
+        const quantity = details.quantity || 0;
+        // Fix: Use unitPrice instead of price
+        const price = details.unitPrice || details.price || 0; // Fallback to price if unitPrice doesn't exist
+        const total = details.total || (price * quantity);
+        detailsHTML += `
+          <li>
+            ${product} - ${quantity} kg × ${price.toFixed(2)} PHP = ${total.toFixed(2)} PHP
+          </li>`;
       } else {
-        detailsHTML += `<li>No products found</li>`;
+        detailsHTML += `<li>${product} - ${details}</li>`;
       }
+    });
+  } else {
+    detailsHTML += `<li>No products found</li>`;
+  }
 
-        // Add order total
+  // Add order total - also needs to handle unitPrice
   const orderTotal = order.total || (order.products ? 
     Object.values(order.products).reduce((sum, product) => {
       if (typeof product === 'object') {
-        return sum + (product.total || product.price * product.quantity || 0);
+        const price = product.unitPrice || product.price || 0;
+        return sum + (product.total || price * (product.quantity || 0));
       }
       return sum;
     }, 0) : 0);
@@ -1997,6 +2224,10 @@ function populateOrderForm(orderId, order) {
     document.getElementById("orderStatus").value = order.status || "Pending";
     document.getElementById("orderPaymentStatus").value = order.paymentStatus || "Pending";
   
+    // Show product selection groups immediately
+    document.getElementById("productSelectionGroup").style.display = "block";
+    document.getElementById("quantityGroup").style.display = "block";
+  
     // Load products for the supplier
     loadSupplierProducts(originalSupplierId)
       .then(() => {
@@ -2016,6 +2247,7 @@ function populateOrderForm(orderId, order) {
         alert("Failed to load supplier products");
       });
 }
+
 /* ============================================= */
 /* ============ ORDER FORM MANAGEMENT ========== */
 /* ============================================= */
@@ -2172,16 +2404,16 @@ function showOrderModal() {
       supplierSelect.focus();
     }
   
-    // Show product selection if items exist
+    // Show product selection groups if we're adding a new order
+    const isEditing = !!document.getElementById("orderForm").dataset.editId;
     const productGroup = document.getElementById("productSelectionGroup");
     const quantityGroup = document.getElementById("quantityGroup");
     
-    if (productGroup && quantityGroup) {
+    if (!isEditing && productGroup && quantityGroup) {
       productGroup.style.display = currentOrderItems.length > 0 ? "block" : "none";
       quantityGroup.style.display = currentOrderItems.length > 0 ? "block" : "none";
     }
-  }
-
+}
 /**
  * Closes the order modal and resets form
  */
@@ -2688,11 +2920,6 @@ function loadSuppliersForOrder() {
     });
 }
 
-/**
- * Loads products for selected supplier
- * @param {string} supplierId - The ID of the supplier
- * @returns {Promise} A promise that resolves when products are loaded
- */
 function loadSupplierProducts(supplierId) {
     return new Promise((resolve, reject) => {
       currentSupplierId = supplierId;
@@ -2713,7 +2940,10 @@ function loadSupplierProducts(supplierId) {
         return;
       }
   
+      // Always show these groups when loading products
       productGroup.style.display = "block";
+      quantityGroup.style.display = "block";
+  
       productSelect.innerHTML = '<option value="">Loading products...</option>';
   
       db.ref(`branch_suppliers/${currentBranch}/${supplierId}`)
@@ -2742,7 +2972,6 @@ function loadSupplierProducts(supplierId) {
           }
   
           productSelect.disabled = false;
-          quantityGroup.style.display = "block";
           
           // Add event listener for product selection
           productSelect.addEventListener('change', function() {
@@ -2765,7 +2994,7 @@ function loadSupplierProducts(supplierId) {
           reject(error);
         });
     });
-  }
+}
 
 function loadSupplierProductsWithRetry(supplierId, retries = 3) {
   return loadSupplierProducts(supplierId).catch((error) => {
