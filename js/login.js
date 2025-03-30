@@ -358,14 +358,15 @@ function registerUser(email, password, name, role = "manager") {
 function signIn() {
     const email = document.getElementById("email").value.trim().toLowerCase();
     const password = document.getElementById("password").value.trim();
+    let uid; // Create a variable to store the UID
   
     auth.signInWithEmailAndPassword(email, password)
       .then((userCredential) => {
-        const userId = userCredential.user.uid;
-        console.log("Attempting login with UID:", userId);
+        uid = userCredential.user.uid; // Store the UID here
+        console.log("Attempting login with UID:", uid);
   
         // Try direct UID lookup first
-        return db.ref(`users/${userId}`).once('value')
+        return db.ref(`users/${uid}`).once('value')
           .then((snapshot) => {
             if (snapshot.exists()) {
               console.log("User found by UID");
@@ -394,7 +395,7 @@ function signIn() {
   
         // Store user info
         localStorage.setItem("userRole", userData.role || "");
-        localStorage.setItem("userId", userCredential.user.uid);
+        localStorage.setItem("userId", uid); // Use the stored UID
         localStorage.setItem("userEmail", userData.email || "");
   
         // Debug output
