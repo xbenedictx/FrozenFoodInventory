@@ -324,36 +324,6 @@ function registerUser(email, password, name, role = "manager") {
   }
 
 
-//   function loginUser(email, password) {
-//     auth.signInWithEmailAndPassword(email, password)
-//       .then((userCredential) => {
-//         // User logged in - get their database record
-//         const userId = userCredential.user.uid;
-        
-//         return db.ref('users/' + userId).once('value');
-//       })
-//       .then((snapshot) => {
-//         const userData = snapshot.val();
-//         if (userData) {
-//           // Store user role in localStorage/session
-//           localStorage.setItem('userRole', userData.role);
-//           // Redirect based on role
-//           if (userData.role === 'manager') {
-//             window.location.href = '/manager-dashboard.html';
-//           } else {
-//             window.location.href = '/user-dashboard.html';
-//           }
-//         }
-//       })
-//       .catch((error) => {
-//         console.error("Login error:", error);
-//       });
-//   }
-
-
-// Sign In
-
-
 // Sign In
 function signIn() {
     const email = document.getElementById("email").value.trim().toLowerCase();

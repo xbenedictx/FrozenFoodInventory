@@ -271,66 +271,202 @@ function showPage(pageId) {
   if (pageId === "reports") loadReportPage();
 }
 
+/* ============================================= */
+/* =============== DASHBOARD SECTION =========== */
+/* ============================================= */
+
+/**
+ * Loads dashboard page content including key metrics and recent data.
+ * Displays low stock alerts, recent orders, and supplier performance.
+ */
+/* ============================================= */
+/* =============== DASHBOARD SECTION =========== */
+/* ============================================= */
+
+/**
+ * Loads dashboard page content including key metrics and recent data.
+ * Displays low stock alerts, recent orders, and supplier performance.
+ */
 function loadDashboardPage() {
-  const page = document.getElementById("page-dashboard");
+    const page = document.getElementById("page-dashboard");
+    
+    if (!page) {
+        console.error("Dashboard page element not found");
+        return;
+    }
 
-  if (!page) {
-    console.error("Dashboard page element not found");
-    return;
-  }
-
-  // First completely set up the dashboard structure
-  page.innerHTML = `
+    // Clear and set up the dashboard page structure
+    page.innerHTML = `
         <div class="dashboard-content">
-            <h2>${
-              currentBranch ? currentBranch + " Dashboard" : "Dashboard"
-            }</h2>
-            <div id="dashboard-metrics" class="metrics-container">
-                <div class="loading-spinner">
-                    <i class="fas fa-spinner fa-spin"></i> Loading metrics...
+            <h2>${currentBranch ? currentBranch + " Dashboard" : "Dashboard"}</h2>
+            <div class="metric-grid">
+                <!-- Metrics will be loaded here -->
+            </div>
+            <div class="chart-container">
+                <h3>Recent Activity</h3>
+                <div id="recentActivity" class="recent-activity">
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i> Loading activity...
+                    </div>
                 </div>
             </div>
         </div>
     `;
 
-  // Now we can safely get the metrics container
-  const metrics = document.getElementById("dashboard-metrics");
-
-  if (!currentBranch) {
-    metrics.innerHTML = `
+    const metricsContainer = page.querySelector(".metric-grid");
+    
+    if (!currentBranch) {
+        metricsContainer.innerHTML = `
             <div class="error-message">
                 <i class="fas fa-exclamation-triangle"></i>
                 <p>No branch assigned to your account. Please contact admin.</p>
             </div>
         `;
-    return;
-  }
+        return;
+    }
 
-  // Show loading state
-  metrics.innerHTML = `
+    // Show loading state
+    metricsContainer.innerHTML = `
         <div class="loading-spinner">
             <i class="fas fa-spinner fa-spin"></i> Loading branch data...
         </div>
     `;
 
-  Promise.all([
-    db.ref(`branch_inventory/${currentBranch}`).once("value"),
-    db.ref(`branch_orders/${currentBranch}`).once("value"),
-    db.ref(`branch_suppliers/${currentBranch}`).once("value"),
-  ])
+    Promise.all([
+        db.ref(`branch_inventory/${currentBranch}`).once("value"),
+        db.ref(`branch_orders/${currentBranch}`).once("value"),
+        db.ref(`branch_suppliers/${currentBranch}`).once("value"),
+    ])
     .then(([inventorySnap, ordersSnap, suppliersSnap]) => {
-      // [Previous data processing code remains the same...]
+        // Process inventory data
+        const inventoryData = [];
+        inventorySnap.forEach((child) => {
+            const item = child.val();
+            item.stock = typeof item.stock === "number" ? item.stock : 0;
+            item.minStock = typeof item.minStock === "number" ? item.minStock : 0;
+            inventoryData.push({ id: child.key, ...item });
+        });
 
-      // Build the dashboard HTML
-      metrics.innerHTML = `
-            <div class="metric-grid">
-                <!-- Metric cards go here (same as before) -->
+        // Find low stock items
+        const lowStockItems = inventoryData.filter(
+            (item) => item.minStock > 0 && item.stock <= item.minStock
+        );
+
+        // Process orders data
+        const recentOrders = [];
+        const ordersBySupplier = {};
+        
+        if (ordersSnap.val()) {
+            ordersSnap.forEach((child) => {
+                const order = child.val();
+                order.id = child.key;
+                recentOrders.push(order);
+
+                const supplierId = order.supplierID;
+                ordersBySupplier[supplierId] = (ordersBySupplier[supplierId] || 0) + 1;
+            });
+        }
+
+        // Sort and get recent orders
+        const recentOrdersList = recentOrders
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+            .slice(0, 5);
+
+        // Process suppliers data
+        const suppliers = suppliersSnap.val()
+            ? Object.entries(suppliersSnap.val()).reduce((acc, [id, supplier]) => {
+                acc[id] = supplier;
+                return acc;
+            }, {})
+            : {};
+
+        const supplierPerformance = suppliersSnap.val()
+            ? Object.entries(suppliersSnap.val()).map(([id, s]) => ({
+                name: s.name,
+                orders: ordersBySupplier[id] || 0,
+            }))
+            : [];
+
+        // Build the metrics cards
+        metricsContainer.innerHTML = `
+            <div class="metric-card">
+                <div class="metric-header">
+                    <i class="fas fa-box-open"></i>
+                    <h3>Inventory</h3>
+                </div>
+                <div class="metric-body">
+                    <div class="metric-value">${inventoryData.length}</div>
+                    <div class="metric-description">Total Items</div>
+                </div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-header">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Low Stock</h3>
+                </div>
+                <div class="metric-body">
+                    <div class="metric-value ${lowStockItems.length > 0 ? 'warning' : ''}">${lowStockItems.length}</div>
+                    <div class="metric-description">Items Need Restocking</div>
+                </div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-header">
+                    <i class="fas fa-truck"></i>
+                    <h3>Recent Orders</h3>
+                </div>
+                <div class="metric-body">
+                    <div class="metric-value">${recentOrders.length}</div>
+                    <div class="metric-description">Total Orders</div>
+                </div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-header">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>Top Supplier</h3>
+                </div>
+                <div class="metric-body">
+                    ${supplierPerformance.length > 0 
+                        ? `
+                        <div class="metric-value">${supplierPerformance[0]?.name || 'N/A'}</div>
+                        <div class="metric-description">${supplierPerformance[0]?.orders || 0} orders</div>
+                        `
+                        : '<div class="metric-description">No supplier data</div>'
+                    }
+                </div>
             </div>
         `;
+
+        // Load recent activity
+        const activityContainer = document.getElementById("recentActivity");
+        if (recentOrdersList.length > 0) {
+            activityContainer.innerHTML = `
+                <ul class="activity-list">
+                    ${recentOrdersList.map(order => `
+                        <li class="activity-item">
+                            <div class="activity-icon">
+                                <i class="fas fa-truck"></i>
+                            </div>
+                            <div class="activity-details">
+                                <p>Order #${order.id} placed with ${suppliers[order.supplierID]?.name || 'Unknown'}</p>
+                                <p class="activity-time">${formatDisplayDate(new Date(order.timestamp))}</p>
+                            </div>
+                            <div class="activity-status status-${order.status?.toLowerCase() || 'pending'}">
+                                ${order.status || "Pending"}
+                            </div>
+                        </li>
+                    `).join('')}
+                </ul>
+            `;
+        } else {
+            activityContainer.innerHTML = "<p>No recent activity</p>";
+        }
     })
     .catch((error) => {
-      console.error("Error loading dashboard metrics:", error);
-      metrics.innerHTML = `
+        console.error("Error loading dashboard metrics:", error);
+        metricsContainer.innerHTML = `
             <div class="error-message">
                 <i class="fas fa-exclamation-circle"></i>
                 <p>Failed to load dashboard data</p>
