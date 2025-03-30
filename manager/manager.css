@@ -107,3 +107,47 @@ body {
 .page.active {
   display: block;
 }
+
+
+.metrics-container {
+    padding: 20px;
+    min-height: 200px;
+  }
+  
+  .loading-spinner {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+  }
+  
+  .error-message {
+    text-align: center;
+    padding: 20px;
+    color: #d9534f;
+  }
+  
+  .error-message i {
+    font-size: 2em;
+    margin-bottom: 10px;
+  }
+  
+  .error-detail {
+    font-size: 0.9em;
+    color: #777;
+  }
+  
+  .retry-btn {
+    margin-top: 15px;
+    padding: 8px 15px;
+    background: #5bc0de;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+  }

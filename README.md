@@ -1,7 +1,12 @@
 For testing only:
 
 elevazobenedict@gmail.com = Benedict_123$$ to test the Admin dashboard.
-beme.mendavia.up@phinmaed.com = Mendavia_123%% to test the Manager dashboard.
+beme.mendavia.up@phinmaed.com = password123 to test the Manager dashboard.
+
+Manager Accounts:
+manager1@example.com = password123
+manager2@example.com = password123
+manager3@example.com = password123
 
 
 What to see:

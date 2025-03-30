@@ -88,16 +88,16 @@ const imageMap = {
  * Removes the user role from local storage as part of the logout process.
  */
 function signOut() {
-  auth
-    .signOut()
-    .then(() => {
+    auth.signOut().then(() => {
       localStorage.removeItem("userRole");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("userEmail");
       window.location.href = "../login/login.html";
-    })
-    .catch((error) => {
+    }).catch((error) => {
       console.error("Sign out error:", error);
+      window.location.href = "../login/login.html";
     });
-}
+  }
 
 /**
  * Helper function to create form groups
@@ -192,154 +192,188 @@ async function showPage(pageId) {
  * Displays low stock alerts, recent orders, and supplier performance.
  */
 function loadDashboardPage() {
-  const metrics = document.getElementById("dashboard-metrics");
-  metrics.innerHTML = "<p>Loading metrics...</p>";
+    const page = document.getElementById("page-dashboard");
+    
+    if (!page) {
+        console.error("Dashboard page element not found");
+        return;
+    }
 
-  if (!currentBranch) {
-    metrics.innerHTML = "<p>Please select a branch first</p>";
-    return;
-  }
+    // Clear and set up the dashboard page structure
+    page.innerHTML = `
+        <div class="dashboard-content">
+            <h2>Branch Dashboard</h2>
+            <div id="dashboard-metrics" class="metrics-container">
+                <p>Loading metrics...</p>
+            </div>
+        </div>
+    `;
 
-  Promise.all([
-    db.ref(`branch_inventory/${currentBranch}`).once("value"),
-    db.ref(`branch_orders/${currentBranch}`).once("value"),
-    db.ref(`branch_suppliers/${currentBranch}`).once("value"),
-  ])
+    const metrics = document.getElementById("dashboard-metrics");
+    
+    if (!currentBranch) {
+        metrics.innerHTML = "<p>Error: No branch assigned to your account. Please contact admin.</p>";
+        return;
+    }
+
+    Promise.all([
+        db.ref(`branch_inventory/${currentBranch}`).once("value"),
+        db.ref(`branch_orders/${currentBranch}`).once("value"),
+        db.ref(`branch_suppliers/${currentBranch}`).once("value"),
+    ])
     .then(([inventorySnap, ordersSnap, suppliersSnap]) => {
-      const inventoryData = [];
-      inventorySnap.forEach((child) => {
-        const item = child.val();
-        // Ensure numeric values and handle undefined minStock
-        item.stock = typeof item.stock === "number" ? item.stock : 0;
-        item.minStock = typeof item.minStock === "number" ? item.minStock : 0;
-        inventoryData.push({ id: child.key, ...item });
-      });
-
-      // Improved low stock calculation (only counts if minStock > 0)
-      const lowStockItems = inventoryData.filter(
-        (item) => item.minStock > 0 && item.stock <= item.minStock
-      );
-      const lowStock = lowStockItems.length;
-
-      const recentOrders = [];
-      const ordersBySupplier = {};
-      if (ordersSnap.val()) {
-        ordersSnap.forEach((child) => {
-          const order = child.val();
-          order.id = child.key;
-
-          // Process products - this is the key fix
-          let productsInfo = "No products";
-          if (order.products) {
-            if (typeof order.products === "string") {
-              productsInfo = order.products;
-            } else if (typeof order.products === "object") {
-              // Handle both array and object formats
-              if (Array.isArray(order.products)) {
-                productsInfo = order.products.join(", ");
-              } else {
-                productsInfo = Object.entries(order.products)
-                  .map(([product, details]) => {
-                    // Handle both simple quantities and detailed objects
-                    if (typeof details === 'object') {
-                      return `${product} (${details.quantity || 'N/A'})`;
-                    } else {
-                      return `${product} (${details})`;
-                    }
-                  })
-                  .join(", ");
-              }
-            }
-          }
-
-          recentOrders.push({
-            ...order,
-            productsInfo, // Add the formatted products string
-          });
-
-          const supplierId = order.supplierID;
-          ordersBySupplier[supplierId] =
-            (ordersBySupplier[supplierId] || 0) + 1;
+        // Process inventory data
+        const inventoryData = [];
+        inventorySnap.forEach((child) => {
+            const item = child.val();
+            item.stock = typeof item.stock === "number" ? item.stock : 0;
+            item.minStock = typeof item.minStock === "number" ? item.minStock : 0;
+            inventoryData.push({ id: child.key, ...item });
         });
-      }
 
-      // Sort orders by timestamp (newest first) and take the last 3
-      const recentOrdersList = recentOrders
-        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-        .slice(0, 3);
+        // Find low stock items
+        const lowStockItems = inventoryData.filter(
+            (item) => item.minStock > 0 && item.stock <= item.minStock
+        );
 
-      const suppliers = suppliersSnap.val()
-        ? Object.entries(suppliersSnap.val()).reduce((acc, [id, supplier]) => {
-            acc[id] = supplier;
-            return acc;
-          }, {})
-        : {};
+        // Process orders data
+        const recentOrders = [];
+        const ordersBySupplier = {};
+        
+        if (ordersSnap.val()) {
+            ordersSnap.forEach((child) => {
+                const order = child.val();
+                order.id = child.key;
 
-      const supplierPerformance = suppliersSnap.val()
-        ? Object.entries(suppliersSnap.val()).map(([id, s]) => ({
-            name: s.name,
-            orders: ordersBySupplier[id] || 0,
-          }))
-        : [];
+                let productsInfo = "No products";
+                if (order.products) {
+                    if (typeof order.products === "string") {
+                        productsInfo = order.products;
+                    } else if (typeof order.products === "object") {
+                        if (Array.isArray(order.products)) {
+                            productsInfo = order.products.join(", ");
+                        } else {
+                            productsInfo = Object.entries(order.products)
+                                .map(([product, details]) => {
+                                    if (typeof details === 'object') {
+                                        return `${product} (${details.quantity || 'N/A'})`;
+                                    } else {
+                                        return `${product} (${details})`;
+                                    }
+                                })
+                                .join(", ");
+                        }
+                    }
+                }
 
-      metrics.innerHTML = `
-          <div class="metric-card">
-            <h3>Low Stock Alerts</h3>
-            <p>${lowStock} items</p>
-            ${
-              lowStock > 0
-                ? `
-              <div class="low-stock-details">
-                <ul>
-                  ${lowStockItems
-                    .slice(0, 3)
-                    .map(
-                      (item) => `
-                    <li>
-                      <strong>${item.name}</strong>: 
-                      ${item.stock} in stock (min: ${item.minStock})
-                    </li>
-                  `
-                    )
-                    .join("")}
-                </ul>
-              </div>
-            `
-                : ""
-            }
-          </div>
-          <div class="metric-card">
-            <h3>Recent Orders</h3>
-            <ul>
-              ${recentOrdersList
-                .map(
-                  (o) => `
-                <li>
-                  <strong>Order #${o.id}</strong><br>
-                  Supplier: ${suppliers[o.supplierID]?.name || "Unknown"}<br>
-                  Products: ${o.productsInfo}<br>
-                  Status: ${o.status || "N/A"}<br>
-                  Payment Status: ${o.paymentStatus || "N/A"}<br>
-                  Date: ${
-                    o.timestamp ? new Date(o.timestamp).toLocaleString() : "N/A"
-                  }
-                </li>
-              `
-                )
-                .join("")}
-            </ul>
-          </div>
-          <div class="metric-card">
-            <h3>Supplier Performance</h3>
-            <ul>${supplierPerformance
-              .map((s) => `<li>${s.name}: ${s.orders} orders</li>`)
-              .join("")}</ul>
-          </div>
+                recentOrders.push({
+                    ...order,
+                    productsInfo,
+                });
+
+                const supplierId = order.supplierID;
+                ordersBySupplier[supplierId] = (ordersBySupplier[supplierId] || 0) + 1;
+            });
+        }
+
+        // Sort and get recent orders
+        const recentOrdersList = recentOrders
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+            .slice(0, 3);
+
+        // Process suppliers data
+        const suppliers = suppliersSnap.val()
+            ? Object.entries(suppliersSnap.val()).reduce((acc, [id, supplier]) => {
+                acc[id] = supplier;
+                return acc;
+            }, {})
+            : {};
+
+        const supplierPerformance = suppliersSnap.val()
+            ? Object.entries(suppliersSnap.val()).map(([id, s]) => ({
+                name: s.name,
+                orders: ordersBySupplier[id] || 0,
+            }))
+            : [];
+
+        // Build the dashboard HTML
+        metrics.innerHTML = `
+            <div class="metric-card">
+                <h3>Branch Overview</h3>
+                <p>Welcome to your branch dashboard</p>
+            </div>
+            <div class="metric-card">
+                <h3>Low Stock Alerts (${lowStockItems.length})</h3>
+                ${
+                    lowStockItems.length > 0
+                        ? `
+                        <div class="low-stock-details">
+                            <ul>
+                                ${lowStockItems
+                                    .slice(0, 3)
+                                    .map(
+                                        (item) => `
+                                    <li>
+                                        <strong>${item.name}</strong>: 
+                                        ${item.stock} in stock (min: ${item.minStock})
+                                    </li>
+                                `
+                                    )
+                                    .join("")}
+                            </ul>
+                        </div>
+                    `
+                        : "<p>No low stock items</p>"
+                }
+            </div>
+            <div class="metric-card">
+                <h3>Recent Orders</h3>
+                ${
+                    recentOrdersList.length > 0
+                        ? `
+                        <ul>
+                            ${recentOrdersList
+                                .map(
+                                    (o) => `
+                                <li>
+                                    <strong>Order #${o.id}</strong><br>
+                                    Supplier: ${suppliers[o.supplierID]?.name || "Unknown"}<br>
+                                    Products: ${o.productsInfo}<br>
+                                    Status: ${o.status || "N/A"}<br>
+                                    Date: ${o.timestamp ? new Date(o.timestamp).toLocaleString() : "N/A"}
+                                </li>
+                            `
+                                )
+                                .join("")}
+                        </ul>
+                    `
+                        : "<p>No recent orders</p>"
+                }
+            </div>
+            <div class="metric-card">
+                <h3>Supplier Performance</h3>
+                ${
+                    supplierPerformance.length > 0
+                        ? `
+                        <ul>
+                            ${supplierPerformance
+                                .map((s) => `<li>${s.name}: ${s.orders} orders</li>`)
+                                .join("")}
+                        </ul>
+                    `
+                        : "<p>No supplier data available</p>"
+                }
+            </div>
         `;
     })
     .catch((error) => {
-      console.error("Error loading dashboard metrics:", error.message);
-      metrics.innerHTML = `<p>Error loading metrics: ${error.message}</p>`;
+        console.error("Error loading dashboard metrics:", error.message);
+        metrics.innerHTML = `
+            <div class="error-message">
+                <p>Error loading metrics: ${error.message}</p>
+                <button onclick="loadDashboardPage()">Retry</button>
+            </div>
+        `;
     });
 }
 
