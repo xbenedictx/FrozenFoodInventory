@@ -230,10 +230,26 @@ function loadDashboardPage() {
 
           // Process products - this is the key fix
           let productsInfo = "No products";
-          if (order.products && typeof order.products === "object") {
-            productsInfo = Object.entries(order.products)
-              .map(([product, quantity]) => `${product} (${quantity})`)
-              .join(", ");
+          if (order.products) {
+            if (typeof order.products === "string") {
+              productsInfo = order.products;
+            } else if (typeof order.products === "object") {
+              // Handle both array and object formats
+              if (Array.isArray(order.products)) {
+                productsInfo = order.products.join(", ");
+              } else {
+                productsInfo = Object.entries(order.products)
+                  .map(([product, details]) => {
+                    // Handle both simple quantities and detailed objects
+                    if (typeof details === 'object') {
+                      return `${product} (${details.quantity || 'N/A'})`;
+                    } else {
+                      return `${product} (${details})`;
+                    }
+                  })
+                  .join(", ");
+              }
+            }
           }
 
           recentOrders.push({
@@ -1414,21 +1430,30 @@ function loadSupplierPage() {
           div.className = "supplier-item";
 
           // Create product list HTML
-          let productsHtml = ""; // Remove the initial "Products:" string
+          let productsHtml = "";
           if (supplier.products) {
             if (typeof supplier.products === "string") {
               // Legacy format (comma-separated string)
-              productsHtml += supplier.products.split(",")
+              productsHtml = supplier.products.split(",")
                 .map(product => `<li>${product.trim()}</li>`)
                 .join("");
             } else {
               // New format (object with prices)
-              for (const [productName, productData] of Object.entries(supplier.products)) {
-                productsHtml += `<li>${productName} - ${productData.price.toFixed(2)} PHP per kg</li>`;
-              }
+              productsHtml = Object.entries(supplier.products)
+                .map(([productName, productData]) => {
+                  // Handle different data formats
+                  let price = '';
+                  if (typeof productData === 'object') {
+                    price = productData.price || productData.quantity || 'N/A';
+                  } else {
+                    price = productData;
+                  }
+                  return `<li>${productName} - ${parseFloat(price).toFixed(2)} PHP per kg</li>`;
+                })
+                .join("");
             }
           } else {
-            productsHtml += "<li>N/A</li>";
+            productsHtml = "<li>N/A</li>";
           }
           productsHtml += "</ul>";
 
@@ -1669,12 +1694,10 @@ function addProductEntry(productName = "", price = "") {
       productEntries.removeChild(productEntry);
     });
 }
-/*************  ✨ Codeium Command ⭐  *************/
 /**
  * Shows the supplier modal and focuses on the supplier name input
  * @returns {void}
  */
-/******  c36bf335-c3aa-4136-8a94-bf311e6e705e  *******/
 function showSupplierModal() {
   document.getElementById("supplierModal").style.display = "block";
   document.getElementById("supplierName").focus();
