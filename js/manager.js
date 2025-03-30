@@ -297,9 +297,6 @@ function showPage(pageId) {
   if (pageId === "reports") loadReportPage();
 }
 
-/* ============================================= */
-/* =============== DASHBOARD SECTION =========== */
-/* ============================================= */
 
 /**
  * Loads dashboard page content including key metrics and recent data.
@@ -1665,42 +1662,43 @@ let supplierProductsWithPrices = {};
  * Loads and displays orders with real-time updates
  */
 function loadOrderPage() {
-  const page = document.getElementById("page-orders");
-  
-  // Set up the page structure
-  page.innerHTML = `
-    <div class="orders-header">
-      <h2>Order Management</h2>
-      <button class="add-order-btn" onclick="addOrder()">
-        <i class="fas fa-plus"></i> Add Order
-      </button>
-    </div>
-    <div id="orderList" class="orders-grid-container"></div>
-  `;
-  if (!currentBranch) {
-    document.getElementById("orderList").innerHTML = 
-      "<p>No branch assigned to your account. Please contact admin.</p>";
-    return;
-  }
-
-  cleanupOrderListeners();
-
-  const orderList = document.getElementById("orderList");
-  orderList.innerHTML = "<p>Loading orders...</p>";
-
-  // Set up real-time listener
-  orderListListener = db.ref(`branch_orders/${currentBranch}`).on(
-    "value",
-    (snapshot) => {
-      const branchOrders = snapshot.val() || {};
-      renderOrderList(branchOrders);
-    },
-    (error) => {
-      console.error("Error loading orders:", error.message);
-      orderList.innerHTML = `<p>Error loading orders: ${error.message}</p>`;
+    const page = document.getElementById("page-orders");
+    
+    // Set up the page structure
+    page.innerHTML = `
+      <div class="orders-header">
+        <h2>Order Management</h2>
+        <button class="add-order-btn" onclick="addOrder()">
+          <i class="fas fa-plus"></i> Add Order
+        </button>
+      </div>
+      <div id="orderList" class="orders-grid-container"></div>
+    `;
+    
+    if (!currentBranch) {
+      document.getElementById("orderList").innerHTML = 
+        "<p>Please select a branch first</p>";
+      return;
     }
-  );
-}
+  
+    cleanupOrderListeners();
+  
+    const orderList = document.getElementById("orderList");
+    orderList.innerHTML = "<p>Loading orders...</p>";
+  
+    // Set up real-time listener
+    orderListListener = db.ref(`branch_orders/${currentBranch}`).on(
+      "value",
+      (snapshot) => {
+        const branchOrders = snapshot.val() || {};
+        renderOrderList(branchOrders);
+      },
+      (error) => {
+        console.error("Error loading orders:", error.message);
+        orderList.innerHTML = `<p>Error loading orders: ${error.message}</p>`;
+      }
+    );
+  }
 
 /**
  * Renders the order list

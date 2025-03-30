@@ -228,26 +228,132 @@ function loadDashboardPage() {
     // Clear and set up the dashboard page structure
     page.innerHTML = `
         <div class="dashboard-content">
-            <h2>Branch Dashboard</h2>
-            <div id="dashboard-metrics" class="metrics-container">
-                <p>Loading metrics...</p>
+            <div class="dashboard-header">
+                <h2>${currentBranch ? currentBranch + " Dashboard" : "Dashboard"}</h2>
+                <div class="branch-selector">
+                    <select id="branchSelect" class="form-control">
+                        <option value="">Loading branches...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="metric-grid">
+                <!-- Metrics will be loaded here -->
+            </div>
+            <div class="chart-container">
+                <h3>Recent Activity</h3>
+                <div id="recentActivity" class="recent-activity">
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i> Loading activity...
+                    </div>
+                </div>
             </div>
         </div>
     `;
 
-    const metrics = document.getElementById("dashboard-metrics");
+    // Load branches for the dropdown
+    loadBranchesForDropdown();
+
+    const metricsContainer = page.querySelector(".metric-grid");
     
     if (!currentBranch) {
-        metrics.innerHTML = "<p>Error: No branch assigned to your account. Please contact admin.</p>";
+        metricsContainer.innerHTML = `
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Please select a branch from the dropdown</p>
+            </div>
+        `;
         return;
     }
 
+    // Show loading state
+    metricsContainer.innerHTML = `
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i> Loading branch data...
+        </div>
+    `;
+
+    loadBranchDashboardData(currentBranch);
+}
+
+/**
+ * Loads branches into the dropdown selector
+ */
+async function loadBranchesForDropdown() {
+    const branchSelect = document.getElementById("branchSelect");
+    
+    try {
+        const branchesSnapshot = await db.ref('branches').once('value');
+        const branches = branchesSnapshot.val();
+        
+        branchSelect.innerHTML = '<option value="">Select a branch</option>';
+        
+        if (branches) {
+            Object.keys(branches).forEach(branchId => {
+                const option = document.createElement('option');
+                option.value = branchId;
+                option.textContent = branches[branchId].name || branchId;
+                if (branchId === currentBranch) {
+                    option.selected = true;
+                }
+                branchSelect.appendChild(option);
+            });
+        }
+        
+        // Add event listener for branch selection
+        branchSelect.addEventListener('change', (e) => {
+            currentBranch = e.target.value;
+            if (currentBranch) {
+                loadBranchDashboardData(currentBranch);
+            } else {
+                const metricsContainer = document.querySelector(".metric-grid");
+                metricsContainer.innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Please select a branch from the dropdown</p>
+                    </div>
+                `;
+                document.getElementById("recentActivity").innerHTML = `
+                    <p>No branch selected</p>
+                `;
+            }
+        });
+    } catch (error) {
+        console.error("Error loading branches:", error);
+        branchSelect.innerHTML = '<option value="">Error loading branches</option>';
+    }
+}
+
+/**
+ * Loads dashboard data for a specific branch
+ */
+function loadBranchDashboardData(branchId) {
+    const metricsContainer = document.querySelector(".metric-grid");
+    const activityContainer = document.getElementById("recentActivity");
+    
+    // Show loading state
+    metricsContainer.innerHTML = `
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i> Loading ${branchId} data...
+        </div>
+    `;
+    
+    activityContainer.innerHTML = `
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i> Loading activity...
+        </div>
+    `;
+
     Promise.all([
-        db.ref(`branch_inventory/${currentBranch}`).once("value"),
-        db.ref(`branch_orders/${currentBranch}`).once("value"),
-        db.ref(`branch_suppliers/${currentBranch}`).once("value"),
+        db.ref(`branch_inventory/${branchId}`).once("value"),
+        db.ref(`branch_orders/${branchId}`).once("value"),
+        db.ref(`branch_suppliers/${branchId}`).once("value"),
+        db.ref(`branches/${branchId}`).once("value")
     ])
-    .then(([inventorySnap, ordersSnap, suppliersSnap]) => {
+    .then(([inventorySnap, ordersSnap, suppliersSnap, branchSnap]) => {
+        // Update page title with branch name
+        const branchName = branchSnap.val()?.name || branchId;
+        document.querySelector(".dashboard-content h2").textContent = `${branchName} Dashboard`;
+
         // Process inventory data
         const inventoryData = [];
         inventorySnap.forEach((child) => {
@@ -270,32 +376,7 @@ function loadDashboardPage() {
             ordersSnap.forEach((child) => {
                 const order = child.val();
                 order.id = child.key;
-
-                let productsInfo = "No products";
-                if (order.products) {
-                    if (typeof order.products === "string") {
-                        productsInfo = order.products;
-                    } else if (typeof order.products === "object") {
-                        if (Array.isArray(order.products)) {
-                            productsInfo = order.products.join(", ");
-                        } else {
-                            productsInfo = Object.entries(order.products)
-                                .map(([product, details]) => {
-                                    if (typeof details === 'object') {
-                                        return `${product} (${details.quantity || 'N/A'})`;
-                                    } else {
-                                        return `${product} (${details})`;
-                                    }
-                                })
-                                .join(", ");
-                        }
-                    }
-                }
-
-                recentOrders.push({
-                    ...order,
-                    productsInfo,
-                });
+                recentOrders.push(order);
 
                 const supplierId = order.supplierID;
                 ordersBySupplier[supplierId] = (ordersBySupplier[supplierId] || 0) + 1;
@@ -305,7 +386,7 @@ function loadDashboardPage() {
         // Sort and get recent orders
         const recentOrdersList = recentOrders
             .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-            .slice(0, 3);
+            .slice(0, 5);
 
         // Process suppliers data
         const suppliers = suppliersSnap.val()
@@ -322,87 +403,119 @@ function loadDashboardPage() {
             }))
             : [];
 
-        // Build the dashboard HTML
-        metrics.innerHTML = `
+        // Sort suppliers by order count
+        supplierPerformance.sort((a, b) => b.orders - a.orders);
+
+        // Build the metrics cards
+        metricsContainer.innerHTML = `
             <div class="metric-card">
-                <h3>Branch Overview</h3>
-                <p>Welcome to your branch dashboard</p>
+                <div class="metric-header">
+                    <i class="fas fa-box-open"></i>
+                    <h3>Inventory</h3>
+                </div>
+                <div class="metric-body">
+                    <div class="metric-value">${inventoryData.length}</div>
+                    <div class="metric-description">Total Items</div>
+                </div>
             </div>
+            
             <div class="metric-card">
-                <h3>Low Stock Alerts (${lowStockItems.length})</h3>
-                ${
-                    lowStockItems.length > 0
-                        ? `
-                        <div class="low-stock-details">
-                            <ul>
-                                ${lowStockItems
-                                    .slice(0, 3)
-                                    .map(
-                                        (item) => `
-                                    <li>
-                                        <strong>${item.name}</strong>: 
-                                        ${item.stock} in stock (min: ${item.minStock})
-                                    </li>
-                                `
-                                    )
-                                    .join("")}
-                            </ul>
-                        </div>
-                    `
-                        : "<p>No low stock items</p>"
-                }
+                <div class="metric-header">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Low Stock</h3>
+                </div>
+                <div class="metric-body">
+                    <div class="metric-value ${lowStockItems.length > 0 ? 'warning' : ''}">${lowStockItems.length}</div>
+                    <div class="metric-description">Items Need Restocking</div>
+                </div>
             </div>
+            
             <div class="metric-card">
-                <h3>Recent Orders</h3>
-                ${
-                    recentOrdersList.length > 0
-                        ? `
-                        <ul>
-                            ${recentOrdersList
-                                .map(
-                                    (o) => `
-                                <li>
-                                    <strong>Order #${o.id}</strong><br>
-                                    Supplier: ${suppliers[o.supplierID]?.name || "Unknown"}<br>
-                                    Products: ${o.productsInfo}<br>
-                                    Status: ${o.status || "N/A"}<br>
-                                    Date: ${o.timestamp ? new Date(o.timestamp).toLocaleString() : "N/A"}
-                                </li>
-                            `
-                                )
-                                .join("")}
-                        </ul>
-                    `
-                        : "<p>No recent orders</p>"
-                }
+                <div class="metric-header">
+                    <i class="fas fa-truck"></i>
+                    <h3>Recent Orders</h3>
+                </div>
+                <div class="metric-body">
+                    <div class="metric-value">${recentOrders.length}</div>
+                    <div class="metric-description">Total Orders</div>
+                </div>
             </div>
+            
             <div class="metric-card">
-                <h3>Supplier Performance</h3>
-                ${
-                    supplierPerformance.length > 0
+                <div class="metric-header">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>Top Supplier</h3>
+                </div>
+                <div class="metric-body">
+                    ${supplierPerformance.length > 0 
                         ? `
-                        <ul>
-                            ${supplierPerformance
-                                .map((s) => `<li>${s.name}: ${s.orders} orders</li>`)
-                                .join("")}
-                        </ul>
-                    `
-                        : "<p>No supplier data available</p>"
-                }
+                        <div class="metric-value">${supplierPerformance[0]?.name || 'N/A'}</div>
+                        <div class="metric-description">${supplierPerformance[0]?.orders || 0} orders</div>
+                        `
+                        : '<div class="metric-description">No supplier data</div>'
+                    }
+                </div>
             </div>
         `;
+
+        // Load recent activity
+        if (recentOrdersList.length > 0) {
+            activityContainer.innerHTML = `
+                <ul class="activity-list">
+                    ${recentOrdersList.map(order => `
+                        <li class="activity-item">
+                            <div class="activity-icon">
+                                <i class="fas fa-truck"></i>
+                            </div>
+                            <div class="activity-details">
+                                <p>Order #${order.id} placed with ${suppliers[order.supplierID]?.name || 'Unknown'}</p>
+                                <p class="activity-time">${formatDisplayDate(new Date(order.timestamp))}</p>
+                            </div>
+                            <div class="activity-status status-${order.status?.toLowerCase() || 'pending'}">
+                                ${order.status || "Pending"}
+                            </div>
+                        </li>
+                    `).join('')}
+                </ul>
+            `;
+        } else {
+            activityContainer.innerHTML = "<p>No recent activity</p>";
+        }
     })
     .catch((error) => {
-        console.error("Error loading dashboard metrics:", error.message);
-        metrics.innerHTML = `
+        console.error("Error loading dashboard metrics:", error);
+        metricsContainer.innerHTML = `
             <div class="error-message">
-                <p>Error loading metrics: ${error.message}</p>
-                <button onclick="loadDashboardPage()">Retry</button>
+                <i class="fas fa-exclamation-circle"></i>
+                <p>Failed to load dashboard data</p>
+                <p class="error-detail">${error.message}</p>
+                <button class="retry-btn" onclick="loadBranchDashboardData('${branchId}')">
+                    <i class="fas fa-sync-alt"></i> Try Again
+                </button>
+            </div>
+        `;
+        
+        activityContainer.innerHTML = `
+            <div class="error-message">
+                <p>Failed to load recent activity</p>
             </div>
         `;
     });
 }
 
+/**
+ * Formats date for display
+ */
+function formatDisplayDate(date) {
+    const options = { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    };
+    return date.toLocaleDateString(undefined, options);
+}
 /* ============================================= */
 /* ============ INVENTORY SECTION ============== */
 /* ============================================= */
@@ -2004,45 +2117,61 @@ function renderOrderList(orders) {
 }
 
 function createOrderListItem(id, order) {
+    const orderTotal = order.total || 
+      (order.products ? Object.values(order.products).reduce((sum, product) => {
+        if (typeof product === "object") {
+          const price = product.unitPrice || product.price || 0;
+          return sum + (product.total || price * (product.quantity || 0));
+        }
+        return sum;
+      }, 0) : 0);
+  
     const div = document.createElement("div");
-    div.className = "order-item";
-  
-    // Calculate total if not already in order data
-    const orderTotal =
-      order.total ||
-      (order.products
-        ? Object.values(order.products).reduce((sum, product) => {
-            if (typeof product === "object") {
-              const price = product.unitPrice || product.price || 0;
-              return sum + (product.total || price * (product.quantity || 0));
-            }
-            return sum;
-          }, 0)
-        : 0);
-  
+    div.className = "order-item-card";
+    
     div.innerHTML = `
-      <div>
-        <strong>Order ID: </strong>${id}<br>
-        <strong>Supplier: </strong>${order.supplierName || order.supplierID}<br>
-        <strong>Products: </strong>${formatOrderProducts(order.products)}<br>
-        <strong>Total: </strong>${orderTotal.toFixed(2)} PHP<br>
-        <strong>Status: </strong><span class="status-${order.status?.toLowerCase() || 'pending'}">${order.status || "Pending"}</span><br>
-        <strong>Payment Status: </strong><span class="status-${order.paymentStatus?.toLowerCase() || 'pending'}">${order.paymentStatus || "Pending"}</span><br>
-        <strong>Date: </strong>${
-          order.timestamp ? new Date(order.timestamp).toLocaleString() : "N/A"
-        }
+      <div class="order-card-header">
+        <h4>
+          Order #${id}
+          <span class="order-status status-${order.status?.toLowerCase() || 'pending'}">
+            ${order.status || "Pending"}
+          </span>
+        </h4>
+        <p>Supplier: ${order.supplierName || order.supplierID}</p>
       </div>
-      <div class="order-actions">
-        <button onclick="viewOrderDetails('${id}')">View Details</button>
-        ${
-          order.paymentStatus === "Pending" && order.status === "Pending"
-            ? `<button onclick="showPaymentModal('${id}', '${order.supplierID}')">Pay</button>`
-            : ""
-        }
+      
+      <div class="order-card-body">
+        <div class="order-detail-row">
+          <span class="label">Products:</span>
+          <span class="value">${formatOrderProducts(order.products)}</span>
+        </div>
+        <div class="order-detail-row">
+          <span class="label">Total:</span>
+          <span class="value">${orderTotal.toFixed(2)} PHP</span>
+        </div>
+        <div class="order-detail-row">
+          <span class="label">Payment:</span>
+          <span class="value status-${order.paymentStatus?.toLowerCase() || 'pending'}">
+            ${order.paymentStatus || "Pending"}
+          </span>
+        </div>
+        <div class="order-detail-row">
+          <span class="label">Date:</span>
+          <span class="value">
+            ${order.timestamp ? new Date(order.timestamp).toLocaleString() : "N/A"}
+          </span>
+        </div>
+      </div>
+      
+      <div class="order-card-footer">
+        <button onclick="viewOrderDetails('${id}')">View</button>
+        ${order.paymentStatus === "Pending" && order.status === "Pending" ? 
+          `<button onclick="showPaymentModal('${id}', '${order.supplierID}')">Pay</button>` : ''}
         <button onclick="editOrder('${id}')">Edit</button>
         <button onclick="deleteOrder('${id}')">Delete</button>
       </div>
     `;
+    
     return div;
   }
 /**
