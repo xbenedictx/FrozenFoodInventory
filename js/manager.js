@@ -761,7 +761,7 @@ function renderInventory(data, inventoryList, searchTerm = "") {
 
     const normalHeader = document.createElement("h4");
     normalHeader.className = "sub-header normal";
-    normalHeader.textContent = "All Stock Items";
+    normalHeader.textContent = "Available Stock Items";
     normalSection.appendChild(normalHeader);
 
     renderItemList(normalItems, normalSection, false, false);
